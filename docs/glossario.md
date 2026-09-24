@@ -20,6 +20,10 @@ Organização do programa em partes empilhadas, cada uma com um papel: acesso ao
 ### Banco vetorial
 Tipo de banco de dados feito para guardar [embeddings](#embedding) e achar "o que é parecido com isto". Exemplos: Qdrant, Chroma. Foi considerado e descartado neste projeto.
 
+<a id="branch"></a>
+### Branch (ramo do Git)
+Linha de trabalho paralela dentro do repositório: uma cópia do código em que se pode mexer sem afetar a versão principal (`main`). Quando o trabalho fica pronto, ele é incorporado de volta.
+
 <a id="chainlit"></a>
 ### Chainlit
 Biblioteca Python que cria uma tela de chat no navegador com poucas linhas de código. Mostra, além da resposta, cada passo que o agente deu.
@@ -139,6 +143,10 @@ Programa que baixa e roda [modelos de linguagem](#llm) no próprio computador.
 <a id="pressao-de-memoria"></a>
 ### Pressão de memória (swap)
 Indicador do Monitor de Atividade do Mac que mostra se a [RAM](#ram) está dando conta: verde é folga; amarelo e vermelho indicam que o sistema começou a usar o disco como memória extra (*swap*). O disco é muito mais lento que a RAM, então tudo fica lento — principalmente o [modelo local](#modelo-local).
+
+<a id="pull-request"></a>
+### Pull request
+Pedido para incorporar o trabalho de uma [branch](#branch) em outra, com a lista do que mudou. É o momento de revisar antes de juntar.
 
 <a id="pydantic-ai"></a>
 ### Pydantic AI
