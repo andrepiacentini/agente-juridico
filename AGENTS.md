@@ -84,6 +84,7 @@ Todo trabalho de um épico acontece em branches próprias; nunca diretamente na 
 2. **Toda tarefa:** crie uma branch nova **a partir da branch do épico**, nunca da `main`: `<tipo>/t<épico>.<n>-<slug-da-tarefa>` (ex.: `feat/t3.2-list-parties`).
 3. **Antes de criar:** `git fetch` e verifique se a branch do épico já existe, localmente ou em `origin`. Se existir, parta dela atualizada, sem recriá-la.
 4. **Fechamento:** tarefa concluída volta para a branch do épico por pull request; épico concluído (todas as tarefas `[x]`) volta para a `main`.
+5. **Merge é do autor**, nunca do assistente. **Depois do merge**, apague a branch local e remota somente se o PR estiver `MERGED` e todos os checks estiverem verdes (sem checks configurados conta como verde; check falho ou pendente → não apague, avise). Volte antes para a base do PR atualizada; use `git branch -d` (nunca `-D`), `git push origin --delete <branch>` se ainda existir no remoto e `git fetch --prune`. Branch `epic/` só é apagada quando o épico for mergeado na `main`.
 
 **Nomes:** sempre em inglês, minúsculas, palavras separadas por hífen, com o prefixo (pasta) conforme o objetivo:
 

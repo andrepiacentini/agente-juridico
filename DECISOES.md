@@ -132,6 +132,7 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 ### D24 — Uma branch por épico e uma por tarefa
 - **Decisão:** cada épico ganha uma [branch](docs/glossario.md#branch) própria, criada a partir da `main` quando a primeira tarefa dele começa. Cada tarefa ganha uma branch nova criada a partir da branch do épico. Os nomes são em inglês e começam por um prefixo que indica o objetivo (`epic/`, `feat/`, `enh/`, `fix/`, `hotfix/`, `docs/` etc.), como `epic/e03-query-tools` e `feat/t3.2-list-parties`. A tarefa pronta volta para o épico, e o épico pronto volta para a `main`, por [pull request](docs/glossario.md#pull-request). A regra está no `AGENTS.md`, seção "Fluxo de branches".
 - **Por quê:** a `main` só recebe épicos inteiros e revisados, então está sempre em estado de demonstração. Cada tarefa fica isolada e pode ser mostrada, revisada ou desfeita sem afetar as outras — o que também deixa o histórico do Git alinhado ao [roadmap](project/ROADMAP.md) para a banca.
+- **Limpeza:** depois do merge, e só com os checks automáticos aprovados, a branch é apagada — no computador e no GitHub —, para a lista de branches mostrar apenas trabalho em andamento. A branch do épico fica até o épico inteiro entrar na `main`.
 - **Descartado:** trabalhar direto na `main` (uma tarefa quebrada estragaria a versão de demonstração) e uma branch só por épico, sem branches de tarefa (misturaria tarefas no mesmo histórico).
 
 ---
