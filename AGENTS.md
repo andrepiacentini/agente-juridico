@@ -76,6 +76,31 @@ Aplicadas na proporção do projeto: é um desafio técnico com prazo, rodando n
 - **Observabilidade.** `logging` com campos estruturados — nunca `print` — em cada chamada de ferramenta: nome, argumentos, duração e número de linhas devolvidas.
 - **12 fatores.** Configuração só por variável de ambiente (`.env`, com `.env.example` versionado); nenhum caminho, modelo ou chave fixo no código; dependências declaradas no `pyproject.toml`/`uv.lock`.
 
+## Fluxo de branches (Git)
+
+Todo trabalho de um épico acontece em branches próprias; nunca diretamente na `main`.
+
+1. **Primeira tarefa de um épico:** o épico ainda não tem branch. Crie-a a partir da `main` atualizada: `epic/e<nn>-<slug-do-epico>` (ex.: `epic/e03-query-tools`).
+2. **Toda tarefa:** crie uma branch nova **a partir da branch do épico**, nunca da `main`: `<tipo>/t<épico>.<n>-<slug-da-tarefa>` (ex.: `feat/t3.2-list-parties`).
+3. **Antes de criar:** `git fetch` e verifique se a branch do épico já existe, localmente ou em `origin`. Se existir, parta dela atualizada, sem recriá-la.
+4. **Fechamento:** tarefa concluída volta para a branch do épico por pull request; épico concluído (todas as tarefas `[x]`) volta para a `main`.
+
+**Nomes:** sempre em inglês, minúsculas, palavras separadas por hífen, com o prefixo (pasta) conforme o objetivo:
+
+| Prefixo | Uso |
+|---|---|
+| `epic/` | branch do épico, base das tarefas dele |
+| `feat/` | funcionalidade nova |
+| `enh/` | melhoria de algo que já funciona (desempenho, texto de resposta, prompt) |
+| `fix/` | correção de defeito encontrado durante o desenvolvimento |
+| `hotfix/` | correção urgente de algo já na `main`: parte da `main`, volta para a `main` e para a branch do épico em andamento |
+| `refactor/` | reorganização sem mudar comportamento |
+| `test/` | só testes ou casos da bateria de avaliação |
+| `docs/` | só documentação (`DECISOES.md`, `docs/`, `project/`) |
+| `chore/` | configuração e manutenção (dependências, `.gitignore`, ferramentas) |
+
+Trabalho fora de qualquer épico (ex.: ajuste de documentação de planejamento) parte da `main` com o prefixo adequado (`docs/`, `chore/`).
+
 ## O banco é adversarial por design
 
 Os números abaixo custaram uma sessão de profiling; não os re-derive, use-os para escrever tools e testes. Detalhes em `plan.md` §2.

@@ -127,6 +127,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Junto:** o chat no terminal passa a abrir com `uv run case-assistant` (antes `uv run agente`), com o mesmo nome do pacote.
 - **Descartado:** `src/agente/` (nome em português, das primeiras versões do plano) e `src/tjsc_agent/` (sugestão do Claude Code; o autor preferiu um nome ligado ao domínio).
 
+## 24/09/2026
+
+### D24 — Uma branch por épico e uma por tarefa
+- **Decisão:** cada épico ganha uma [branch](docs/glossario.md#branch) própria, criada a partir da `main` quando a primeira tarefa dele começa. Cada tarefa ganha uma branch nova criada a partir da branch do épico. Os nomes são em inglês e começam por um prefixo que indica o objetivo (`epic/`, `feat/`, `enh/`, `fix/`, `hotfix/`, `docs/` etc.), como `epic/e03-query-tools` e `feat/t3.2-list-parties`. A tarefa pronta volta para o épico, e o épico pronto volta para a `main`, por [pull request](docs/glossario.md#pull-request). A regra está no `AGENTS.md`, seção "Fluxo de branches".
+- **Por quê:** a `main` só recebe épicos inteiros e revisados, então está sempre em estado de demonstração. Cada tarefa fica isolada e pode ser mostrada, revisada ou desfeita sem afetar as outras — o que também deixa o histórico do Git alinhado ao [roadmap](project/ROADMAP.md) para a banca.
+- **Descartado:** trabalhar direto na `main` (uma tarefa quebrada estragaria a versão de demonstração) e uma branch só por épico, sem branches de tarefa (misturaria tarefas no mesmo histórico).
+
 ---
 
 ## Pendências de decisão
