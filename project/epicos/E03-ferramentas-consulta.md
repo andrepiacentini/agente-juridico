@@ -1,0 +1,80 @@
+# E03 — Ferramentas de consulta
+
+[← Roadmap](../ROADMAP.md)
+
+**Resultado do épico:** as funções que o agente vai usar para consultar o banco, cada uma com um teste que roda **sem IA**.
+**Por que importa:** o modelo só escolhe *qual* ferramenta chamar; quem garante que o dado está certo é o código da ferramenta. Por isso as armadilhas do banco são tratadas aqui, não no prompt.
+
+Regra que vale para todas: ferramentas de listagem devolvem **dados resumidos** (ids, tipos, datas). Só `ler_documento` devolve texto completo.
+
+---
+
+### T3.1 — `buscar_processo`: dados básicos `[ ]`
+- **Objetivo:** dado um número, devolver classe, assunto, comarca, vara, magistrado, datas, valor da causa e quantidade de documentos e movimentações.
+- **Passos:** consulta com `JOIN` em `unidade` e `magistrado`; devolver um dicionário pequeno; processo inexistente devolve aviso claro, não erro.
+- **Pronto quando:** teste com o 3161 confere os campos; teste com número inexistente devolve "processo não encontrado".
+- **Depende de:** T2.1, T2.4.
+- **Para explicar à banca:** "É a primeira ferramenta que o agente chama: um cartão de identificação do processo."
+
+### T3.2 — `buscar_processo`: situação padronizada `[ ]`
+- **Objetivo:** tratar `Julgado` / `JULGADO` / `julgado` como a mesma coisa.
+- **Passos:** normalizar com `LOWER()` e devolver em formato único.
+- **Pronto quando:** teste com o processo 1 (`julgado` minúsculo) devolve a situação padronizada.
+- **Depende de:** T3.1.
+- **Para explicar à banca:** "O banco escreve a mesma situação de três jeitos; padronizo no código para o modelo não se confundir."
+
+### T3.3 — `buscar_processo`: campo "julgamento" cruzando três sinais `[ ]`
+- **Objetivo:** responder "já foi julgado?" com base em três fontes: `data_sentenca`, movimentações de sentença (códigos 9219/9220/9221) e existência de documento do tipo Sentença.
+- **Passos:** calcular os três sinais; devolver um resumo como "julgado, com texto da sentença disponível" ou "consta data de sentença, mas o texto não está disponível".
+- **Pronto quando:** testes com o 3161 (três sinais batem) e com o processo 1 (data sem documento) dão respostas diferentes e corretas.
+- **Depende de:** T3.1.
+- **Para explicar à banca:** "Em 4.426 processos há data de sentença sem a sentença. Por isso nunca confio num sinal só — o código cruza os três e entrega o resultado pronto."
+
+### T3.4 — `buscar_processo`: lista de inconsistências `[ ]`
+- **Objetivo:** avisar o agente sobre problemas no cadastro, sem corrigi-los.
+- **Passos:** detectar: magistrado ausente, magistrado aposentado/removido, comarca do processo diferente da comarca da vara, valor da causa vazio ou ≤ 0, conflito entre situação e data de sentença; devolver como lista de avisos.
+- **Pronto quando:** o 3161 devolve o aviso de juiz aposentado; um processo sem magistrado devolve o aviso correspondente.
+- **Depende de:** T3.1.
+- **Para explicar à banca:** "O agente reporta a inconsistência em vez de escolher um lado — num tribunal, esconder uma divergência é pior do que mostrá-la."
+
+### T3.5 — `listar_partes` `[ ]`
+- **Objetivo:** devolver as partes do processo por polo (ativo/passivo), com tipo e CPF/CNPJ.
+- **Passos:** consulta em `processo_parte` + `parte`; agrupar por polo.
+- **Pronto quando:** teste com o 3161 devolve autor(es) e réu(s) corretos.
+- **Depende de:** T2.1.
+- **Para explicar à banca:** "Partes estão em tabela própria; é uma consulta direta, sem interpretação."
+
+### T3.6 — `listar_movimentacoes` `[ ]`
+- **Objetivo:** devolver o andamento do processo em ordem de data.
+- **Passos:** consulta em `movimentacao` ordenada por `data_mov`; só código, descrição e data.
+- **Pronto quando:** teste com o processo 1 devolve 16 movimentações em ordem.
+- **Depende de:** T2.1.
+- **Para explicar à banca:** "É o que permite resumir os 63% de processos que não têm nenhum documento."
+
+### T3.7 — `listar_documentos` (sem texto) `[ ]`
+- **Objetivo:** devolver a lista de documentos com id, tipo, autor, data e número de páginas — **sem o texto**.
+- **Passos:** consulta em `documento` sem a coluna `texto`; marcar como advogado quem tem "OAB" no campo `autor`.
+- **Pronto quando:** teste com o 3161 devolve 19 itens sem texto; teste com o processo 1 devolve lista vazia.
+- **Depende de:** T2.1.
+- **Para explicar à banca:** "O modelo primeiro vê o índice dos documentos e escolhe quais ler. É isso que faz caber num computador de 8 GB."
+
+### T3.8 — `ler_documento` `[ ]`
+- **Objetivo:** devolver o texto completo de um documento pelo id, com tipo e data para citação.
+- **Passos:** consulta por `id`; id inexistente devolve aviso claro.
+- **Pronto quando:** teste lê a sentença do 3161 e confere que o texto veio inteiro.
+- **Depende de:** T2.1.
+- **Para explicar à banca:** "Texto só é carregado quando o agente pede, e sempre com o id para ele citar a fonte."
+
+### T3.9 — `buscar_texto`: termos nos documentos `[ ]`
+- **Objetivo:** encontrar documentos que mencionam um termo, com um trecho em volta.
+- **Passos:** usar o índice da T2.5; filtros opcionais por tipo de documento e por processo; limitar a quantidade de resultados.
+- **Pronto quando:** teste com "inversão do ônus" devolve documentos com id e trecho.
+- **Depende de:** T2.5.
+- **Para explicar à banca:** "Busca por palavra, não por 'significado parecido' — resolve o que o edital pede sem precisar de banco vetorial."
+
+### T3.10 — `buscar_texto`: nomes de partes e homônimos `[ ]`
+- **Objetivo:** buscar uma pessoa pelo nome e separar pessoas diferentes com o mesmo nome.
+- **Passos:** buscar no índice de `parte.nome`; agrupar resultados por CPF/CNPJ; sinalizar quando houver mais de uma pessoa.
+- **Pronto quando:** teste com um nome homônimo conhecido devolve duas ou mais pessoas separadas, cada uma com seus processos.
+- **Depende de:** T2.5.
+- **Para explicar à banca:** "Há 643 nomes repetidos com documentos diferentes; a ferramenta separa as pessoas e o agente pergunta de qual se trata."
