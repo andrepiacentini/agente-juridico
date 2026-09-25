@@ -1,3 +1,5 @@
+# desafio.sqlite é versionado de propósito (D27) e nunca é alterado pelo projeto.
+
 # Ambiente Python (recriado por `uv sync`)
 .venv/
 __pycache__/

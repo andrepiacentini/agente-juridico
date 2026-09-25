@@ -28,7 +28,7 @@
 - **Depende de:** nada.
 - **Para explicar à banca:** "O histórico de commits mostra a evolução do projeto e complementa o `DECISOES.md`."
 
-### T1.4 — Decidir se o banco `desafio.sqlite` entra no repositório `[ ]`
+### T1.4 — Decidir se o banco `desafio.sqlite` entra no repositório `[x]`
 - **Objetivo:** tomar e registrar uma decisão sobre versionar ou não o arquivo do banco.
 - **Passos:** ver o tamanho do arquivo; avaliar se a banca já tem o arquivo; decidir entre commitar ou instruir o download no README; registrar no `DECISOES.md`.
 - **Pronto quando:** a decisão está no `DECISOES.md` e o `.gitignore` reflete a escolha.
