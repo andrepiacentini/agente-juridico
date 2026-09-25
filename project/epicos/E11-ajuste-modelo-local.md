@@ -44,9 +44,10 @@
 - **Depende de:** E09.
 - **Para explicar à banca:** "Tenho um modelo menor testado para o caso de a máquina ficar sem memória ao vivo."
 
-### T11.6 — Medir a memória no cenário real da apresentação `[ ]`
+### T11.6 — Medir a memória com videochamada aberta (opcional) `[ ]`
+- **Opcional (D28):** o edital prevê apresentação **presencial**. Esta tarefa só é feita se a apresentação passar a ser remota; caso contrário, é cancelada no fim do E11.
 - **Objetivo:** saber se a demo com modelo local aguenta o cenário real: Chainlit no navegador **e** uma videochamada aberta ao mesmo tempo.
 - **Passos:** fechar todos os outros programas; abrir o Chainlit **sempre no Safari**, só com essa aba; abrir uma chamada do Google Meet em **outro navegador** (Chrome), com câmera e compartilhamento de tela ativos; rodar as 4 perguntas do edital no processo 3161 e a minuta; acompanhar a "Pressão de memória" e o uso de swap no Monitor de Atividade; anotar o tempo de cada resposta. Repetir com o `qwen3:1.7b` se a pressão ficar amarela ou vermelha.
 - **Pronto quando:** o `DECISOES.md` registra a cor da pressão de memória, o swap usado e os tempos, e a decisão de qual modelo levar para a demo (local 4B, local 1.7B ou nuvem).
 - **Depende de:** T11.1, T11.5 e E10.
-- **Para explicar à banca:** "Não confiei só na conta: testei a demonstração com a videochamada aberta, que é o cenário real, e escolhi o modelo com base na medição."
+- **Para explicar à banca:** "Não confiei só na conta: testei a demonstração com a videochamada aberta, que seria o cenário real de uma apresentação remota, e escolhi o modelo com base na medição."

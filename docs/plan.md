@@ -301,7 +301,7 @@ Além do histórico de mensagens, o `processo_em_foco` é injetado no system pro
 | Navegador com **só a aba do Chainlit** (Safari) | ~0,5 GB |
 | **Total** | **~7 GB** — cabe, com pouca folga |
 
-A estimativa **não inclui** a videochamada de uma apresentação remota (Google Meet em outro navegador), que pode sozinha consumir 1 GB ou mais, nem outros programas abertos (IDE, Chrome do dia a dia, Slack). Por isso: Safari só com a aba do Chainlit, todo o resto fechado, e a medição real da tarefa T11.6 decide se a demo roda com o modelo local ou com o modelo em nuvem (D22).
+A estimativa **não inclui** outros programas abertos (IDE, navegador do dia a dia, mensageiros). Por isso: Safari só com a aba do Chainlit e todo o resto fechado. A apresentação é **presencial** (edital); se passar a ser remota, a videochamada (Google Meet em outro navegador) pode consumir sozinha 1 GB ou mais, e a tarefa opcional T11.6 mede esse cenário antes de decidir entre modelo local e em nuvem (D22, D28).
 
 Contexto de 16k tokens cabe o pior processo (19 docs ≈ 15k tokens) se o modelo ler tudo — mas o design "metadados primeiro, texto sob demanda" faz o caso comum ficar em 3–5k. O modelo padrão é a variante *instruct*, sem modo raciocínio (*thinking*): responde direto, o que corta a latência (D25).
 

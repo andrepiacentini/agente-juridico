@@ -23,7 +23,7 @@
 
 ### T2.3 — Teste: o arquivo do banco não muda `[ ]`
 - **Objetivo:** garantir que nada do projeto altera `desafio.sqlite`.
-- **Passos:** calcular a "impressão digital" (hash) do arquivo antes e depois de rodar os testes; comparar.
+- **Passos:** calcular a "impressão digital" (hash) do arquivo antes e depois de rodar os testes; comparar. Comparar também com o SHA-256 de referência registrado na D27, que prova que o arquivo é o mesmo recebido.
 - **Pronto quando:** o teste passa e falharia se o arquivo mudasse.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Comparo a impressão digital do arquivo antes e depois — é a prova de que o dado original está intacto."

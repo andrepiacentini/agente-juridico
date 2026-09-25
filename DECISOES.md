@@ -156,12 +156,21 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** baixar e medir velocidade é preparação de ambiente e não depende de nada; saber se o modelo menor escolhe a ferramenta certa e não inventa dados só é possível com as ferramentas e a bateria prontas. Resultado da T1.8: o 1.7b é cerca de 2 vezes mais rápido (~41 contra ~19 [tokens](docs/glossario.md#token) por segundo) e ocupa cerca de metade da memória (1,7 contra 3,2 GB), mas comete erros de português e de conteúdo que o 4B não comete. Nele, desligar o [modo raciocínio](docs/glossario.md#thinking) funciona — o alerta da D25 não se confirmou.
 - **Descartado:** mover a T11.5 inteira para o E01 — a parte de qualidade não pode ser feita antes do E09.
 
+### D27 — O banco `desafio.sqlite` fica no repositório
+- **Decisão:** manter o arquivo `desafio.sqlite` (40 MB) versionado no Git, como já estava desde o primeiro commit. O projeto nunca o altera ([somente leitura](docs/glossario.md#somente-leitura), D04). Impressão digital ([hash](docs/glossario.md#hash) SHA-256) do arquivo nesta data, para a verificação da T2.3: `8a90b47cdc3b07bcb395ffe0e81c3d56dd33946fa047dec7dc86499767690c43`.
+- **Por quê:** a banca clona o repositório e roda o projeto sem baixar, descompactar ou posicionar o arquivo à mão — é o que o E01 promete. São dados fictícios, sem sigilo, o repositório é privado, e 40 MB está bem abaixo dos limites do GitHub (aviso a partir de 50 MB, bloqueio a partir de 100 MB).
+- **Descartado:** tirar o arquivo do Git e instruir o download no README (o edital distribui um ZIP de 7,1 MB). Acrescentaria um passo manual para a banca; e, como o arquivo já está no histórico, removê-lo agora não diminuiria o repositório sem reescrever esse histórico.
+
+### D28 — Apresentação presencial: teste com videochamada vira opcional
+- **Decisão:** a tarefa T11.6 (medir a memória com o Google Meet aberto) passa a ser opcional. Só será feita se a apresentação deixar de ser presencial; caso contrário, é cancelada no fim do E11. Continua valendo a regra da D22: Chainlit no Safari, só com a aba do chat.
+- **Por quê:** o edital diz que a apresentação é **presencial** ("Sessão de Demonstração e Arguição Técnica"). A D22 partiu de uma apresentação remota, que não é o cenário previsto. Sem videochamada, a conta de memória do `plan.md` §5 volta a ter folga.
+- **Uso de IA:** o Claude Code encontrou a informação ao reler o edital durante a T1.4; a D22 tinha sido escrita sem conferir esse ponto.
+
 ---
 
 ## Pendências de decisão
 
 Decisões já identificadas, ainda não tomadas (viram entradas datadas quando forem resolvidas):
 
-- Versionar ou não o arquivo `desafio.sqlite` no repositório (tarefa T1.4).
-- Qual modelo usar como principal na demonstração — depende do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e do teste de memória com o Google Meet aberto (T11.6).
+- Qual modelo usar como principal na demonstração — depende do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
 - Levar ou não o modelo reserva `qwen3:1.7b` para a apresentação (T11.5).
