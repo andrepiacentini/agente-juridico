@@ -7,7 +7,7 @@
 
 ---
 
-### T1.1 — Instalar o gerenciador de projeto `uv` `[ ]`
+### T1.1 — Instalar o gerenciador de projeto `uv` `[x]`
 - **Objetivo:** ter o `uv` disponível no terminal.
 - **Passos:** `brew install uv`; conferir com `uv --version`.
 - **Pronto quando:** o comando mostra a versão instalada.
@@ -37,7 +37,7 @@
 
 ### T1.5 — Criar o `pyproject.toml` `[ ]`
 - **Objetivo:** declarar o projeto, a versão do Python (3.12) e as bibliotecas.
-- **Passos:** `uv init --python 3.12`; `uv add pydantic-ai chainlit python-dotenv`; `uv add --dev pytest`; declarar o comando `agente` apontando para `agente.cli:main`.
+- **Passos:** `uv init --python 3.12`; `uv add pydantic-ai chainlit python-dotenv`; `uv add --dev pytest`; declarar o comando `case-assistant` apontando para `case_assistant.cli:main`.
 - **Pronto quando:** `uv sync` termina sem erro e `uv run python --version` mostra 3.12.
 - **Depende de:** T1.1.
 - **Para explicar à banca:** "Fixei o Python 3.12 porque o do sistema é 3.14 e algumas bibliotecas ainda não têm versão pronta para ele."
@@ -45,7 +45,7 @@
 ### T1.6 — Criar o esqueleto de pastas `[ ]`
 - **Objetivo:** ter a estrutura de arquivos prevista no `plan.md` §6, ainda vazia.
 - **Passos:** criar `src/case_assistant/` com `__init__.py`, `db.py`, `tools.py`, `prompts.py`, `agent.py`, `cli.py`; criar `tests/` e `app.py`.
-- **Pronto quando:** `uv run python -c "import agente"` funciona.
+- **Pronto quando:** `uv run python -c "import case_assistant"` funciona.
 - **Depende de:** T1.5.
 - **Para explicar à banca:** "Separei banco, ferramentas, instruções do agente e interface em arquivos diferentes — cada um se explica sozinho."
 
