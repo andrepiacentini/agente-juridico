@@ -35,9 +35,9 @@
 - **Depende de:** T1.3.
 - **Para explicar à banca:** "Decidi [commitar / não commitar] o banco porque [motivo] — e em nenhum caso o arquivo é alterado pelo projeto."
 
-### T1.5 — Criar o `pyproject.toml` `[ ]`
+### T1.5 — Criar o `pyproject.toml` `[x]`
 - **Objetivo:** declarar o projeto, a versão do Python (3.12) e as bibliotecas.
-- **Passos:** `uv init --python 3.12`; `uv add pydantic-ai chainlit python-dotenv`; `uv add --dev pytest`; declarar o comando `case-assistant` apontando para `case_assistant.cli:main`.
+- **Passos:** `uv init --package --name case-assistant --python 3.12`; `uv add "pydantic-ai-slim[openai,anthropic]" chainlit python-dotenv` (D29); `uv add --dev pytest`; declarar o comando `case-assistant` apontando para `case_assistant.cli:main`.
 - **Pronto quando:** `uv sync` termina sem erro e `uv run python --version` mostra 3.12.
 - **Depende de:** T1.1.
 - **Para explicar à banca:** "Fixei o Python 3.12 porque o do sistema é 3.14 e algumas bibliotecas ainda não têm versão pronta para ele."
@@ -51,7 +51,7 @@
 
 ### T1.7 — Criar o `.env.example` e fazer o primeiro commit `[ ]`
 - **Objetivo:** documentar como escolher o modelo sem mexer no código.
-- **Passos:** criar `.env.example` com `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` e a alternativa comentada `# LLM_MODEL=anthropic:claude-sonnet-5`, mais `ANTHROPIC_API_KEY=`; primeiro commit.
+- **Passos:** criar `.env.example` com `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` e a alternativa comentada `# LLM_MODEL=anthropic:claude-sonnet-5`, mais `OLLAMA_BASE_URL=http://localhost:11434/v1` (exigido pelo Pydantic AI para o prefixo `ollama:`) e `ANTHROPIC_API_KEY=`; primeiro commit.
 - **Pronto quando:** o commit existe e não contém nenhuma chave real.
 - **Depende de:** T1.3 a T1.6.
 - **Para explicar à banca:** "Trocar de modelo é mudar uma linha de configuração; o código é o mesmo."
