@@ -14,7 +14,8 @@
 - **Depende de:** E05.
 - **Para explicar à banca:** "Calculei o orçamento de memória antes: modelo, contexto e sistema cabem em 7 dos 8 GB."
 
-### T11.2 — Desligar o "modo raciocínio" `[ ]`
+### T11.2 — Desligar o "modo raciocínio" `[-]`
+- **Cancelada (D25):** o modelo padrão passou a ser a variante *instruct*, que não tem modo raciocínio; não há o que desligar. A variante com raciocínio ignora `think=False`.
 - **Objetivo:** desativar o raciocínio interno do Qwen3 para respostas mais rápidas.
 - **Passos:** configurar `think=False`; comparar tempo e placar antes e depois.
 - **Pronto quando:** a comparação está anotada no `DECISOES.md`.
@@ -37,6 +38,7 @@
 
 ### T11.5 — Testar o modelo reserva `[ ]`
 - **Objetivo:** validar `qwen3:1.7b` como plano B se a memória apertar na apresentação.
+- **Atenção (D25):** antes de rodar, verificar se a etiqueta `qwen3:1.7b` aponta para uma versão só-raciocínio que ignora `think=False`, como aconteceu com o `qwen3:4b` (conferir com `ollama show` e com um teste de resposta direta). Se for, procurar a variante *instruct* equivalente.
 - **Passos:** `ollama pull qwen3:1.7b`; rodar a bateria; anotar o placar.
 - **Pronto quando:** o placar está registrado e há decisão sobre levá-lo para a demo.
 - **Depende de:** E09.

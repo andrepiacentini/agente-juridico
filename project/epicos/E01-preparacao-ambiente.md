@@ -14,9 +14,9 @@
 - **Depende de:** nada.
 - **Para explicar à banca:** "O `uv` garante que o projeto rode com a mesma versão de Python e das bibliotecas em qualquer máquina."
 
-### T1.2 — Baixar e testar o modelo local `[ ]`
-- **Objetivo:** confirmar que o modelo `qwen3:4b` roda no MacBook.
-- **Passos:** `ollama pull qwen3:4b`; `ollama run qwen3:4b "Responda em português: o que é uma petição inicial?"`.
+### T1.2 — Baixar e testar o modelo local `[x]`
+- **Objetivo:** confirmar que o modelo local roda no MacBook. Resultado: `qwen3:4b-instruct-2507-q4_K_M` (D25).
+- **Passos:** `ollama pull qwen3:4b-instruct-2507-q4_K_M`; `ollama run qwen3:4b-instruct-2507-q4_K_M "Responda em português: o que é uma petição inicial?"`.
 - **Pronto quando:** o modelo responde em português sem travar a máquina.
 - **Depende de:** nada.
 - **Para explicar à banca:** "Escolhi um modelo de 4 bilhões de parâmetros porque é o maior que cabe com folga em 8 GB e ainda sabe usar ferramentas."
@@ -51,7 +51,7 @@
 
 ### T1.7 — Criar o `.env.example` e fazer o primeiro commit `[ ]`
 - **Objetivo:** documentar como escolher o modelo sem mexer no código.
-- **Passos:** criar `.env.example` com `LLM_MODEL=ollama:qwen3:4b` e a alternativa comentada `# LLM_MODEL=anthropic:claude-sonnet-5`, mais `ANTHROPIC_API_KEY=`; primeiro commit.
+- **Passos:** criar `.env.example` com `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` e a alternativa comentada `# LLM_MODEL=anthropic:claude-sonnet-5`, mais `ANTHROPIC_API_KEY=`; primeiro commit.
 - **Pronto quando:** o commit existe e não contém nenhuma chave real.
 - **Depende de:** T1.3 a T1.6.
 - **Para explicar à banca:** "Trocar de modelo é mudar uma linha de configuração; o código é o mesmo."

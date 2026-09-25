@@ -193,7 +193,7 @@ flowchart TB
     CLI["<b>CLI — terminal</b><br/>plano B da demonstração"]
     AGENT["<b>agent.py — loop do agente (Pydantic AI)</b><br/>• system prompt: papel, regras, schema, processo em foco<br/>• message_history (multi-turno)<br/>• estado da sessão: processo_em_foco"]
     TOOLS["<b>tools.py — ferramentas</b><br/>buscar_processo · listar_partes<br/>listar_movimentacoes · listar_documentos<br/>ler_documento · buscar_texto (FTS5)<br/>consultar_sql (read-only)"]
-    LLM["<b>LLM</b> — troca por LLM_MODEL<br/>ollama: qwen3:4b<br/>anthropic: sonnet / haiku"]
+    LLM["<b>LLM</b> — troca por LLM_MODEL<br/>ollama: qwen3:4b-instruct-2507-q4_K_M<br/>anthropic: sonnet / haiku"]
     DBPY["<b>db.py</b> — sqlite3 stdlib"]
     DB[("desafio.sqlite<br/>mode=ro")]
 
@@ -286,7 +286,7 @@ Além do histórico de mensagens, o `processo_em_foco` é injetado no system pro
 | Linguagem | **Python 3.12+** via `uv` | `sqlite3` na stdlib; ecossistema de IA; qualquer avaliador lê. `uv run` reproduzível sem virtualenv manual. Python local é 3.14 — pinar 3.12 evita wheel faltando | TypeScript (ecossistema de agentes local menos maduro; sqlite precisa de binding nativo) |
 | Agente | **Pydantic AI** | Loop de tool calling pronto; ferramentas = funções Python tipadas (schema JSON sai dos type hints); **model-agnostic por string** (`ollama` via endpoint OpenAI-compatível, `anthropic:`, `openai:`, `groq:`); `message_history` nativo; sem camadas mágicas. ~150 linhas de código próprio | LangChain/LangGraph (abstrações pesadas e instáveis; difícil explicar na arguição), LlamaIndex (centrado em RAG), CrewAI/AutoGen (multi-agente é overkill). Loop manual com `litellm` é válido, mas reimplementa normalização de tool-calls entre provedores |
 | Banco | **SQLite direto, read-only** + FTS5 | Zero infra; o desafio *é* esse arquivo. `mode=ro` garante que nenhum SQL gerado escreva | Qdrant/Chroma (§3); DuckDB (não há analítica pesada) |
-| LLM local | **`qwen3:4b`** no Ollama | Melhor tool calling da faixa 4B, bom em PT-BR, Q4_K_M ≈ 2,6 GB | `llama3.1:8b` (4,9 GB + KV cache não sobra RAM), `gemma3:4b` (sem tool calling no Ollama), `llama3.2:3b` (tool calling fraco) |
+| LLM local | **`qwen3:4b-instruct-2507-q4_K_M`** no Ollama (D25) | Melhor tool calling da faixa 4B, bom em PT-BR, Q4_K_M ≈ 2,5 GB; variante *instruct*, sem modo raciocínio — a etiqueta `qwen3:4b` hoje é só-raciocínio e ignora `think=False` | `llama3.1:8b` (4,9 GB + KV cache não sobra RAM), `gemma3:4b` (sem tool calling no Ollama), `llama3.2:3b` (tool calling fraco) |
 | LLM nuvem (demo) | **Claude Sonnet 5 / Haiku 4.5** via `anthropic:` | Mesmo código, troca `LLM_MODEL` no `.env`. Ter os dois na apresentação mostra portabilidade e protege contra o modelo local travar ao vivo | — |
 | UI | **Chainlit** | Chat pronto em ~40 linhas e **mostra cada tool call e resultado como "passo" colapsável** — o avaliador vê o agente decidir. Demonstra "Fundamentar" visualmente | Streamlit (exibir tool calls exige código extra), Gradio, React (custo sem retorno) |
 | Testes | `pytest` — testes das ferramentas (sem LLM) + golden set de ~12 perguntas | Opcional pelo edital; incluir e explicar: ferramentas são determinísticas e cobrem as armadilhas; golden set é a regressão ao mexer no prompt | cobertura, CI |
@@ -295,7 +295,7 @@ Além do histórico de mensagens, o `processo_em_foco` é injetado no system pro
 
 | Item | RAM |
 |---|---|
-| `qwen3:4b` Q4_K_M pesos | ~2,6 GB |
+| `qwen3:4b-instruct-2507` Q4_K_M pesos | ~2,5 GB |
 | KV cache, `num_ctx=16384`, `OLLAMA_KV_CACHE_TYPE=q8_0` | ~1,2 GB |
 | macOS + servidor Chainlit + Python | ~2,5 GB |
 | Navegador com **só a aba do Chainlit** (Safari) | ~0,5 GB |
@@ -303,7 +303,7 @@ Além do histórico de mensagens, o `processo_em_foco` é injetado no system pro
 
 A estimativa **não inclui** a videochamada de uma apresentação remota (Google Meet em outro navegador), que pode sozinha consumir 1 GB ou mais, nem outros programas abertos (IDE, Chrome do dia a dia, Slack). Por isso: Safari só com a aba do Chainlit, todo o resto fechado, e a medição real da tarefa T11.6 decide se a demo roda com o modelo local ou com o modelo em nuvem (D22).
 
-Contexto de 16k tokens cabe o pior processo (19 docs ≈ 15k tokens) se o modelo ler tudo — mas o design "metadados primeiro, texto sob demanda" faz o caso comum ficar em 3–5k. Desligar o *thinking* do Qwen3 (`think=False`) para latência; ligar só para a minuta se quiser qualidade extra.
+Contexto de 16k tokens cabe o pior processo (19 docs ≈ 15k tokens) se o modelo ler tudo — mas o design "metadados primeiro, texto sob demanda" faz o caso comum ficar em 3–5k. O modelo padrão é a variante *instruct*, sem modo raciocínio (*thinking*): responde direto, o que corta a latência (D25).
 
 Fallback se ficar apertado: `qwen3:1.7b` (1,4 GB) — pior em redação, mas ainda chama ferramentas.
 
@@ -343,7 +343,7 @@ flowchart LR
 
     subgraph CONFIG["Configuração"]
         PYPROJECT["pyproject.toml + uv.lock<br/><i>dependências, Python 3.12</i>"]
-        ENV[".env.example<br/><i>LLM_MODEL=ollama:qwen3:4b</i>"]
+        ENV[".env.example<br/><i>LLM_MODEL=ollama:qwen3:4b-instruct…</i>"]
         GITIGNORE[".gitignore<br/><i>ignora .env</i>"]
     end
 
@@ -379,12 +379,12 @@ Os nomes dos arquivos de código seguem a regra de identificadores em inglês (D
 
 | Fase | Entrega | Verificação |
 |---|---|---|
-| **0 — Setup** (½ dia) | `brew install uv`, `uv init`, `ollama pull qwen3:4b`, `git init`, esqueleto, `DECISOES.md` com a decisão RAG × SQL | `uv run python -c "import sqlite3"`; Ollama responde |
+| **0 — Setup** (½ dia) | `brew install uv`, `uv init`, `ollama pull qwen3:4b-instruct-2507-q4_K_M`, `git init`, esqueleto, `DECISOES.md` com a decisão RAG × SQL | `uv run python -c "import sqlite3"`; Ollama responde |
 | **1 — Ferramentas** (1 dia) | `db.py` + `tools.py` com as 7 funções e normalizações; testes unitários das armadilhas | `pytest` verde sem LLM |
 | **2 — Agente CLI** (1 dia) | `agent.py` + `prompts.py` + `cli.py`; roda com `ollama` e com `anthropic` trocando env | As 4 perguntas do edital no processo 3161 e no processo 1 |
 | **3 — Limites e minuta** (1 dia) | Regras de "não consta"; template da minuta com disclaimer; `processo_em_foco` | Golden set: processo sem docs, sem magistrado, sentença sem texto, homônimo |
 | **4 — UI** (½ dia) | Chainlit com passos visíveis; seletor de modelo | Demo end-to-end |
-| **5 — Ajuste do modelo local** (½ dia) | `num_ctx`, KV q8, `think` off, tamanho das respostas das tools | Latência < 30 s por resposta no M1 |
+| **5 — Ajuste do modelo local** (½ dia) | `num_ctx`, KV q8, tamanho das respostas das tools | Latência < 30 s por resposta no M1 |
 | **6 — Entregáveis** (½ dia) | README, DECISOES.md completo, roteiro da demo, respostas da arguição | Alguém sem contexto sobe em 5 min |
 
 Total: ~5 dias de trabalho concentrado. Se o prazo for menor, cortar a Fase 4 (fica no CLI) — nunca a Fase 3.
@@ -405,8 +405,8 @@ Total: ~5 dias de trabalho concentrado. Se o prazo for menor, cortar a Fase 4 (f
 
 | Risco | Mitigação |
 |---|---|
-| `qwen3:4b` alucina argumento ou ignora "não consta" | Golden set + regra no prompt + a UI mostra a fonte, então o erro é visível, não escondido. Demo com Claude como plano B |
-| Latência da minuta no M1 (~1.500 tokens de saída) | Streaming na UI; `think` off; ou minuta com o modelo em nuvem |
+| O modelo local alucina argumento ou ignora "não consta" | Golden set + regra no prompt + a UI mostra a fonte, então o erro é visível, não escondido. Demo com Claude como plano B |
+| Latência da minuta no M1 (~1.500 tokens de saída) | Streaming na UI (modelo *instruct*, sem raciocínio); ou minuta com o modelo em nuvem |
 | RAM estourar ao vivo | `num_ctx=8192`, fechar apps, `qwen3:1.7b` no bolso |
 | Modelo pequeno confunde `situacao` vs. movimentação de sentença | `buscar_processo` já retorna o campo derivado `julgamento` cruzando os três sinais, para o modelo não ter que raciocinar |
 

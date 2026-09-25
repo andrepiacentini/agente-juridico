@@ -36,7 +36,7 @@
 - **Para explicar à banca:** "Um comando só me diz se uma mudança melhorou ou piorou o agente."
 
 ### T9.5 — Placar dos dois modelos `[ ]`
-- **Objetivo:** rodar a bateria com `qwen3:4b` e com Claude e registrar o resultado.
+- **Objetivo:** rodar a bateria com o modelo local (`qwen3:4b-instruct-2507-q4_K_M`) e com Claude e registrar o resultado.
 - **Passos:** rodar; anotar placar, tempo total e principais falhas no `DECISOES.md`.
 - **Pronto quando:** os dois placares estão registrados com data.
 - **Depende de:** T9.4.
