@@ -43,7 +43,7 @@
 - **Para explicar à banca:** "O terminal mostra cada consulta que o agente faz — dá para ver ele decidindo."
 
 ### T5.6 — Primeira pergunta real com o modelo local `[ ]`
-- **Objetivo:** validar o caminho completo com `qwen3:4b`.
+- **Objetivo:** validar o caminho completo com o modelo local (`qwen3:4b-instruct-2507-q4_K_M`).
 - **Passos:** perguntar "quem são as partes do processo 0000007-79.2023.8.99.9014?"; anotar ferramentas chamadas, tempo e qualidade.
 - **Pronto quando:** a resposta traz as partes corretas e cita a fonte; o resultado está anotado no `DECISOES.md`.
 - **Depende de:** T5.5.

@@ -135,6 +135,22 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Limpeza:** depois do merge, e só com os checks automáticos aprovados, a branch é apagada — no computador e no GitHub —, para a lista de branches mostrar apenas trabalho em andamento. A branch do épico fica até o épico inteiro entrar na `main`.
 - **Descartado:** trabalhar direto na `main` (uma tarefa quebrada estragaria a versão de demonstração) e uma branch só por épico, sem branches de tarefa (misturaria tarefas no mesmo histórico).
 
+## 25/09/2026
+
+### D25 — Modelo local padrão: `qwen3:4b-instruct-2507`, sem modo raciocínio
+- **Decisão:** o [modelo local](docs/glossario.md#modelo-local) padrão passa a ser `qwen3:4b-instruct-2507-q4_K_M`, a variante do Qwen3 4B que responde direto, sem [modo raciocínio](docs/glossario.md#thinking). Mesmo tamanho (2,5 GB) e mesma família da D08. A tarefa T11.2 ("desligar o modo raciocínio") foi cancelada: não há o que desligar.
+- **Por quê:** no teste da T1.2, com a mesma pergunta ("o que é uma petição inicial?", em até 5 frases) e o mesmo computador:
+
+  | Modelo | Resposta | Tempo total |
+  |---|---|---|
+  | `qwen3:4b` | raciocinou em inglês, mesmo com o raciocínio pedido como desligado, e esgotou o limite de 400 [tokens](docs/glossario.md#token) sem responder | 23,5 s, sem resposta |
+  | `qwen3:4b-instruct-2507` | 5 frases em português, direto | 10,2 s |
+
+  A etiqueta `qwen3:4b` do Ollama hoje aponta para uma versão mais nova do modelo que **só** funciona raciocinando; a opção de desligar é ignorada. O plano (D08) contava com poder desligar.
+- **Descartado:** manter `qwen3:4b` — cada resposta gastaria centenas de tokens pensando em inglês antes de começar, o que estoura o limite de 30 s por resposta.
+- **Achado de memória:** no primeiro teste, com aplicativos pesados abertos (~5,6 GB juntos), a máquina estava com 4,9 GB em [swap](docs/glossario.md#pressao-de-memoria) e o modelo gerava só 2,2 tokens por segundo. Com esses aplicativos fechados: 19,7 tokens por segundo — 9 vezes mais rápido. Confirma a regra da D22: na demonstração, só o necessário aberto.
+- **Uso de IA:** o plano escrito com o Claude Code assumiu que o `think=False` funcionaria no `qwen3:4b`, sem verificar a versão atual do modelo; o erro só apareceu no teste real. O Claude Code identificou a causa (contexto de 262 mil tokens no `ollama show`, típico da versão nova) e propôs a variante *instruct*.
+
 ---
 
 ## Pendências de decisão

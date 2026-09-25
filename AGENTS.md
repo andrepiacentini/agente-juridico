@@ -21,14 +21,14 @@ Repositório recém-iniciado, sem commits e sem código. Existem o PDF, o banco,
 ```bash
 brew install uv                    # uv não está instalado nesta máquina
 uv sync                            # Python 3.12 pinado; o Python do sistema é 3.14
-ollama pull qwen3:4b               # modelo local padrão
+ollama pull qwen3:4b-instruct-2507-q4_K_M   # modelo local padrão (D25)
 uv run case-assistant              # chat no terminal (cli.py) — plano B da demo
 uv run chainlit run app.py -w      # UI web
 uv run pytest                      # testes das ferramentas (não precisam de LLM)
 uv run pytest tests/test_tools.py -k "sem_documentos"   # um teste
 ```
 
-Troca de LLM só por variável de ambiente (`LLM_MODEL` em `.env`): `ollama:qwen3:4b` local ou `anthropic:...` na nuvem. O código não pode ter branch por provedor.
+Troca de LLM só por variável de ambiente (`LLM_MODEL` em `.env`): `ollama:qwen3:4b-instruct-2507-q4_K_M` local ou `anthropic:...` na nuvem. O código não pode ter branch por provedor.
 
 ## Arquitetura — decisões fechadas
 
