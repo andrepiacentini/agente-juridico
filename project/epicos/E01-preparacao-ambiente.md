@@ -42,7 +42,7 @@
 - **Depende de:** T1.1.
 - **Para explicar à banca:** "Fixei o Python 3.12 porque o do sistema é 3.14 e algumas bibliotecas ainda não têm versão pronta para ele."
 
-### T1.6 — Criar o esqueleto de pastas `[ ]`
+### T1.6 — Criar o esqueleto de pastas `[x]`
 - **Objetivo:** ter a estrutura de arquivos prevista no `plan.md` §6, ainda vazia.
 - **Passos:** criar `src/case_assistant/` com `__init__.py`, `db.py`, `tools.py`, `prompts.py`, `agent.py`, `cli.py`; criar `tests/` e `app.py`.
 - **Pronto quando:** `uv run python -c "import case_assistant"` funciona.
