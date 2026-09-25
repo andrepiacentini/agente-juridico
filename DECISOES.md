@@ -166,6 +166,11 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** o edital diz que a apresentação é **presencial** ("Sessão de Demonstração e Arguição Técnica"). A D22 partiu de uma apresentação remota, que não é o cenário previsto. Sem videochamada, a conta de memória do `plan.md` §5 volta a ter folga.
 - **Uso de IA:** o Claude Code encontrou a informação ao reler o edital durante a T1.4; a D22 tinha sido escrita sem conferir esse ponto.
 
+### D29 — Pydantic AI "enxuto", só com os provedores usados; Python travado na 3.12
+- **Decisão:** instalar `pydantic-ai-slim[openai,anthropic]` em vez do pacote completo `pydantic-ai`, e declarar o projeto como compatível só com Python 3.12 (`>=3.12,<3.13`).
+- **Por quê:** o pacote completo traz bibliotecas de todos os fornecedores de IA (Google, Groq, Mistral, Cohere, AWS e outros), que o projeto não usa. A versão enxuta instala só o necessário: o conector compatível com OpenAI, usado pelo [Ollama](docs/glossario.md#ollama), e o da Anthropic. Menos dependências significa instalação mais rápida e menos coisa para dar errado na máquina da banca. A trava na 3.12 evita que o [uv](docs/glossario.md#uv) escolha o Python 3.14 do sistema (D07). Verificado: `uv sync` limpo termina sem erro, Python 3.12.14, SQLite 3.53.1 com [FTS5](docs/glossario.md#fts5), e o Pydantic AI 2.50 reconhece `ollama:qwen3:4b-instruct-2507-q4_K_M`.
+- **Descartado:** o pacote completo `pydantic-ai`, previsto no plano original.
+
 ---
 
 ## Pendências de decisão
