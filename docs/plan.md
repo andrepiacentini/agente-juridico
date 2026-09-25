@@ -305,7 +305,26 @@ A estimativa **não inclui** a videochamada de uma apresentação remota (Google
 
 Contexto de 16k tokens cabe o pior processo (19 docs ≈ 15k tokens) se o modelo ler tudo — mas o design "metadados primeiro, texto sob demanda" faz o caso comum ficar em 3–5k. O modelo padrão é a variante *instruct*, sem modo raciocínio (*thinking*): responde direto, o que corta a latência (D25).
 
-Fallback se ficar apertado: `qwen3:1.7b` (1,4 GB) — pior em redação, mas ainda chama ferramentas.
+Fallback se ficar apertado: `qwen3:1.7b` (1,7 GB carregado) — mais rápido e mais leve, pior em redação; ver o comparativo abaixo.
+
+### Comparativo de modelos (medido)
+
+Mesmo computador (MacBook M1, 8 GB), mesma pergunta — *"Responda em português, em até 5 frases: o que é uma petição inicial?"* —, 3 rodadas por modelo, contexto de 4 mil tokens, sem modo raciocínio. Medido em 25/09/2026 nas tarefas T1.2 e T1.8.
+
+| | `qwen3:4b-instruct-2507` (padrão) | `qwen3:1.7b` (reserva) | Claude (nuvem) |
+|---|---|---|---|
+| Onde roda | local (Ollama) | local (Ollama) | nuvem (Anthropic) |
+| Raciocínio desligado (`think=false`) | não se aplica: variante sem raciocínio | funciona | a medir (T1.9) |
+| Velocidade de geração | ~19 tok/s | ~41 tok/s | a medir (T1.9) |
+| Tempo total, modelo já carregado | 6,3–6,8 s | 2,6–2,7 s | a medir (T1.9) |
+| Primeira resposta (inclui carregar o modelo) | 12,2 s | 5,4 s | não se aplica |
+| Memória do Mac ocupada pelo modelo | 3,2 GB | 1,7 GB | ~0 (roda fora) |
+| Swap durante o teste | subiu ~1,4 GB | não subiu | a medir (T1.9) |
+| Qualidade do texto | correto e fluente; um erro de conteúdo ("ação civil, criminal ou administrativa" — no penal a peça inicial é a denúncia/queixa) | erros de concordância ("para que ela ouvam o caso") e de conteúdo (trata "contestações" como tipo de ação) | a medir (T1.9) |
+
+Descartado antes do comparativo: `qwen3:4b` (etiqueta atual, só-raciocínio) — ignora `think=false`, raciocina em inglês e esgotou 400 tokens sem responder (D25).
+
+Este teste mede **velocidade e memória** com uma pergunta simples, sem ferramentas. Qual modelo vai para a demonstração depende da bateria de avaliação (T9.5, T11.5): escolher a ferramenta certa, respeitar o "não consta" e redigir a minuta.
 
 Ambiente local verificado: Ollama instalado (modelos presentes: `llama3.1:8b`, `nomic-embed-text`, `qwen2.5-coder:1.5b`); `uv` ausente (`brew install uv`); Node presente.
 

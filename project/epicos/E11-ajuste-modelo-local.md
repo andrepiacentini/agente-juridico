@@ -36,10 +36,10 @@
 - **Depende de:** T11.3.
 - **Para explicar à banca:** "Menos texto enviado ao modelo significa resposta mais rápida."
 
-### T11.5 — Testar o modelo reserva `[ ]`
-- **Objetivo:** validar `qwen3:1.7b` como plano B se a memória apertar na apresentação.
-- **Atenção (D25):** antes de rodar, verificar se a etiqueta `qwen3:1.7b` aponta para uma versão só-raciocínio que ignora `think=False`, como aconteceu com o `qwen3:4b` (conferir com `ollama show` e com um teste de resposta direta). Se for, procurar a variante *instruct* equivalente.
-- **Passos:** `ollama pull qwen3:1.7b`; rodar a bateria; anotar o placar.
+### T11.5 — Avaliar o modelo reserva na bateria `[ ]`
+- **Objetivo:** saber se o `qwen3:1.7b` ainda acerta o suficiente para ser o plano B da apresentação.
+- **Já feito na T1.8 (D26):** download, confirmação de que `think=false` funciona nele, medição de velocidade e memória.
+- **Passos:** rodar a bateria (E09) com o 1.7b; comparar o placar com o do modelo padrão.
 - **Pronto quando:** o placar está registrado e há decisão sobre levá-lo para a demo.
 - **Depende de:** E09.
 - **Para explicar à banca:** "Tenho um modelo menor testado para o caso de a máquina ficar sem memória ao vivo."

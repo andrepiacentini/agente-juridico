@@ -55,3 +55,17 @@
 - **Pronto quando:** o commit existe e não contém nenhuma chave real.
 - **Depende de:** T1.3 a T1.6.
 - **Para explicar à banca:** "Trocar de modelo é mudar uma linha de configuração; o código é o mesmo."
+
+### T1.8 — Baixar e testar o modelo reserva `[x]`
+- **Objetivo:** ter o `qwen3:1.7b` pronto como plano B e saber quanto ele ganha em velocidade e memória.
+- **Passos:** verificar com `ollama show` se a etiqueta aponta para uma versão só-raciocínio (D25); `ollama pull qwen3:1.7b`; rodar a mesma pergunta da T1.2 três vezes com `think=false`; anotar velocidade, tempo, memória e qualidade no comparativo do `plan.md` §5.
+- **Pronto quando:** o comparativo tem a coluna do 1.7b preenchida.
+- **Depende de:** T1.2.
+- **Para explicar à banca:** "O modelo reserva é duas vezes mais rápido e ocupa metade da memória, mas escreve pior — por isso é reserva, e não o padrão."
+
+### T1.9 — Testar o modelo em nuvem `[ ]`
+- **Objetivo:** completar o comparativo com o Claude e confirmar que a alternativa em nuvem funciona.
+- **Passos:** obter uma `ANTHROPIC_API_KEY` e colocá-la no `.env` (nunca no código nem no Git); rodar a mesma pergunta da T1.2 três vezes com o Claude Sonnet 5 (o modelo do `.env.example`); anotar velocidade, tempo e qualidade na coluna "Claude (nuvem)" do comparativo do `plan.md` §5.
+- **Pronto quando:** o comparativo tem as três colunas preenchidas.
+- **Depende de:** T1.7.
+- **Para explicar à banca:** "Comparei os três modelos com a mesma pergunta: o local protege dados sigilosos, o de nuvem é o mais capaz, e trocar entre eles é uma linha de configuração."

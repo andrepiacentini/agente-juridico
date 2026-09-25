@@ -151,6 +151,11 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Achado de memória:** no primeiro teste, com aplicativos pesados abertos (~5,6 GB juntos), a máquina estava com 4,9 GB em [swap](docs/glossario.md#pressao-de-memoria) e o modelo gerava só 2,2 tokens por segundo. Com esses aplicativos fechados: 19,7 tokens por segundo — 9 vezes mais rápido. Confirma a regra da D22: na demonstração, só o necessário aberto.
 - **Uso de IA:** o plano escrito com o Claude Code assumiu que o `think=False` funcionaria no `qwen3:4b`, sem verificar a versão atual do modelo; o erro só apareceu no teste real. O Claude Code identificou a causa (contexto de 262 mil tokens no `ollama show`, típico da versão nova) e propôs a variante *instruct*.
 
+### D26 — Modelo reserva testado já no setup; avaliação de qualidade fica para depois
+- **Decisão:** a antiga T11.5 foi dividida. O download e o teste de velocidade e memória do `qwen3:1.7b` viraram a T1.8, no épico de preparação (E01), já concluída. A comparação de qualidade continua na T11.5, depois da bateria de avaliação (E09). Foi criada a T1.9, também no E01, para medir o Claude em nuvem com a mesma pergunta e completar o comparativo dos três modelos no `plan.md` §5.
+- **Por quê:** baixar e medir velocidade é preparação de ambiente e não depende de nada; saber se o modelo menor escolhe a ferramenta certa e não inventa dados só é possível com as ferramentas e a bateria prontas. Resultado da T1.8: o 1.7b é cerca de 2 vezes mais rápido (~41 contra ~19 [tokens](docs/glossario.md#token) por segundo) e ocupa cerca de metade da memória (1,7 contra 3,2 GB), mas comete erros de português e de conteúdo que o 4B não comete. Nele, desligar o [modo raciocínio](docs/glossario.md#thinking) funciona — o alerta da D25 não se confirmou.
+- **Descartado:** mover a T11.5 inteira para o E01 — a parte de qualidade não pode ser feita antes do E09.
+
 ---
 
 ## Pendências de decisão
