@@ -148,7 +148,7 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 
   A etiqueta `qwen3:4b` do Ollama hoje aponta para uma versão mais nova do modelo que **só** funciona raciocinando; a opção de desligar é ignorada. O plano (D08) contava com poder desligar.
 - **Descartado:** manter `qwen3:4b` — cada resposta gastaria centenas de tokens pensando em inglês antes de começar, o que estoura o limite de 30 s por resposta.
-- **Achado de memória:** no primeiro teste, com OrbStack e Ferdium abertos (~5,6 GB juntos), a máquina estava com 4,9 GB em [swap](docs/glossario.md#pressao-de-memoria) e o modelo gerava só 2,2 tokens por segundo. Com os dois fechados: 19,7 tokens por segundo — 9 vezes mais rápido. Confirma a regra da D22: na demonstração, só o necessário aberto.
+- **Achado de memória:** no primeiro teste, com aplicativos pesados abertos (~5,6 GB juntos), a máquina estava com 4,9 GB em [swap](docs/glossario.md#pressao-de-memoria) e o modelo gerava só 2,2 tokens por segundo. Com esses aplicativos fechados: 19,7 tokens por segundo — 9 vezes mais rápido. Confirma a regra da D22: na demonstração, só o necessário aberto.
 - **Uso de IA:** o plano escrito com o Claude Code assumiu que o `think=False` funcionaria no `qwen3:4b`, sem verificar a versão atual do modelo; o erro só apareceu no teste real. O Claude Code identificou a causa (contexto de 262 mil tokens no `ollama show`, típico da versão nova) e propôs a variante *instruct*.
 
 ---
