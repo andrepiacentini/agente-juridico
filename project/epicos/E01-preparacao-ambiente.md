@@ -21,7 +21,7 @@
 - **Depende de:** nada.
 - **Para explicar à banca:** "Escolhi um modelo de 4 bilhões de parâmetros porque é o maior que cabe com folga em 8 GB e ainda sabe usar ferramentas."
 
-### T1.3 — Iniciar o repositório Git `[ ]`
+### T1.3 — Iniciar o repositório Git `[x]`
 - **Objetivo:** ter o projeto versionado desde o início.
 - **Passos:** `git init` (se ainda não feito); criar `.gitignore` com `.venv/`, `.env`, `__pycache__/`, `.chainlit/`.
 - **Pronto quando:** `git status` não lista arquivos de ambiente nem segredos.
