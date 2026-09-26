@@ -39,9 +39,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T3.1.
 - **Para explicar à banca:** "O agente reporta a inconsistência em vez de escolher um lado — num tribunal, esconder uma divergência é pior do que mostrá-la."
 
-### T3.5 — `list_parties` `[ ]`
+### T3.5 — `list_parties` `[x]`
 - **Objetivo:** devolver as partes do processo por polo (ativo/passivo), com tipo e CPF/CNPJ.
-- **Passos:** consulta em `processo_parte` + `parte`; agrupar por polo.
+- **Passos:** consulta em `processo_parte` + `parte`; agrupar por polo (`plaintiffs` = ativo, `defendants` = passivo); "tipo" = pessoa física/jurídica pelo formato do documento (CPF ou CNPJ), porque `parte.tipo` contradiz o polo em 1.633 vínculos (D35); mostrar uma vez só a parte vinculada duas vezes ao mesmo polo (99 casos), com aviso.
 - **Pronto quando:** teste com o 3161 devolve autor(es) e réu(s) corretos.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Partes estão em tabela própria; é uma consulta direta, sem interpretação."

@@ -5,13 +5,14 @@ from contextlib import closing
 import pytest
 
 from case_assistant.db import connect
-from case_assistant.tools import find_case
+from case_assistant.tools import find_case, list_parties
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
 MISSING_CASE_NUMBER = "9999999-99.2099.8.99.9999"
 LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situacao "julgado"
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
+DUPLICATED_PARTY_CASE_ID = 642  # "Anderson Cunha" vinculado duas vezes ao polo ativo
 INACTIVE_UNIT_CASE_ID = 30  # vara "Vara da Fazenda Pública" de Joinville, desativada
 CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER = CASE_WITHOUT_JUDGE_NUMBER  # processo 4: nenhum dos três sinais
 NORMALIZED_STATUSES = {"arquivado", "em andamento", "julgado", "suspenso"}
@@ -167,3 +168,42 @@ def test_warnings_counts_match_database_profile(connection) -> None:
     assert count("Valor da causa") == 886
     assert count("sem data de sentença") == 43
     assert count("está desativada") == 746
+
+
+def case_number_of(connection, case_id: int) -> str:
+    return connection.execute("SELECT numero FROM processo WHERE id = ?", (case_id,)).fetchone()["numero"]
+
+
+def test_list_parties_groups_by_pole(connection) -> None:
+    assert list_parties(connection, REFERENCE_CASE_NUMBER) == {
+        "found": True,
+        "case_number": REFERENCE_CASE_NUMBER,
+        "plaintiffs": [{"name": "João Ziegler Rocha", "person_type": "pessoa física", "document": "999.539.988-87"}],
+        "defendants": [
+            {"name": "Operadora de Saúde Cambirela Ltda", "person_type": "pessoa jurídica", "document": "99.193.997/0001-35"}
+        ],
+        "warnings": [],
+    }
+
+
+def test_list_parties_shows_duplicated_link_once_and_warns(connection) -> None:
+    parties = list_parties(connection, case_number_of(connection, DUPLICATED_PARTY_CASE_ID))
+
+    assert [party["name"] for party in parties["plaintiffs"]].count("Anderson Cunha") == 1
+    assert parties["warnings"] == ["Anderson Cunha aparece mais de uma vez no polo ativo do cadastro."]
+
+
+def test_list_parties_reports_missing_case(connection) -> None:
+    assert list_parties(connection, MISSING_CASE_NUMBER) == {
+        "found": False,
+        "message": f"Processo {MISSING_CASE_NUMBER} não encontrado no banco.",
+    }
+
+
+def test_list_parties_covers_every_case(connection) -> None:
+    numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
+    all_parties = [list_parties(connection, number) for number in numbers]
+
+    assert all(parties["plaintiffs"] and parties["defendants"] for parties in all_parties)
+    assert sum(len(parties["plaintiffs"]) + len(parties["defendants"]) for parties in all_parties) == 25_086 - 99
+    assert sum(len(parties["warnings"]) for parties in all_parties) == 99
