@@ -187,6 +187,11 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** a proteção "somente leitura" funcionou (D04); o que falhou foi o procedimento do teste, que desligou a proteção dentro da pasta real. É também a prova de valor de duas decisões anteriores: versionar o banco (D27) permitiu restaurá-lo em segundos, e o hash de referência permitiu provar que a restauração foi exata.
 - **Uso de IA:** erro do Claude Code, identificado por ele mesmo ao ver o banco listado como alterado no Git, com a causa confirmada inspecionando o cache.
 
+### D32 — Índice de busca montado uma vez por sessão, e não a cada conexão
+- **Decisão:** o índice de busca por palavras ([FTS5](docs/glossario.md#fts5)) é criado pela função `create_search_index`, separada da função que abre o banco, e chamado uma vez no início de cada sessão do agente. Ele fica em [tabelas temporárias](docs/glossario.md#tabela-temporaria) e ignora acentos e maiúsculas ("onus" encontra "Ônus").
+- **Por quê:** a tarefa previa montar o índice "ao conectar". Medido, ele leva 0,35 s para os 25.582 documentos e 14.966 partes — barato para uma sessão de conversa, mas desperdício para quem só precisa ler uma linha, como a maioria dos testes. Separar as duas coisas mantém a conexão rápida e cada função com uma responsabilidade.
+- **Descartado:** criar o índice dentro de `connect()` (todo uso do banco pagaria o custo); gravar o índice no arquivo (proibido: o banco é [somente leitura](docs/glossario.md#somente-leitura), D04).
+
 ---
 
 ## Pendências de decisão

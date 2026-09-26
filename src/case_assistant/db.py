@@ -6,6 +6,8 @@ from pathlib import Path
 
 DATABASE_PATH_VARIABLE = "DATABASE_PATH"
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parents[2] / "desafio.sqlite"
+# Sem acentos e sem diferença de maiúsculas: "onus" encontra "Ônus".
+SEARCH_TOKENIZER = "unicode61 remove_diacritics 2"
 
 
 class DatabaseNotFoundError(FileNotFoundError):
@@ -26,3 +28,16 @@ def connect() -> sqlite3.Connection:
 def _configured_database_path() -> Path:
     configured = os.environ.get(DATABASE_PATH_VARIABLE)
     return Path(configured).expanduser().resolve() if configured else DEFAULT_DATABASE_PATH
+
+
+def create_search_index(connection: sqlite3.Connection) -> None:
+    """Monta em TEMP a busca por palavras (FTS5) no texto dos documentos e no nome das partes; o arquivo não muda.
+
+    Leva cerca de 0,4 s no MacBook M1 (T2.5), por isso é chamada uma vez por sessão, e não a cada conexão.
+    """
+    connection.executescript(f"""
+        CREATE VIRTUAL TABLE temp.document_search USING fts5(texto, tokenize='{SEARCH_TOKENIZER}');
+        INSERT INTO temp.document_search (rowid, texto) SELECT id, texto FROM main.documento;
+        CREATE VIRTUAL TABLE temp.party_search USING fts5(nome, tokenize='{SEARCH_TOKENIZER}');
+        INSERT INTO temp.party_search (rowid, nome) SELECT id, nome FROM main.parte;
+    """)
