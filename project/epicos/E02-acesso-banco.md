@@ -14,9 +14,9 @@
 - **Depende de:** T1.6.
 - **Para explicar à banca:** "O banco é aberto em modo somente leitura pelo próprio SQLite — mesmo que o modelo tente apagar algo, o banco recusa."
 
-### T2.2 — Teste: escrita é recusada `[ ]`
+### T2.2 — Teste: escrita é recusada `[x]`
 - **Objetivo:** provar a garantia da T2.1.
-- **Passos:** em `tests/test_db.py`, tentar `INSERT`, `UPDATE` e `DELETE` e verificar que dá erro.
+- **Passos:** em `tests/test_db.py`, tentar `INSERT`, `UPDATE`, `DELETE`, `DROP TABLE` e `CREATE TABLE` e verificar que dá erro; confirmar que os dados continuam iguais depois das tentativas.
 - **Pronto quando:** `uv run pytest tests/test_db.py` passa.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Não confio só na regra: tenho um teste que tenta escrever e confirma que falha."

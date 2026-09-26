@@ -180,6 +180,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Resultado do teste (T1.9):** o Gemini deu a melhor resposta dos modelos testados — correta, completa e sem erro de conteúdo —, em 3 a 4 segundos no modo padrão. Dois cuidados para quando o agente usar o Gemini: o limite de tokens de saída inclui o [raciocínio](docs/glossario.md#thinking) (com limite de 400, ele gastou 383 pensando e cortou a resposta), então o nível de raciocínio deve ser fixado em `low`; e o plano gratuito oscila — uma chamada recusada por "alta demanda" e tempos de 2,7 a 20,3 segundos na mesma pergunta. Números completos no comparativo do `plan.md` §5.
 - **Descartado:** colocar crédito na Anthropic agora (custo sem necessidade para o experimento); usar os créditos mensais do Google AI Pro (exigem ativar um programa à parte, e o plano gratuito basta); tirar o conector da Anthropic (custaria pouco mantê-lo e ele permite mostrar três fornecedores na apresentação).
 
+### D31 — Erro do assistente: um contra-teste alterou o banco original
+- **O que aconteceu:** na T2.2, para provar que os testes de escrita realmente detectam o problema, o Claude Code trocou por um instante o modo somente leitura (`mode=ro`) por leitura e escrita (`mode=rw`), rodou os testes contra uma **cópia** do banco e depois restaurou o arquivo. Na rodada seguinte, já com o código correto, os testes escreveram no `desafio.sqlite` **original**: o Python continuou executando a versão alterada guardada em cache (*bytecode*). As duas versões tinham o mesmo tamanho e foram gravadas no mesmo segundo, e o Python usa justamente tamanho e horário para decidir se o cache ainda vale.
+- **Como foi corrigido:** o arquivo foi restaurado pelo Git (D27) e a [impressão digital](docs/glossario.md#hash) conferida com a referência registrada — idêntica. O cache foi apagado e os testes voltaram a passar sem tocar no banco.
+- **Decisão:** contra-testes que desligam proteções só são feitos numa cópia completa do projeto, em outra pasta — nunca na pasta de trabalho. E a verificação da impressão digital do banco (T2.3) passa a ser o próximo passo, para que um erro assim seja detectado automaticamente a cada rodada de testes.
+- **Por quê:** a proteção "somente leitura" funcionou (D04); o que falhou foi o procedimento do teste, que desligou a proteção dentro da pasta real. É também a prova de valor de duas decisões anteriores: versionar o banco (D27) permitiu restaurá-lo em segundos, e o hash de referência permitiu provar que a restauração foi exata.
+- **Uso de IA:** erro do Claude Code, identificado por ele mesmo ao ver o banco listado como alterado no Git, com a causa confirmada inspecionando o cache.
+
 ---
 
 ## Pendências de decisão
