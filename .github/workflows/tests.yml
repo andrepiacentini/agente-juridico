@@ -1,0 +1,32 @@
+# Roda os testes em todo pull request e em todo push na main (T1.11, D33).
+# Os testes não usam IA: nenhuma chave de API é necessária aqui.
+name: tests
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+permissions:
+  contents: read
+
+concurrency:
+  group: tests-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  tests:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v7
+
+      - uses: astral-sh/setup-uv@v10
+        with:
+          enable-cache: true
+
+      - name: Instalar dependências exatamente como no uv.lock
+        run: uv sync --locked
+
+      - name: Rodar os testes
+        run: uv run pytest -v

@@ -192,6 +192,12 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** a tarefa previa montar o índice "ao conectar". Medido, ele leva 0,35 s para os 25.582 documentos e 14.966 partes — barato para uma sessão de conversa, mas desperdício para quem só precisa ler uma linha, como a maioria dos testes. Separar as duas coisas mantém a conexão rápida e cada função com uma responsabilidade.
 - **Descartado:** criar o índice dentro de `connect()` (todo uso do banco pagaria o custo); gravar o índice no arquivo (proibido: o banco é [somente leitura](docs/glossario.md#somente-leitura), D04).
 
+### D33 — Testes na CI a cada pull request (revisa a D15)
+- **Decisão:** os [testes automatizados](docs/glossario.md#teste-automatizado) passam a rodar na [integração contínua](docs/glossario.md#ci) do GitHub ([GitHub Actions](docs/glossario.md#ci)) em todo [pull request](docs/glossario.md#pull-request) e em todo envio para a `main`. O servidor instala o projeto do zero com o [uv](docs/glossario.md#uv) e roda a suíte inteira, inclusive a guarda de integridade do banco (T2.3). Um PR só é aceito com o check `tests` verde.
+- **Por quê:** a D15 tinha deixado a CI de fora como "custo sem retorno". Com o projeto em andamento, ela passou a se pagar: tira a verificação da máquina de quem desenvolve (um ambiente limpo pega o que "funciona na minha máquina" esconde), deixa a prova visível em cada PR para a banca e custa cerca de 1 minuto por execução, dentro da cota gratuita. Não precisa de nenhuma chave de API, porque os testes não usam IA.
+- **Limitação:** no plano gratuito do GitHub, repositório privado não permite bloquear o botão de merge quando o check falha. A regra fica no fluxo de trabalho (`AGENTS.md`): o assistente acompanha o check e avisa o resultado; o autor só faz o merge com ele verde.
+- **Descartado:** tornar o repositório público só para liberar o bloqueio automático (o edital pede o acesso ao repositório para os e-mails da banca, e manter o código de um processo seletivo restrito é o mais prudente); assinar o GitHub Pro (custo sem necessidade); medir cobertura de testes (mantido o que a D15 decidiu).
+
 ---
 
 ## Pendências de decisão
