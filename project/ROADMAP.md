@@ -30,7 +30,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 |---|---|---|---|---|
 | E01 | [Preparação do ambiente](epicos/E01-preparacao-ambiente.md) | Projeto instala e roda com um comando | 11 | `[~]` |
 | E02 | [Acesso seguro ao banco](epicos/E02-acesso-banco.md) | Conexão que só lê, provada por teste | 5 | `[x]` |
-| E03 | [Ferramentas de consulta](epicos/E03-ferramentas-consulta.md) | 7 funções que respondem sobre um processo, testadas sem IA | 10 | `[~]` |
+| E03 | [Ferramentas de consulta](epicos/E03-ferramentas-consulta.md) | 8 funções que respondem sobre um processo, testadas sem IA | 11 | `[~]` |
 | E04 | [Consulta livre protegida](epicos/E04-consulta-livre.md) | "Válvula de escape" SQL que não consegue estragar nada | 5 | `[ ]` |
 | E05 | [Agente no terminal](epicos/E05-agente-terminal.md) | Conversa no terminal usando as ferramentas | 8 | `[ ]` |
 | E06 | [Memória da conversa](epicos/E06-memoria-conversa.md) | "E quem é o juiz?" funciona sem repetir o número | 4 | `[ ]` |
@@ -41,7 +41,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Resposta em menos de 30 s no MacBook de 8 GB | 6 | `[ ]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[ ]` |
 
-**Total: 78 tarefas.**
+**Total: 79 tarefas.**
 
 ## Ordem e dependências
 

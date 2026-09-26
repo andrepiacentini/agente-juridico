@@ -253,6 +253,7 @@ stateDiagram-v2
 | `listar_documentos` | `numero` | Metadados: id, tipo, autor, data, páginas, tamanho — **sem texto** | Advogados = autores com "OAB" |
 | `ler_documento` | `id` | Texto completo | Só sob demanda |
 | `buscar_texto` | `termo`, opcional `tipo`/`numero` | Hits FTS5 com snippet e ids | Para termos e nomes |
+| `search_cases` (T3.11, D36) | filtros: assunto, classe, comarca, vara, magistrado, situação, datas, valor; ordenação; limite | Total + lista compacta (número, classe, assunto, comarca, situação, data, valor) | Perguntas "quais/quantos processos…" sem SQL do modelo; texto comparado sem acento/caixa |
 | `consultar_sql` | `sql` | Linhas (máx. 50) | Só `SELECT`/`WITH`; sem `;`, `PRAGMA`, `ATTACH`; timeout 5 s; conexão `mode=ro` |
 
 Ferramentas retornam **dados compactos por padrão e texto completo só sob demanda**. É isso que faz funcionar em 8 GB: o modelo nunca recebe 19 documentos de uma vez a menos que peça.
