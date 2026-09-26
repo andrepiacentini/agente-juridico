@@ -198,6 +198,12 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Limitação:** no plano gratuito do GitHub, repositório privado não permite bloquear o botão de merge quando o check falha. A regra fica no fluxo de trabalho (`AGENTS.md`): o assistente acompanha o check e avisa o resultado; o autor só faz o merge com ele verde.
 - **Descartado:** tornar o repositório público só para liberar o bloqueio automático (o edital pede o acesso ao repositório para os e-mails da banca, e manter o código de um processo seletivo restrito é o mais prudente); assinar o GitHub Pro (custo sem necessidade); medir cobertura de testes (mantido o que a D15 decidiu).
 
+### D34 — Comarcas "divergentes" são a mesma cidade escrita de outro jeito
+- **Decisão:** a ferramenta `find_case` avisa quando a comarca do processo e a da vara estão escritas de forma diferente, mas distingue dois casos: **mesma comarca com grafia diferente** ("A comarca está grafada de forma diferente no processo ('S. José') e na vara ('São José')") e **comarca realmente diferente** ("Comarca do processo difere da comarca da vara"). Para classificar, compara os nomes sem acento, sem diferença de maiúsculas e de espaços e com as três abreviações encontradas no banco por extenso (`S.`, `Sto.`, `Bal.`). O valor mostrado é sempre o original: nada é corrigido.
+- **Por quê:** a análise inicial (D13) contou 1.024 processos com comarca diferente da vara e tratou isso como divergência. Ao escrever os testes da T3.4, o primeiro exemplo era `CRICIÚMA` × `Criciúma`. Medindo todos: 451 têm espaço sobrando, 296 estão sem acento, 238 diferem só em maiúsculas e 39 usam abreviação — **nenhum é outra cidade**. Avisar "comarca diferente" faria o agente sugerir um problema de competência que não existe, o que seria inventar informação.
+- **Descartado:** reportar a diferença literal (enganoso, pelo motivo acima); corrigir o nome da comarca na resposta (a regra do projeto é reportar, nunca corrigir); ignorar as diferenças (esconderia um problema real de qualidade do cadastro).
+- **Uso de IA:** o plano escrito com o Claude Code registrou o número sem olhar os exemplos; o próprio Claude Code percebeu o problema no primeiro caso de teste e mediu o banco inteiro antes de implementar.
+
 ---
 
 ## Pendências de decisão

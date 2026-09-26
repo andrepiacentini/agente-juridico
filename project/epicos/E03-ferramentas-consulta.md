@@ -32,9 +32,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T3.1.
 - **Para explicar à banca:** "Em 4.426 processos há data de sentença sem a sentença. Por isso nunca confio num sinal só — o código cruza os três e entrega o resultado pronto."
 
-### T3.4 — `find_case`: lista de inconsistências `[ ]`
+### T3.4 — `find_case`: lista de inconsistências `[x]`
 - **Objetivo:** avisar o agente sobre problemas no cadastro, sem corrigi-los.
-- **Passos:** detectar: magistrado ausente, magistrado aposentado/removido, comarca do processo diferente da comarca da vara, valor da causa vazio ou ≤ 0, conflito entre situação e data de sentença; devolver como lista de avisos.
+- **Passos:** detectar: magistrado ausente (1.044), magistrado aposentado/removido (2.022), comarca do processo diferente da comarca da vara (1.024 — todas a mesma cidade grafada de outro jeito, reportadas como tal, D34), valor da causa vazio ou ≤ 0 (886), conflito entre situação e data de sentença (43 "julgado" sem data), vara desativada (746, acrescentado a pedido do autor); devolver no campo `warnings` como lista de frases, calculada a partir do próprio cartão, sem consulta extra.
 - **Pronto quando:** o 3161 devolve o aviso de juiz aposentado; um processo sem magistrado devolve o aviso correspondente.
 - **Depende de:** T3.1.
 - **Para explicar à banca:** "O agente reporta a inconsistência em vez de escolher um lado — num tribunal, esconder uma divergência é pior do que mostrá-la."
