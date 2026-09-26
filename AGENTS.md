@@ -111,7 +111,7 @@ Os números abaixo custaram uma sessão de profiling; não os re-derive, use-os 
 - **63% dos processos (6.309) não têm documento nenhum.** Resumo só por movimentações; minuta impossível.
 - `situacao` tem casing misto (`Julgado`/`JULGADO`/`julgado`) — sempre `LOWER()`.
 - Situação de julgamento nunca vem de um sinal só: cruzar `data_sentenca`, movimentação `9219/9220/9221` e documento tipo `Sentença` **ou** `Sentença Homologatória de Acordo` (os números abaixo só batem contando os dois tipos). Há 4.426 processos com `data_sentenca` sem documento de sentença e 37 no sentido inverso.
-- `magistrado_id` NULL em 1.044 processos; 2.022 processos têm juiz `aposentado`/`removido`; 1.024 têm `processo.comarca ≠ unidade.comarca`. Reportar, nunca inferir ou "corrigir".
+- `magistrado_id` NULL em 1.044 processos; 2.022 processos têm juiz `aposentado`/`removido`; 1.024 têm `processo.comarca ≠ unidade.comarca` — mas todas são a **mesma comarca grafada de outro jeito** (espaço sobrando, sem acento, caixa diferente ou abreviação como `S. José`), nenhuma é outra cidade (D34). Reportar, nunca inferir ou "corrigir".
 - 402 movimentações órfãs (processo inexistente) — só aparecem sem JOIN.
 - 643 nomes de parte homônimos com CPF diferente — pedir desambiguação.
 - **Advogados não têm tabela.** Estão em `documento.autor` ("Dr. X — OAB/SC 99.170") e no texto; o metadado `autor` às vezes diverge da assinatura no texto.
