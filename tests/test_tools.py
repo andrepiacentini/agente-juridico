@@ -12,6 +12,7 @@ CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrad
 MISSING_CASE_NUMBER = "9999999-99.2099.8.99.9999"
 LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situacao "julgado"
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
+CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER = CASE_WITHOUT_JUDGE_NUMBER  # processo 4: nenhum dos três sinais
 NORMALIZED_STATUSES = {"arquivado", "em andamento", "julgado", "suspenso"}
 
 
@@ -24,7 +25,7 @@ def connection():
 def test_find_case_returns_identification_card(connection) -> None:
     case = find_case(connection, REFERENCE_CASE_NUMBER)
 
-    assert case == {
+    assert {field: value for field, value in case.items() if field != "judgment"} == {
         "found": True,
         "case_number": REFERENCE_CASE_NUMBER,
         "case_class": "Procedimento Comum Cível",
@@ -80,3 +81,41 @@ def test_find_case_status_has_only_four_normalized_values(connection) -> None:
     numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
 
     assert {find_case(connection, number)["status"] for number in numbers} == NORMALIZED_STATUSES
+
+
+def test_judgment_when_all_three_signals_agree(connection) -> None:
+    judgment = find_case(connection, REFERENCE_CASE_NUMBER)["judgment"]
+
+    assert judgment == {
+        "summary": "Julgado: data de sentença, movimentação de sentença e documento de sentença conferem.",
+        "sentence_movement": {"code": 9219, "description": "Sentença com Resolução do Mérito", "date": "2026-02-18"},
+        "sentence_document": {"id": 7878, "type": "Sentença", "date": "2026-02-18"},
+    }
+
+
+def test_judgment_reports_sentence_date_without_sentence_text(connection) -> None:
+    judgment = find_case(connection, LOWERCASE_STATUS_CASE_NUMBER)["judgment"]
+
+    assert judgment["summary"] == (
+        "Sinais divergentes. Presentes: data de sentença, movimentação de sentença. "
+        "Ausente: documento de sentença (o texto da sentença não está no banco)."
+    )
+    assert judgment["sentence_document"] is None
+
+
+def test_judgment_when_there_is_no_sentence_signal(connection) -> None:
+    judgment = find_case(connection, CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER)["judgment"]
+
+    assert judgment["summary"].startswith("Não há sinal de sentença")
+    assert judgment["sentence_movement"] is None
+
+
+def test_judgment_counts_match_database_profile(connection) -> None:
+    numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
+    summaries = [find_case(connection, number)["judgment"]["summary"] for number in numbers]
+
+    assert sum(summary.startswith("Julgado") for summary in summaries) == 1_775
+    assert sum(summary.startswith("Não há sinal") for summary in summaries) == 3_671
+    assert sum(summary.startswith("Sinais divergentes") for summary in summaries) == 4_554
+    # sem documento, mas com outro sinal: data+movimentação (4.413), só movimentação (83), só data (13)
+    assert sum("não está no banco" in summary for summary in summaries) == 4_413 + 83 + 13

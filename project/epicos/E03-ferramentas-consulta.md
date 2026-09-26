@@ -25,9 +25,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T3.1.
 - **Para explicar à banca:** "O banco escreve a mesma situação de três jeitos; padronizo no código para o modelo não se confundir."
 
-### T3.3 — `find_case`: campo "julgamento" cruzando três sinais `[ ]`
+### T3.3 — `find_case`: campo "julgamento" cruzando três sinais `[x]`
 - **Objetivo:** responder "já foi julgado?" com base em três fontes: `data_sentenca`, movimentações de sentença (códigos 9219/9220/9221) e existência de documento do tipo Sentença.
-- **Passos:** calcular os três sinais; devolver um resumo como "julgado, com texto da sentença disponível" ou "consta data de sentença, mas o texto não está disponível".
+- **Passos:** calcular os três sinais — documento de sentença conta os tipos `Sentença` e `Sentença Homologatória de Acordo` (só assim os números batem: 4.426 com data sem documento, 37 no inverso); devolver no campo `judgment` um resumo com os sinais presentes e ausentes, sem escolher um lado, mais a movimentação e o documento de sentença (para citação). No banco: 1.775 processos com os três sinais, 3.671 sem nenhum, 4.554 divergentes, em 7 combinações.
 - **Pronto quando:** testes com o 3161 (três sinais batem) e com o processo 1 (data sem documento) dão respostas diferentes e corretas.
 - **Depende de:** T3.1.
 - **Para explicar à banca:** "Em 4.426 processos há data de sentença sem a sentença. Por isso nunca confio num sinal só — o código cruza os três e entrega o resultado pronto."
