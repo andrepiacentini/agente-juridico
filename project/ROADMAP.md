@@ -29,19 +29,19 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | # | Épico | Resultado visível | Tarefas | Situação |
 |---|---|---|---|---|
 | E01 | [Preparação do ambiente](epicos/E01-preparacao-ambiente.md) | Projeto instala e roda com um comando | 10 | `[~]` |
-| E02 | [Acesso seguro ao banco](epicos/E02-acesso-banco.md) | Conexão que só lê, provada por teste | 5 | `[ ]` |
+| E02 | [Acesso seguro ao banco](epicos/E02-acesso-banco.md) | Conexão que só lê, provada por teste | 5 | `[x]` |
 | E03 | [Ferramentas de consulta](epicos/E03-ferramentas-consulta.md) | 7 funções que respondem sobre um processo, testadas sem IA | 10 | `[ ]` |
 | E04 | [Consulta livre protegida](epicos/E04-consulta-livre.md) | "Válvula de escape" SQL que não consegue estragar nada | 5 | `[ ]` |
 | E05 | [Agente no terminal](epicos/E05-agente-terminal.md) | Conversa no terminal usando as ferramentas | 8 | `[ ]` |
 | E06 | [Memória da conversa](epicos/E06-memoria-conversa.md) | "E quem é o juiz?" funciona sem repetir o número | 4 | `[ ]` |
-| E07 | [Reconhecer limites](epicos/E07-reconhecer-limites.md) | O agente diz "não consta" em vez de inventar | 7 | `[ ]` |
+| E07 | [Reconhecer limites](epicos/E07-reconhecer-limites.md) | O agente diz "não consta" em vez de inventar | 8 | `[ ]` |
 | E08 | [Minuta de sentença](epicos/E08-minuta-sentenca.md) | Minuta rotulada como proposta, ou recusa explicada | 5 | `[ ]` |
 | E09 | [Bateria de perguntas de avaliação](epicos/E09-avaliacao.md) | Placar de acertos por modelo | 5 | `[ ]` |
 | E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[ ]` |
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Resposta em menos de 30 s no MacBook de 8 GB | 6 | `[ ]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[ ]` |
 
-**Total: 76 tarefas.**
+**Total: 77 tarefas.**
 
 ## Ordem e dependências
 
