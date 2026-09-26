@@ -1,5 +1,7 @@
 # Assistente de IA para consulta de processos judiciais — Desafio TJSC
 
+[![tests](https://github.com/andrepiacentini/desafio-tjsc/actions/workflows/tests.yml/badge.svg)](https://github.com/andrepiacentini/desafio-tjsc/actions/workflows/tests.yml)
+
 Chat de IA que responde, em português, perguntas sobre uma base de processos judiciais sintéticos (`desafio.sqlite`). O agente decide sozinho o que consultar no banco, cita os documentos e movimentações em que baseou cada resposta e declara quando a informação não existe na base. Também resume processos e gera propostas de minuta de sentença, sempre identificadas como texto não proferido.
 
 ## Definições tomadas
