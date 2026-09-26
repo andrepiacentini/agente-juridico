@@ -13,6 +13,7 @@ MISSING_CASE_NUMBER = "9999999-99.2099.8.99.9999"
 LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situacao "julgado"
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
 DUPLICATED_PARTY_CASE_ID = 642  # "Anderson Cunha" vinculado duas vezes ao polo ativo
+IMPLAUSIBLE_VALUE_CASE_ID = 6348  # valor da causa 9.999.999.999 — o seguinte no banco é 1,27 milhão
 INACTIVE_UNIT_CASE_ID = 30  # vara "Vara da Fazenda Pública" de Joinville, desativada
 CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER = CASE_WITHOUT_JUDGE_NUMBER  # processo 4: nenhum dos três sinais
 NORMALIZED_STATUSES = {"arquivado", "em andamento", "julgado", "suspenso"}
@@ -144,10 +145,11 @@ def test_warnings_report_retired_judge(connection) -> None:
         (134, "grafada de forma diferente no processo ('S. José') e na vara ('São José')"),
         (2, "Valor da causa não informado."),
         (6, "Valor da causa inválido"),
+        (IMPLAUSIBLE_VALUE_CASE_ID, "Valor da causa implausível (R$ 9.999.999.999,00)"),
         (17, "Situação 'julgado' sem data de sentença."),
         (INACTIVE_UNIT_CASE_ID, "está desativada."),
     ],
-    ids=["missing_judge", "removed_judge", "district_casing", "district_abbreviation", "missing_value", "non_positive_value", "judged_without_date", "inactive_unit"],
+    ids=["missing_judge", "removed_judge", "district_casing", "district_abbreviation", "missing_value", "non_positive_value", "implausible_value", "judged_without_date", "inactive_unit"],
 )
 def test_warnings_report_registry_inconsistencies(connection, case_id: int, expected_warning: str) -> None:
     assert any(expected_warning in warning for warning in warnings_for(connection, case_id))
@@ -165,7 +167,7 @@ def test_warnings_counts_match_database_profile(connection) -> None:
     # as 1.024 diferenças de comarca do banco são a mesma cidade escrita de outro jeito; nenhuma é outra cidade
     assert count("grafada de forma diferente") == 1_024
     assert count("difere da comarca da vara") == 0
-    assert count("Valor da causa") == 886
+    assert count("Valor da causa") == 886 + 1  # 598 vazios + 288 <= 0 + 1 implausível
     assert count("sem data de sentença") == 43
     assert count("está desativada") == 746
 

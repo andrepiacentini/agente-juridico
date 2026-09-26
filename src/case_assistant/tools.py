@@ -50,6 +50,8 @@ LIST_PARTIES_QUERY = """
 CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
+# Acima disso só existe um valor no banco: 9.999.999.999, com cara de preenchimento; o seguinte é 1,27 milhão.
+IMPLAUSIBLE_CLAIM_VALUE = 100_000_000
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
 # Abreviações de comarca encontradas no banco ("S. José", "Bal. Camboriú", "Sto. Amaro da Imperatriz").
 DISTRICT_ABBREVIATIONS = {"s.": "sao", "sto.": "santo", "bal.": "balneario"}
@@ -134,6 +136,8 @@ def _registry_warnings(case: dict[str, Any]) -> list[str]:
         warnings.append("Valor da causa não informado.")
     elif claim_value <= 0:
         warnings.append(f"Valor da causa inválido ({claim_value}).")
+    elif claim_value >= IMPLAUSIBLE_CLAIM_VALUE:
+        warnings.append(f"Valor da causa implausível ({_brazilian_currency(claim_value)}): parece valor de preenchimento.")
 
     status, sentence_date = case["status"], case["sentence_date"]
     if status == "julgado" and sentence_date is None:
@@ -141,6 +145,10 @@ def _registry_warnings(case: dict[str, Any]) -> list[str]:
     elif status in STATUSES_WITHOUT_SENTENCE and sentence_date is not None:
         warnings.append(f"Situação '{status}' com data de sentença ({sentence_date}).")
     return warnings
+
+
+def _brazilian_currency(value: float) -> str:
+    return "R$ " + f"{value:,.2f}".replace(",", "\u00a0").replace(".", ",").replace("\u00a0", ".")
 
 
 def _comparable_district(district: str) -> str:
