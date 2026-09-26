@@ -209,6 +209,12 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** `parte.tipo` guarda "autor" ou "réu" no cadastro da pessoa, mas a mesma pessoa pode ser autora num processo e ré em outro. Na análise, esse campo contradiz o polo em 1.633 vínculos (821 "réus" no polo ativo e 812 "autores" no passivo). Mostrar os dois confundiria o modelo; o polo é o dado que vale para aquele processo. Todos os 14.966 documentos seguem o formato de CPF ou de CNPJ, então a dedução de pessoa física ou jurídica é segura.
 - **Descartado:** usar `parte.tipo` como papel (erraria em 1.633 casos); mostrar a parte duplicada duas vezes (pareceria que são duas pessoas).
 
+### D36 — Oitava ferramenta: buscar processos por atributo, sem SQL do modelo
+- **Decisão:** acrescentar a ferramenta `search_cases` (tarefa T3.11) às sete previstas no plano. Ela recebe filtros prontos — assunto, classe, comarca, vara, magistrado, situação, período e valor — e devolve o total e uma lista compacta de processos.
+- **Por quê:** durante a implementação das ferramentas, o autor pediu uma reavaliação de cobertura, já que o edital avisa que "os exemplos não esgotam as perguntas". A análise mostrou que, para perguntas sobre **um** processo, as ferramentas existentes cobrem todas as variações enumeradas (os documentos são curtos: o processo mais pesado soma 14.606 caracteres, e o agente pode lê-lo inteiro). A lacuna estava nas perguntas que **selecionam processos por característica** ("quais processos são sobre plano de saúde?", "quantos o juiz X julgou?"): elas só tinham o [SQL livre](docs/glossario.md#text-to-sql), justamente o caminho em que um modelo pequeno mais erra (D03) — e o índice de busca (T2.5) não cobre assunto nem classe. Com uma ferramenta de filtros, essa família de perguntas sai do caminho frágil, e o SQL livre volta a ser exceção de verdade.
+- **Descartado:** ampliar o índice de busca por palavras para assunto e classe (resolveria só a busca por texto, não filtros por data, valor, juiz ou situação); confiar apenas no SQL livre (risco de coluna inventada ou regra do banco esquecida).
+- **Uso de IA:** a análise de cobertura foi feita pelo Claude Code a pedido do autor, enumerando famílias de perguntas contra o perfil real do banco; a lacuna e a ferramenta foram propostas pela IA e aprovadas pelo autor.
+
 ---
 
 ## Pendências de decisão

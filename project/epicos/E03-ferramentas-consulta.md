@@ -7,7 +7,7 @@
 
 Regra que vale para todas: ferramentas de listagem devolvem **dados resumidos** (ids, tipos, datas). Só `read_document` devolve texto completo.
 
-Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `find_case` (buscar_processo), `list_parties` (listar_partes), `list_movements` (listar_movimentacoes), `list_documents` (listar_documentos), `read_document` (ler_documento), `search_text` (buscar_texto). Todas ficam em `src/case_assistant/tools.py`, recebem a conexão aberta (não a abrem) e devolvem um dicionário; "não encontrado" é uma resposta, não um erro.
+Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `find_case` (buscar_processo), `list_parties` (listar_partes), `list_movements` (listar_movimentacoes), `list_documents` (listar_documentos), `read_document` (ler_documento), `search_text` (buscar_texto), `search_cases` (nova, T3.11). Todas ficam em `src/case_assistant/tools.py`, recebem a conexão aberta (não a abrem) e devolvem um dicionário; "não encontrado" é uma resposta, não um erro.
 
 ---
 
@@ -80,3 +80,10 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Pronto quando:** teste com um nome homônimo conhecido devolve duas ou mais pessoas separadas, cada uma com seus processos.
 - **Depende de:** T2.5.
 - **Para explicar à banca:** "Há 643 nomes repetidos com documentos diferentes; a ferramenta separa as pessoas e o agente pergunta de qual se trata."
+
+### T3.11 — `search_cases`: encontrar processos por atributo `[ ]`
+- **Objetivo:** responder perguntas que selecionam processos por características — "quais processos são sobre plano de saúde?", "quantas execuções fiscais há em Joinville?", "quais processos o juiz X julgou?", "quais foram autuados em 2024 e ainda estão em andamento?", "qual o de maior valor?" — sem o modelo escrever SQL (D36).
+- **Passos:** filtros opcionais e combináveis: assunto, classe, comarca, vara, nome do magistrado, situação (padronizada, T3.2), faixa de data de autuação, faixa de data de sentença, faixa de valor da causa; filtros de texto são "contém", sem diferença de acento e de maiúsculas (registrar uma função `unaccent` na conexão, em `db.py`, e reaproveitar a comparação de comarca da T3.4); ordenação por data de autuação, data de sentença ou valor; limite padrão 20 e máximo 50; devolver o **total** de processos que atendem aos filtros mais a lista compacta (número, classe, assunto, comarca, situação, data de autuação, valor); `LEFT JOIN` em magistrado e unidade (1.044 processos sem juiz); nenhum filtro informado devolve aviso pedindo ao menos um.
+- **Pronto quando:** testes: "plano de saude" (sem acento) encontra os 444 processos de "Plano de Saúde — Negativa de Cobertura"; classe "execução fiscal" + comarca "joinville" bate com a contagem feita direto no SQL; o magistrado Luiz Bonetti Vasconcelos traz o 3161 entre os resultados; situação "em andamento" + autuação em 2024 bate com o SQL; o limite é respeitado e o total continua correto; sem filtro devolve o aviso.
+- **Depende de:** T3.2, T3.4.
+- **Para explicar à banca:** "As perguntas do edital são sobre um processo; mas 'quais processos…' é a pergunta mais provável fora da lista. Esta ferramenta responde isso com consultas prontas, e o SQL livre fica só para o que ninguém previu."
