@@ -35,9 +35,9 @@
 - **Depende de:** T1.6.
 - **Para explicar à banca:** "O número do processo é a chave de tudo; reconheço ele por código, sem depender do modelo acertar a digitação."
 
-### T2.5 — Índice de busca por palavras em área temporária `[ ]`
+### T2.5 — Índice de busca por palavras em área temporária `[x]`
 - **Objetivo:** permitir buscar termos no texto dos documentos e nos nomes das partes, sem alterar o arquivo.
-- **Passos:** ao conectar, criar tabelas FTS5 em `TEMP` a partir de `documento.texto` e `parte.nome`; medir quanto tempo leva.
+- **Passos:** `create_search_index(connection)` cria as tabelas FTS5 `temp.document_search` (de `documento.texto`) e `temp.party_search` (de `parte.nome`), sem diferença de acentos nem maiúsculas; medir quanto tempo leva. **Medido: 0,35 s (mediana de 5 execuções) para os 25.582 documentos e 14.966 partes.** Função separada de `connect()`, chamada uma vez por sessão (D32).
 - **Pronto quando:** uma busca por "ônus da prova" retorna documentos, o teste da T2.3 continua passando e o tempo de criação está anotado.
 - **Depende de:** T2.1, T2.3.
 - **Para explicar à banca:** "A busca por palavras usa um recurso que já vem no SQLite, montado na memória a cada execução — sem servidor extra e sem tocar no arquivo."
