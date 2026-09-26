@@ -53,9 +53,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "É o que permite resumir os 63% de processos que não têm nenhum documento."
 
-### T3.7 — `list_documents` (sem texto) `[ ]`
+### T3.7 — `list_documents` (sem texto) `[x]`
 - **Objetivo:** devolver a lista de documentos com id, tipo, autor, data e número de páginas — **sem o texto**.
-- **Passos:** consulta em `documento` sem a coluna `texto`; marcar como advogado quem tem "OAB" no campo `autor`.
+- **Passos:** consulta em `documento`, devolvendo id, tipo, autor, data e páginas — nunca o texto; marcar como advogado quem tem "OAB" no campo `autor`; deduzir o lado de cada advogado pelas peças que só um lado apresenta (inicial, réplica, emenda → autor; contestação, exceção, embargos à execução → réu) e estender às demais peças pela OAB (D37); resumo `lawyers` com nome, OAB, lado e documentos; avisos: OAB cadastrada ausente das assinaturas do texto (309 documentos) e advogado com peças dos dois lados (8 processos).
 - **Pronto quando:** teste com o 3161 devolve 19 itens sem texto; teste com o processo 1 devolve lista vazia.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "O modelo primeiro vê o índice dos documentos e escolhe quais ler. É isso que faz caber num computador de 8 GB."

@@ -5,7 +5,7 @@ from contextlib import closing
 import pytest
 
 from case_assistant.db import connect
-from case_assistant.tools import find_case, list_movements, list_parties
+from case_assistant.tools import find_case, list_documents, list_movements, list_parties
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -15,6 +15,8 @@ UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
 DUPLICATED_PARTY_CASE_ID = 642  # "Anderson Cunha" vinculado duas vezes ao polo ativo
 IMPLAUSIBLE_VALUE_CASE_ID = 6348  # valor da causa 9.999.999.999 — o seguinte no banco é 1,27 milhão
 CASE_WITHOUT_MOVEMENTS_NUMBER = "0000013-87.2026.8.99.9012"  # processo 3611
+SIGNATURE_MISMATCH_CASE_NUMBER = "0000001-46.2021.8.99.9013"  # processo 180: doc 543 assinado por outra OAB
+LAWYER_ON_BOTH_SIDES_CASE_NUMBER = "0000002-07.2025.8.99.9008"  # processo 884: mesma OAB na inicial e na contestação
 INACTIVE_UNIT_CASE_ID = 30  # vara "Vara da Fazenda Pública" de Joinville, desativada
 CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER = CASE_WITHOUT_JUDGE_NUMBER  # processo 4: nenhum dos três sinais
 NORMALIZED_STATUSES = {"arquivado", "em andamento", "julgado", "suspenso"}
@@ -262,3 +264,68 @@ def test_list_movements_warning_counts_match_database_profile(connection) -> Non
     assert sum(any("depois do trânsito em julgado" in w for w in warnings) for warnings in warnings_per_case) == 220
     # 32 se contadas também as movimentações órfãs (sem processo); só processos existentes, 16
     assert sum(any("sem movimentação de sentença" in w for w in warnings) for warnings in warnings_per_case) == 16
+
+
+def test_list_documents_returns_metadata_without_text(connection) -> None:
+    result = list_documents(connection, REFERENCE_CASE_NUMBER)
+    documents = result["documents"]
+
+    assert len(documents) == 19
+    assert documents[0] == {
+        "id": 7865,
+        "type": "Petição Inicial",
+        "author": "Dr. Carlos Gava Reis — OAB/SC 99.170",
+        "date": "2024-01-08",
+        "pages": 2,
+        "lawyer_side": "autor",
+    }
+    assert documents[1]["lawyer_side"] is None  # despacho do juiz
+    assert all("text" not in document and "texto" not in document for document in documents)
+
+
+def test_list_documents_identifies_each_lawyer_and_side(connection) -> None:
+    lawyers = list_documents(connection, REFERENCE_CASE_NUMBER)["lawyers"]
+
+    assert lawyers == [
+        {
+            "name": "Dr. Carlos Gava Reis",
+            "oab": "OAB/SC 99.170",
+            "side": "autor",
+            "document_ids": [7865, 7869, 7872, 7873, 7877, 7879, 7881],
+        },
+        {"name": "Dra. Sônia Weber Azevedo", "oab": "OAB/SC 99.854", "side": "réu", "document_ids": [7868, 7882]},
+    ]
+
+
+def test_list_documents_of_case_without_documents_is_empty(connection) -> None:
+    result = list_documents(connection, LOWERCASE_STATUS_CASE_NUMBER)
+
+    assert result["found"] is True
+    assert result["documents"] == [] and result["lawyers"] == [] and result["warnings"] == []
+
+
+def test_list_documents_warns_when_signature_differs_from_author(connection) -> None:
+    warnings = list_documents(connection, SIGNATURE_MISMATCH_CASE_NUMBER)["warnings"]
+
+    assert (
+        "Documento 543: o autor cadastrado (Dra. Sandra Valente Lopes — OAB/SC 99.438) "
+        "difere da assinatura no texto (OAB/SC 99.790)."
+    ) in warnings
+
+
+def test_list_documents_warns_about_lawyer_on_both_sides(connection) -> None:
+    result = list_documents(connection, LAWYER_ON_BOTH_SIDES_CASE_NUMBER)
+
+    assert any(lawyer["side"] == "ambos os lados" for lawyer in result["lawyers"])
+    assert any("assina peças dos dois lados" in warning for warning in result["warnings"])
+
+
+def test_list_documents_counts_match_database_profile(connection) -> None:
+    numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
+    results = [list_documents(connection, number) for number in numbers]
+    warnings = [warning for result in results for warning in result["warnings"]]
+
+    assert sum(len(result["documents"]) for result in results) == 25_582
+    assert sum(not result["documents"] for result in results) == 6_309
+    assert sum("difere da assinatura no texto" in warning for warning in warnings) == 309
+    assert sum("assina peças dos dois lados" in warning for warning in warnings) == 8
