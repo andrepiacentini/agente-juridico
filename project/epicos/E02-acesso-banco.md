@@ -7,10 +7,10 @@
 
 ---
 
-### T2.1 — Função de conexão somente leitura `[ ]`
-- **Objetivo:** `conectar()` que abre `desafio.sqlite` apenas para leitura.
-- **Passos:** usar `sqlite3.connect("file:desafio.sqlite?mode=ro", uri=True)`; caminho do banco configurável por variável de ambiente, com padrão na raiz do projeto; `row_factory` para devolver linhas como dicionário.
-- **Pronto quando:** `conectar()` executa `SELECT COUNT(*) FROM processo` e devolve 10.000.
+### T2.1 — Função de conexão somente leitura `[x]`
+- **Objetivo:** `connect()` que abre `desafio.sqlite` apenas para leitura.
+- **Passos:** usar `sqlite3.connect("file:desafio.sqlite?mode=ro", uri=True)`; caminho do banco configurável pela variável de ambiente `DATABASE_PATH`, com padrão na raiz do projeto; `row_factory = sqlite3.Row` para acessar colunas pelo nome; erro específico (`DatabaseNotFoundError`) se o arquivo não existir.
+- **Pronto quando:** `connect()` executa `SELECT COUNT(*) FROM processo` e devolve 10.000.
 - **Depende de:** T1.6.
 - **Para explicar à banca:** "O banco é aberto em modo somente leitura pelo próprio SQLite — mesmo que o modelo tente apagar algo, o banco recusa."
 
@@ -31,7 +31,7 @@
 ### T2.4 — Reconhecer e validar o número do processo `[ ]`
 - **Objetivo:** função que acha um número no formato CNJ dentro de um texto e o padroniza.
 - **Passos:** expressão regular para `NNNNNNN-DD.AAAA.J.TR.OOOO`; aceitar também o número só com dígitos (20 dígitos) e formatar; testar com o 3161 e com um número inexistente.
-- **Pronto quando:** `extrair_numero("resuma o 0000007-79.2023.8.99.9014")` devolve o número, e texto sem número devolve `None`.
+- **Pronto quando:** `extract_case_number("resuma o 0000007-79.2023.8.99.9014")` devolve o número, e texto sem número devolve `None`.
 - **Depende de:** T1.6.
 - **Para explicar à banca:** "O número do processo é a chave de tudo; reconheço ele por código, sem depender do modelo acertar a digitação."
 
