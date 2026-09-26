@@ -49,10 +49,10 @@
 - **Depende de:** T1.5.
 - **Para explicar à banca:** "Separei banco, ferramentas, instruções do agente e interface em arquivos diferentes — cada um se explica sozinho."
 
-### T1.7 — Criar o `.env.example` e fazer o primeiro commit `[ ]`
+### T1.7 — Criar o `.env.example` `[x]`
 - **Objetivo:** documentar como escolher o modelo sem mexer no código.
-- **Passos:** criar `.env.example` com `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` e a alternativa comentada `# LLM_MODEL=anthropic:claude-sonnet-5`, mais `OLLAMA_BASE_URL=http://localhost:11434/v1` (exigido pelo Pydantic AI para o prefixo `ollama:`) e `ANTHROPIC_API_KEY=`; primeiro commit.
-- **Pronto quando:** o commit existe e não contém nenhuma chave real.
+- **Passos:** criar `.env.example` com `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` e a alternativa comentada `# LLM_MODEL=anthropic:claude-sonnet-5`, mais `OLLAMA_BASE_URL=http://localhost:11434/v1` (exigido pelo Pydantic AI para o prefixo `ollama:`) e `ANTHROPIC_API_KEY=`; procurar chaves no histórico inteiro do Git (o passo original "primeiro commit" deixou de fazer sentido: o repositório já tinha histórico).
+- **Pronto quando:** o `.env.example` carrega e resolve o modelo local, e nem o repositório nem o histórico contêm chave real ou arquivo `.env`.
 - **Depende de:** T1.3 a T1.6.
 - **Para explicar à banca:** "Trocar de modelo é mudar uma linha de configuração; o código é o mesmo."
 
