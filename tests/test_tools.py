@@ -5,7 +5,7 @@ from contextlib import closing
 import pytest
 
 from case_assistant.db import connect
-from case_assistant.tools import find_case, list_parties
+from case_assistant.tools import find_case, list_movements, list_parties
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -14,6 +14,7 @@ LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situac
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
 DUPLICATED_PARTY_CASE_ID = 642  # "Anderson Cunha" vinculado duas vezes ao polo ativo
 IMPLAUSIBLE_VALUE_CASE_ID = 6348  # valor da causa 9.999.999.999 — o seguinte no banco é 1,27 milhão
+CASE_WITHOUT_MOVEMENTS_NUMBER = "0000013-87.2026.8.99.9012"  # processo 3611
 INACTIVE_UNIT_CASE_ID = 30  # vara "Vara da Fazenda Pública" de Joinville, desativada
 CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER = CASE_WITHOUT_JUDGE_NUMBER  # processo 4: nenhum dos três sinais
 NORMALIZED_STATUSES = {"arquivado", "em andamento", "julgado", "suspenso"}
@@ -209,3 +210,55 @@ def test_list_parties_covers_every_case(connection) -> None:
     assert all(parties["plaintiffs"] and parties["defendants"] for parties in all_parties)
     assert sum(len(parties["plaintiffs"]) + len(parties["defendants"]) for parties in all_parties) == 25_086 - 99
     assert sum(len(parties["warnings"]) for parties in all_parties) == 99
+
+
+def test_list_movements_returns_timeline_in_date_order(connection) -> None:
+    result = list_movements(connection, LOWERCASE_STATUS_CASE_NUMBER)
+    movements = result["movements"]
+
+    assert result["found"] is True
+    assert len(movements) == 16
+    assert movements[0] == {"date": "2021-01-11", "code": 9926, "description": "Distribuição por Sorteio"}
+    assert movements[10] == {"date": "2022-02-02", "code": 9219, "description": "Sentença com Resolução do Mérito"}
+    assert [movement["date"] for movement in movements] == sorted(movement["date"] for movement in movements)
+
+
+def test_list_movements_of_case_without_movements_is_empty(connection) -> None:
+    result = list_movements(connection, CASE_WITHOUT_MOVEMENTS_NUMBER)
+
+    assert result["found"] is True
+    assert result["movements"] == []
+
+
+def test_list_movements_reports_missing_case(connection) -> None:
+    assert list_movements(connection, MISSING_CASE_NUMBER)["found"] is False
+
+
+def test_list_movements_covers_every_linked_movement(connection) -> None:
+    numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
+    total = sum(len(list_movements(connection, number)["movements"]) for number in numbers)
+
+    # 134.046 no banco menos as 402 movimentações órfãs, que não pertencem a nenhum processo
+    assert total == 134_046 - 402
+
+
+def test_list_movements_warns_about_appeal_after_final_judgment(connection) -> None:
+    warnings = list_movements(connection, LOWERCASE_STATUS_CASE_NUMBER)["warnings"]
+
+    assert warnings == [
+        "Recurso de apelação registrado em 2022-03-04, depois do trânsito em julgado (2022-02-21). "
+        "Sequência incomum, que merece conferência: pode ser recurso interposto fora do prazo ou erro de cadastro."
+    ]
+
+
+def test_list_movements_without_contradictions_has_no_warnings(connection) -> None:
+    assert list_movements(connection, REFERENCE_CASE_NUMBER)["warnings"] == []
+
+
+def test_list_movements_warning_counts_match_database_profile(connection) -> None:
+    numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
+    warnings_per_case = [list_movements(connection, number)["warnings"] for number in numbers]
+
+    assert sum(any("depois do trânsito em julgado" in w for w in warnings) for warnings in warnings_per_case) == 220
+    # 32 se contadas também as movimentações órfãs (sem processo); só processos existentes, 16
+    assert sum(any("sem movimentação de sentença" in w for w in warnings) for warnings in warnings_per_case) == 16
