@@ -1,7 +1,9 @@
 """Ferramentas que o agente chama para consultar o banco; devolvem metadados e só leem texto sob demanda (E03, E04)."""
 
+import functools
 import sqlite3
 import unicodedata
+from collections.abc import Callable
 from typing import Any
 
 from case_assistant.case_number import extract_case_number
@@ -18,7 +20,7 @@ FIND_CASE_QUERY = """
     FROM processo p
     LEFT JOIN unidade u ON u.id = p.unidade_id
     LEFT JOIN magistrado m ON m.id = p.magistrado_id
-    WHERE p.numero = ?
+    WHERE p.id = ?
 """
 
 
@@ -37,6 +39,15 @@ SENTENCE_DOCUMENT_QUERY = f"""
 """
 
 
+# Agrupa por parte: 99 vínculos repetem a mesma parte no mesmo polo do mesmo processo.
+LIST_PARTIES_QUERY = """
+    SELECT pp.polo, pa.nome, pa.documento, COUNT(*) AS vinculos
+    FROM processo_parte pp JOIN parte pa ON pa.id = pp.parte_id
+    WHERE pp.processo_id = ?
+    GROUP BY pp.polo, pa.id
+    ORDER BY pa.nome
+"""
+CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
@@ -44,16 +55,37 @@ STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
 DISTRICT_ABBREVIATIONS = {"s.": "sao", "sto.": "santo", "bal.": "balneario"}
 
 
-def find_case(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
-    """Cartão de identificação do processo: classe, assunto, vara, magistrado, datas, valor e totais."""
+class CaseNotFoundError(Exception):
+    """O texto não traz um número de processo no padrão CNJ, ou o processo não está no banco."""
+
+
+def _reports_missing_case(tool: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
+    """Fronteira da ferramenta: "processo não encontrado" vira resposta para o agente, não erro."""
+
+    @functools.wraps(tool)
+    def tool_with_missing_case_answer(*args: Any, **kwargs: Any) -> dict[str, Any]:
+        try:
+            return tool(*args, **kwargs)
+        except CaseNotFoundError as error:
+            return {"found": False, "message": str(error)}
+
+    return tool_with_missing_case_answer
+
+
+def _resolve_case_id(connection: sqlite3.Connection, case_number: str) -> int:
     normalized_number = extract_case_number(case_number)
     if normalized_number is None:
-        return _not_found(f"Não reconheci um número de processo no padrão CNJ em '{case_number}'.")
-
-    row = connection.execute(FIND_CASE_QUERY, (normalized_number,)).fetchone()
+        raise CaseNotFoundError(f"Não reconheci um número de processo no padrão CNJ em '{case_number}'.")
+    row = connection.execute("SELECT id FROM processo WHERE numero = ?", (normalized_number,)).fetchone()
     if row is None:
-        return _not_found(f"Processo {normalized_number} não encontrado no banco.")
+        raise CaseNotFoundError(f"Processo {normalized_number} não encontrado no banco.")
+    return row["id"]
 
+
+@_reports_missing_case
+def find_case(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Cartão de identificação do processo: classe, assunto, vara, magistrado, datas, valor e totais."""
+    row = connection.execute(FIND_CASE_QUERY, (_resolve_case_id(connection, case_number),)).fetchone()
     case = {
         "found": True,
         "case_number": row["numero"],
@@ -166,5 +198,29 @@ def _judge(row: sqlite3.Row) -> dict[str, str] | None:
     return {"name": row["magistrado_nome"], "status": row["magistrado_situacao"]}
 
 
-def _not_found(message: str) -> dict[str, Any]:
-    return {"found": False, "message": message}
+@_reports_missing_case
+def list_parties(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Partes do processo por polo (ativo = autores, passivo = réus), com pessoa física/jurídica e CPF/CNPJ."""
+    rows = connection.execute(LIST_PARTIES_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
+    return {
+        "found": True,
+        "case_number": extract_case_number(case_number),
+        "plaintiffs": [_party_card(row) for row in rows if row["polo"] == "ativo"],
+        "defendants": [_party_card(row) for row in rows if row["polo"] == "passivo"],
+        "warnings": [
+            f"{row['nome']} aparece mais de uma vez no polo {row['polo']} do cadastro." for row in rows if row["vinculos"] > 1
+        ],
+    }
+
+
+def _party_card(row: sqlite3.Row) -> dict[str, str]:
+    return {"name": row["nome"], "person_type": _person_type(row["documento"]), "document": row["documento"]}
+
+
+def _person_type(document: str | None) -> str:
+    """Pelo formato do documento; o campo parte.tipo não serve: é do cadastro da pessoa, não do processo."""
+    if document is not None and len(document) == CPF_LENGTH:
+        return "pessoa física"
+    if document is not None and len(document) == CNPJ_LENGTH:
+        return "pessoa jurídica"
+    return "não identificado"

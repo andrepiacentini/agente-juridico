@@ -114,6 +114,7 @@ Os números abaixo custaram uma sessão de profiling; não os re-derive, use-os 
 - `magistrado_id` NULL em 1.044 processos; 2.022 processos têm juiz `aposentado`/`removido`; 1.024 têm `processo.comarca ≠ unidade.comarca` — mas todas são a **mesma comarca grafada de outro jeito** (espaço sobrando, sem acento, caixa diferente ou abreviação como `S. José`), nenhuma é outra cidade (D34). Reportar, nunca inferir ou "corrigir".
 - 402 movimentações órfãs (processo inexistente) — só aparecem sem JOIN.
 - 643 nomes de parte homônimos com CPF diferente — pedir desambiguação.
+- `parte.tipo` (autor/réu) é do cadastro da pessoa, não do processo: contradiz `processo_parte.polo` em 1.633 vínculos. O papel no processo é sempre o `polo` (D35). 99 vínculos repetem a mesma parte no mesmo polo.
 - **Advogados não têm tabela.** Estão em `documento.autor` ("Dr. X — OAB/SC 99.170") e no texto; o metadado `autor` às vezes diverge da assinatura no texto.
 - Casos de referência: **3161** (`0000007-79.2023.8.99.9014`, 19 docs, sentença parcialmente procedente, juiz aposentado) e **1** (`0000001-43.2021.8.99.9014`, zero docs, `julgado` minúsculo).
 

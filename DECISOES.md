@@ -204,6 +204,11 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** reportar a diferença literal (enganoso, pelo motivo acima); corrigir o nome da comarca na resposta (a regra do projeto é reportar, nunca corrigir); ignorar as diferenças (esconderia um problema real de qualidade do cadastro).
 - **Uso de IA:** o plano escrito com o Claude Code registrou o número sem olhar os exemplos; o próprio Claude Code percebeu o problema no primeiro caso de teste e mediu o banco inteiro antes de implementar.
 
+### D35 — O papel da parte vem do polo do processo, não do cadastro da pessoa
+- **Decisão:** a ferramenta `list_parties` agrupa as partes pelo polo do processo (ativo = autores, passivo = réus) e ignora o campo `parte.tipo`. O "tipo" mostrado é pessoa física ou jurídica, deduzido do formato do documento (CPF ou CNPJ). Uma parte vinculada duas vezes ao mesmo polo aparece uma vez só, com um aviso de que o cadastro a repete.
+- **Por quê:** `parte.tipo` guarda "autor" ou "réu" no cadastro da pessoa, mas a mesma pessoa pode ser autora num processo e ré em outro. Na análise, esse campo contradiz o polo em 1.633 vínculos (821 "réus" no polo ativo e 812 "autores" no passivo). Mostrar os dois confundiria o modelo; o polo é o dado que vale para aquele processo. Todos os 14.966 documentos seguem o formato de CPF ou de CNPJ, então a dedução de pessoa física ou jurídica é segura.
+- **Descartado:** usar `parte.tipo` como papel (erraria em 1.633 casos); mostrar a parte duplicada duas vezes (pareceria que são duas pessoas).
+
 ---
 
 ## Pendências de decisão
