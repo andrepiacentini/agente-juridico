@@ -63,9 +63,17 @@
 - **Depende de:** T1.2.
 - **Para explicar à banca:** "O modelo reserva é duas vezes mais rápido e ocupa metade da memória, mas escreve pior — por isso é reserva, e não o padrão."
 
-### T1.9 — Testar o modelo em nuvem `[ ]`
-- **Objetivo:** completar o comparativo com o Claude e confirmar que a alternativa em nuvem funciona.
-- **Passos:** obter uma `ANTHROPIC_API_KEY` e colocá-la no `.env` (nunca no código nem no Git); rodar a mesma pergunta da T1.2 três vezes com o Claude Sonnet 5 (o modelo do `.env.example`); anotar velocidade, tempo e qualidade na coluna "Claude (nuvem)" do comparativo do `plan.md` §5.
-- **Pronto quando:** o comparativo tem as três colunas preenchidas.
+### T1.9 — Testar o modelo em nuvem (Gemini) `[x]`
+- **Objetivo:** completar o comparativo com um modelo em nuvem e confirmar que a alternativa em nuvem funciona, sem custo (D30).
+- **Passos:** instalar o conector do Google (`pydantic-ai-slim[...,google]`); criar uma chave gratuita em aistudio.google.com e colocá-la no `.env` como `GOOGLE_API_KEY` (nunca no código nem no Git); rodar a mesma pergunta da T1.2 três vezes com o `gemini-3.8-flash`; anotar velocidade, tempo e qualidade na coluna "Gemini (nuvem)" do comparativo do `plan.md` §5.
+- **Pronto quando:** o comparativo tem as colunas dos dois modelos locais e do Gemini preenchidas.
 - **Depende de:** T1.7.
-- **Para explicar à banca:** "Comparei os três modelos com a mesma pergunta: o local protege dados sigilosos, o de nuvem é o mais capaz, e trocar entre eles é uma linha de configuração."
+- **Para explicar à banca:** "Comparei os modelos com a mesma pergunta: o local protege dados sigilosos, o de nuvem é o mais capaz, e trocar entre eles é uma linha de configuração."
+
+### T1.10 — Testar o Claude em nuvem (opcional) `[ ]`
+- **Opcional (D30):** depende de haver crédito na conta da Anthropic; a API recusa chamadas sem saldo.
+- **Objetivo:** acrescentar o Claude ao comparativo e mostrar o mesmo agente com três fornecedores (local, Google, Anthropic).
+- **Passos:** colocar crédito na conta Anthropic; preencher `ANTHROPIC_API_KEY` no `.env`; rodar a mesma pergunta da T1.2 três vezes com o `claude-sonnet-5`; preencher a coluna "Claude (nuvem)" do comparativo.
+- **Pronto quando:** a coluna do Claude está preenchida, ou a tarefa é cancelada no fim do projeto por falta de crédito.
+- **Depende de:** T1.7.
+- **Para explicar à banca:** "O código não sabe qual fornecedor está usando: troquei de Claude para Gemini só mudando o `.env`."

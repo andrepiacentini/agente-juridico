@@ -193,7 +193,7 @@ flowchart TB
     CLI["<b>CLI — terminal</b><br/>plano B da demonstração"]
     AGENT["<b>agent.py — loop do agente (Pydantic AI)</b><br/>• system prompt: papel, regras, schema, processo em foco<br/>• message_history (multi-turno)<br/>• estado da sessão: processo_em_foco"]
     TOOLS["<b>tools.py — ferramentas</b><br/>buscar_processo · listar_partes<br/>listar_movimentacoes · listar_documentos<br/>ler_documento · buscar_texto (FTS5)<br/>consultar_sql (read-only)"]
-    LLM["<b>LLM</b> — troca por LLM_MODEL<br/>ollama: qwen3:4b-instruct-2507-q4_K_M<br/>anthropic: sonnet / haiku"]
+    LLM["<b>LLM</b> — troca por LLM_MODEL<br/>ollama: qwen3:4b-instruct-2507-q4_K_M<br/>google: gemini-3.8-flash<br/>anthropic: sonnet / haiku"]
     DBPY["<b>db.py</b> — sqlite3 stdlib"]
     DB[("desafio.sqlite<br/>mode=ro")]
 
@@ -287,7 +287,7 @@ Além do histórico de mensagens, o `processo_em_foco` é injetado no system pro
 | Agente | **Pydantic AI** | Loop de tool calling pronto; ferramentas = funções Python tipadas (schema JSON sai dos type hints); **model-agnostic por string** (`ollama` via endpoint OpenAI-compatível, `anthropic:`, `openai:`, `groq:`); `message_history` nativo; sem camadas mágicas. ~150 linhas de código próprio | LangChain/LangGraph (abstrações pesadas e instáveis; difícil explicar na arguição), LlamaIndex (centrado em RAG), CrewAI/AutoGen (multi-agente é overkill). Loop manual com `litellm` é válido, mas reimplementa normalização de tool-calls entre provedores |
 | Banco | **SQLite direto, read-only** + FTS5 | Zero infra; o desafio *é* esse arquivo. `mode=ro` garante que nenhum SQL gerado escreva | Qdrant/Chroma (§3); DuckDB (não há analítica pesada) |
 | LLM local | **`qwen3:4b-instruct-2507-q4_K_M`** no Ollama (D25) | Melhor tool calling da faixa 4B, bom em PT-BR, Q4_K_M ≈ 2,5 GB; variante *instruct*, sem modo raciocínio — a etiqueta `qwen3:4b` hoje é só-raciocínio e ignora `think=False` | `llama3.1:8b` (4,9 GB + KV cache não sobra RAM), `gemma3:4b` (sem tool calling no Ollama), `llama3.2:3b` (tool calling fraco) |
-| LLM nuvem (demo) | **Claude Sonnet 5 / Haiku 4.5** via `anthropic:` | Mesmo código, troca `LLM_MODEL` no `.env`. Ter os dois na apresentação mostra portabilidade e protege contra o modelo local travar ao vivo | — |
+| LLM nuvem (demo) | **Gemini 3.8 Flash** via `google:` (plano gratuito, D30); **Claude Sonnet 5** via `anthropic:` como opção com crédito | Mesmo código, troca `LLM_MODEL` no `.env`. Ter os dois na apresentação mostra portabilidade e protege contra o modelo local travar ao vivo | — |
 | UI | **Chainlit** | Chat pronto em ~40 linhas e **mostra cada tool call e resultado como "passo" colapsável** — o avaliador vê o agente decidir. Demonstra "Fundamentar" visualmente | Streamlit (exibir tool calls exige código extra), Gradio, React (custo sem retorno) |
 | Testes | `pytest` — testes das ferramentas (sem LLM) + golden set de ~12 perguntas | Opcional pelo edital; incluir e explicar: ferramentas são determinísticas e cobrem as armadilhas; golden set é a regressão ao mexer no prompt | cobertura, CI |
 
@@ -309,18 +309,22 @@ Fallback se ficar apertado: `qwen3:1.7b` (1,7 GB carregado) — mais rápido e m
 
 ### Comparativo de modelos (medido)
 
-Mesmo computador (MacBook M1, 8 GB), mesma pergunta — *"Responda em português, em até 5 frases: o que é uma petição inicial?"* —, 3 rodadas por modelo, contexto de 4 mil tokens, sem modo raciocínio. Medido em 25/09/2026 nas tarefas T1.2 e T1.8.
+Mesmo computador (MacBook M1, 8 GB), mesma pergunta — *"Responda em português, em até 5 frases: o que é uma petição inicial?"* —, 3 rodadas por modelo, contexto de 4 mil tokens, sem modo raciocínio. Medido em 25/09/2026 nas tarefas T1.2 e T1.8; Gemini na T1.9; Claude na T1.10, opcional.
 
-| | `qwen3:4b-instruct-2507` (padrão) | `qwen3:1.7b` (reserva) | Claude (nuvem) |
-|---|---|---|---|
-| Onde roda | local (Ollama) | local (Ollama) | nuvem (Anthropic) |
-| Raciocínio desligado (`think=false`) | não se aplica: variante sem raciocínio | funciona | a medir (T1.9) |
-| Velocidade de geração | ~19 tok/s | ~41 tok/s | a medir (T1.9) |
-| Tempo total, modelo já carregado | 6,3–6,8 s | 2,6–2,7 s | a medir (T1.9) |
-| Primeira resposta (inclui carregar o modelo) | 12,2 s | 5,4 s | não se aplica |
-| Memória do Mac ocupada pelo modelo | 3,2 GB | 1,7 GB | ~0 (roda fora) |
-| Swap durante o teste | subiu ~1,4 GB | não subiu | a medir (T1.9) |
-| Qualidade do texto | correto e fluente; um erro de conteúdo ("ação civil, criminal ou administrativa" — no penal a peça inicial é a denúncia/queixa) | erros de concordância ("para que ela ouvam o caso") e de conteúdo (trata "contestações" como tipo de ação) | a medir (T1.9) |
+| | `qwen3:4b-instruct-2507` (padrão) | `qwen3:1.7b` (reserva) | Gemini (nuvem) | Claude (nuvem, opcional) |
+|---|---|---|---|---|
+| Onde roda | local (Ollama) | local (Ollama) | nuvem (Google) | nuvem (Anthropic) |
+| Raciocínio desligado (`think=false`) | não se aplica: variante sem raciocínio | funciona | nível `minimal` recusado pelo modelo; `low` zera o raciocínio (0 tokens). No padrão, raciocina 470–700 tokens antes de responder | a medir (T1.10) |
+| Velocidade de geração | ~19 tok/s | ~41 tok/s | não mensurável: a resposta chega num bloco só (no padrão, 214–328 tok/s de texto visível) | a medir (T1.10) |
+| Tempo total, modelo já carregado | 6,3–6,8 s | 2,6–2,7 s | padrão: 3,0–4,2 s · `low`: 2,7–20,3 s (fila do plano gratuito) | a medir (T1.10) |
+| Primeira resposta (inclui carregar o modelo) | 12,2 s | 5,4 s | não se aplica | não se aplica |
+| Memória do Mac ocupada pelo modelo | 3,2 GB | 1,7 GB | ~0 (roda fora) | ~0 (roda fora) |
+| Swap durante o teste | subiu ~1,4 GB | não subiu | não se aplica | a medir (T1.10) |
+| Qualidade do texto | correto e fluente; um erro de conteúdo ("ação civil, criminal ou administrativa" — no penal a peça inicial é a denúncia/queixa) | erros de concordância ("para que ela ouvam o caso") e de conteúdo (trata "contestações" como tipo de ação) | correto, fluente e completo; sem erro de conteúdo (cita partes, fatos, fundamentos, pedidos, valor da causa e a inércia do Judiciário) | a medir (T1.10) |
+
+Achados do Gemini no plano gratuito (T1.9):
+- **O limite de tokens de saída inclui o raciocínio.** Com limite de 400 tokens e raciocínio padrão, gastou 383 pensando e cortou a resposta no meio. O agente precisa fixar o nível de raciocínio em `low` (ou dar limite folgado) ao usar o Gemini.
+- **Instabilidade:** uma chamada recusada com erro 503 ("alta demanda") e tempo de resposta variando de 2,7 s a 20,3 s na mesma pergunta. Bom para experimento; para a apresentação, o modelo local é o caminho previsível.
 
 Descartado antes do comparativo: `qwen3:4b` (etiqueta atual, só-raciocínio) — ignora `think=false`, raciocina em inglês e esgotou 400 tokens sem responder (D25).
 
