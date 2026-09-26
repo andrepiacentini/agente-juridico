@@ -6,8 +6,10 @@ from typing import Any
 from case_assistant.case_number import extract_case_number
 
 # LEFT JOIN: 1.044 processos não têm magistrado e não podem sumir da consulta.
+# LOWER(TRIM()): a situação vem como "Julgado", "JULGADO" ou "julgado" e é devolvida sempre em minúsculas.
 FIND_CASE_QUERY = """
     SELECT p.id, p.numero, p.classe, p.assunto, p.comarca, p.dt_aut, p.data_sentenca, p.valor_causa,
+           LOWER(TRIM(p.situacao)) AS situacao,
            u.vara, u.comarca AS unidade_comarca,
            m.nome AS magistrado_nome, m.situacao AS magistrado_situacao,
            (SELECT COUNT(*) FROM documento WHERE processo_id = p.id) AS total_documentos,
@@ -41,6 +43,7 @@ def find_case(connection: sqlite3.Connection, case_number: str) -> dict[str, Any
         "filing_date": row["dt_aut"],
         "sentence_date": row["data_sentenca"],
         "claim_value": row["valor_causa"],
+        "status": row["situacao"],
         "document_count": row["total_documentos"],
         "movement_count": row["total_movimentacoes"],
     }

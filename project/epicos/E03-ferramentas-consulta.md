@@ -18,9 +18,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T2.1, T2.4.
 - **Para explicar à banca:** "É a primeira ferramenta que o agente chama: um cartão de identificação do processo."
 
-### T3.2 — `find_case`: situação padronizada `[ ]`
+### T3.2 — `find_case`: situação padronizada `[x]`
 - **Objetivo:** tratar `Julgado` / `JULGADO` / `julgado` como a mesma coisa.
-- **Passos:** normalizar com `LOWER()` e devolver em formato único.
+- **Passos:** normalizar com `LOWER(TRIM())` no SQL e devolver em minúsculas no campo `status`. O banco tem 4 situações (arquivado, em andamento, julgado, suspenso) escritas de 3 jeitos cada — 12 valores distintos que viram 4.
 - **Pronto quando:** teste com o processo 1 (`julgado` minúsculo) devolve a situação padronizada.
 - **Depende de:** T3.1.
 - **Para explicar à banca:** "O banco escreve a mesma situação de três jeitos; padronizo no código para o modelo não se confundir."
