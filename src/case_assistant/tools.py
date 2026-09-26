@@ -47,6 +47,14 @@ LIST_PARTIES_QUERY = """
     GROUP BY pp.polo, pa.id
     ORDER BY pa.nome
 """
+# Desempate por id: 2.960 vezes um processo tem mais de uma movimentação no mesmo dia.
+LIST_MOVEMENTS_QUERY = """
+    SELECT data_mov, codigo, descricao FROM movimentacao
+    WHERE processo_id = ?
+    ORDER BY data_mov, id
+"""
+FINAL_JUDGMENT_CODE = 9848  # Trânsito em Julgado
+APPEAL_CODE = 9246  # Recurso de Apelação Interposto
 CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
@@ -219,6 +227,38 @@ def list_parties(connection: sqlite3.Connection, case_number: str) -> dict[str, 
             f"{row['nome']} aparece mais de uma vez no polo {row['polo']} do cadastro." for row in rows if row["vinculos"] > 1
         ],
     }
+
+
+@_reports_missing_case
+def list_movements(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Andamento do processo em ordem de data: só data, código e descrição de cada movimentação."""
+    rows = connection.execute(LIST_MOVEMENTS_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
+    return {
+        "found": True,
+        "case_number": extract_case_number(case_number),
+        "movements": [{"date": row["data_mov"], "code": row["codigo"], "description": row["descricao"]} for row in rows],
+        "warnings": _timeline_warnings(rows),
+    }
+
+
+def _timeline_warnings(rows: list[sqlite3.Row]) -> list[str]:
+    """Sequências incomuns no andamento, reportadas para conferência humana — podem ser exceções legítimas."""
+    final_judgment_dates = [row["data_mov"] for row in rows if row["codigo"] == FINAL_JUDGMENT_CODE]
+    if not final_judgment_dates:
+        return []
+    final_judgment_date = min(final_judgment_dates)
+    warnings = [
+        f"Recurso de apelação registrado em {row['data_mov']}, depois do trânsito em julgado ({final_judgment_date}). "
+        "Sequência incomum, que merece conferência: pode ser recurso interposto fora do prazo ou erro de cadastro."
+        for row in rows
+        if row["codigo"] == APPEAL_CODE and row["data_mov"] > final_judgment_date
+    ]
+    if not any(row["codigo"] in SENTENCE_MOVEMENT_CODES for row in rows):
+        warnings.append(
+            f"Trânsito em julgado ({final_judgment_date}) sem movimentação de sentença no andamento. "
+            "Merece conferência: a sentença pode não ter sido registrada."
+        )
+    return warnings
 
 
 def _party_card(row: sqlite3.Row) -> dict[str, str]:

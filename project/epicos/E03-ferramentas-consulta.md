@@ -46,9 +46,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Partes estão em tabela própria; é uma consulta direta, sem interpretação."
 
-### T3.6 — `list_movements` `[ ]`
+### T3.6 — `list_movements` `[x]`
 - **Objetivo:** devolver o andamento do processo em ordem de data.
-- **Passos:** consulta em `movimentacao` ordenada por `data_mov`; só código, descrição e data.
+- **Passos:** consulta em `movimentacao` ordenada por `data_mov` e, no mesmo dia, por `id`; só data, código e descrição (resposta média de ~1.100 caracteres, máximo ~2.000); movimentações repetidas no mesmo dia são mantidas como estão no banco; processo sem movimentação (3611) devolve lista vazia. Campo `warnings` (acrescentado a pedido do autor) destaca, para conferência humana, sequências incomuns: recurso de apelação depois do trânsito em julgado (220 processos — pode ser recurso fora do prazo ou erro de cadastro) e trânsito em julgado sem movimentação de sentença (16).
 - **Pronto quando:** teste com o processo 1 devolve 16 movimentações em ordem.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "É o que permite resumir os 63% de processos que não têm nenhum documento."
