@@ -135,12 +135,56 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Limpeza:** depois do merge, e só com os checks automáticos aprovados, a branch é apagada — no computador e no GitHub —, para a lista de branches mostrar apenas trabalho em andamento. A branch do épico fica até o épico inteiro entrar na `main`.
 - **Descartado:** trabalhar direto na `main` (uma tarefa quebrada estragaria a versão de demonstração) e uma branch só por épico, sem branches de tarefa (misturaria tarefas no mesmo histórico).
 
+## 25/09/2026
+
+### D25 — Modelo local padrão: `qwen3:4b-instruct-2507`, sem modo raciocínio
+- **Decisão:** o [modelo local](docs/glossario.md#modelo-local) padrão passa a ser `qwen3:4b-instruct-2507-q4_K_M`, a variante do Qwen3 4B que responde direto, sem [modo raciocínio](docs/glossario.md#thinking). Mesmo tamanho (2,5 GB) e mesma família da D08. A tarefa T11.2 ("desligar o modo raciocínio") foi cancelada: não há o que desligar.
+- **Por quê:** no teste da T1.2, com a mesma pergunta ("o que é uma petição inicial?", em até 5 frases) e o mesmo computador:
+
+  | Modelo | Resposta | Tempo total |
+  |---|---|---|
+  | `qwen3:4b` | raciocinou em inglês, mesmo com o raciocínio pedido como desligado, e esgotou o limite de 400 [tokens](docs/glossario.md#token) sem responder | 23,5 s, sem resposta |
+  | `qwen3:4b-instruct-2507` | 5 frases em português, direto | 10,2 s |
+
+  A etiqueta `qwen3:4b` do Ollama hoje aponta para uma versão mais nova do modelo que **só** funciona raciocinando; a opção de desligar é ignorada. O plano (D08) contava com poder desligar.
+- **Descartado:** manter `qwen3:4b` — cada resposta gastaria centenas de tokens pensando em inglês antes de começar, o que estoura o limite de 30 s por resposta.
+- **Achado de memória:** no primeiro teste, com aplicativos pesados abertos (~5,6 GB juntos), a máquina estava com 4,9 GB em [swap](docs/glossario.md#pressao-de-memoria) e o modelo gerava só 2,2 tokens por segundo. Com esses aplicativos fechados: 19,7 tokens por segundo — 9 vezes mais rápido. Confirma a regra da D22: na demonstração, só o necessário aberto.
+- **Uso de IA:** o plano escrito com o Claude Code assumiu que o `think=False` funcionaria no `qwen3:4b`, sem verificar a versão atual do modelo; o erro só apareceu no teste real. O Claude Code identificou a causa (contexto de 262 mil tokens no `ollama show`, típico da versão nova) e propôs a variante *instruct*.
+
+### D26 — Modelo reserva testado já no setup; avaliação de qualidade fica para depois
+- **Decisão:** a antiga T11.5 foi dividida. O download e o teste de velocidade e memória do `qwen3:1.7b` viraram a T1.8, no épico de preparação (E01), já concluída. A comparação de qualidade continua na T11.5, depois da bateria de avaliação (E09). Foi criada a T1.9, também no E01, para medir o Claude em nuvem com a mesma pergunta e completar o comparativo dos três modelos no `plan.md` §5.
+- **Por quê:** baixar e medir velocidade é preparação de ambiente e não depende de nada; saber se o modelo menor escolhe a ferramenta certa e não inventa dados só é possível com as ferramentas e a bateria prontas. Resultado da T1.8: o 1.7b é cerca de 2 vezes mais rápido (~41 contra ~19 [tokens](docs/glossario.md#token) por segundo) e ocupa cerca de metade da memória (1,7 contra 3,2 GB), mas comete erros de português e de conteúdo que o 4B não comete. Nele, desligar o [modo raciocínio](docs/glossario.md#thinking) funciona — o alerta da D25 não se confirmou.
+- **Descartado:** mover a T11.5 inteira para o E01 — a parte de qualidade não pode ser feita antes do E09.
+
+### D27 — O banco `desafio.sqlite` fica no repositório
+- **Decisão:** manter o arquivo `desafio.sqlite` (40 MB) versionado no Git, como já estava desde o primeiro commit. O projeto nunca o altera ([somente leitura](docs/glossario.md#somente-leitura), D04). Impressão digital ([hash](docs/glossario.md#hash) SHA-256) do arquivo nesta data, para a verificação da T2.3: `8a90b47cdc3b07bcb395ffe0e81c3d56dd33946fa047dec7dc86499767690c43`.
+- **Por quê:** a banca clona o repositório e roda o projeto sem baixar, descompactar ou posicionar o arquivo à mão — é o que o E01 promete. São dados fictícios, sem sigilo, o repositório é privado, e 40 MB está bem abaixo dos limites do GitHub (aviso a partir de 50 MB, bloqueio a partir de 100 MB).
+- **Descartado:** tirar o arquivo do Git e instruir o download no README (o edital distribui um ZIP de 7,1 MB). Acrescentaria um passo manual para a banca; e, como o arquivo já está no histórico, removê-lo agora não diminuiria o repositório sem reescrever esse histórico.
+
+### D28 — Apresentação presencial: teste com videochamada vira opcional
+- **Decisão:** a tarefa T11.6 (medir a memória com o Google Meet aberto) passa a ser opcional. Só será feita se a apresentação deixar de ser presencial; caso contrário, é cancelada no fim do E11. Continua valendo a regra da D22: Chainlit no Safari, só com a aba do chat.
+- **Por quê:** o edital diz que a apresentação é **presencial** ("Sessão de Demonstração e Arguição Técnica"). A D22 partiu de uma apresentação remota, que não é o cenário previsto. Sem videochamada, a conta de memória do `plan.md` §5 volta a ter folga.
+- **Uso de IA:** o Claude Code encontrou a informação ao reler o edital durante a T1.4; a D22 tinha sido escrita sem conferir esse ponto.
+
+### D29 — Pydantic AI "enxuto", só com os provedores usados; Python travado na 3.12
+- **Decisão:** instalar `pydantic-ai-slim[openai,anthropic]` em vez do pacote completo `pydantic-ai`, e declarar o projeto como compatível só com Python 3.12 (`>=3.12,<3.13`).
+- **Por quê:** o pacote completo traz bibliotecas de todos os fornecedores de IA (Google, Groq, Mistral, Cohere, AWS e outros), que o projeto não usa. A versão enxuta instala só o necessário: o conector compatível com OpenAI, usado pelo [Ollama](docs/glossario.md#ollama), e o da Anthropic. Menos dependências significa instalação mais rápida e menos coisa para dar errado na máquina da banca. A trava na 3.12 evita que o [uv](docs/glossario.md#uv) escolha o Python 3.14 do sistema (D07). Verificado: `uv sync` limpo termina sem erro, Python 3.12.14, SQLite 3.53.1 com [FTS5](docs/glossario.md#fts5), e o Pydantic AI 2.50 reconhece `ollama:qwen3:4b-instruct-2507-q4_K_M`.
+- **Descartado:** o pacote completo `pydantic-ai`, previsto no plano original.
+
+## 26/09/2026
+
+### D30 — Gemini 3.8 Flash, no plano gratuito, como alternativa em nuvem; Claude vira opção
+- **Decisão:** a alternativa em nuvem ao [modelo local](docs/glossario.md#modelo-local) passa a ser o Gemini 3.8 Flash (`google:gemini-3.8-flash`), usado pelo plano gratuito do Google AI Studio. O Claude (`anthropic:claude-sonnet-5`) continua configurado como opção, para quando houver crédito na conta da Anthropic. O conector do Google foi acrescentado ao Pydantic AI (`pydantic-ai-slim[openai,anthropic,google]`), a chave vai no `.env` como `GOOGLE_API_KEY`, e o teste do Claude virou a tarefa opcional T1.10.
+- **Por quê:** a API da Anthropic recusou a primeira chamada por falta de crédito, e a assinatura do app Claude não inclui uso da API. O Google oferece um plano gratuito da API, sem cartão, que inclui o `gemini-3.8-flash` — suficiente para o experimento e para a comparação entre modelos. A troca não mexe em nenhuma linha de código, só na [variável de ambiente](docs/glossario.md#variavel-de-ambiente) `LLM_MODEL`: é a portabilidade prometida na D08 funcionando na prática.
+- **Limites do plano gratuito:** o Google pode usar o conteúdo enviado para melhorar seus produtos (não há problema aqui: os dados do desafio são fictícios; com dados reais, o caminho continua sendo o modelo local ou o plano pago). O número máximo de chamadas por minuto não é publicado na documentação; como cada pergunta ao agente vira várias chamadas, isso será medido quando o agente e a bateria de avaliação estiverem prontos.
+- **Resultado do teste (T1.9):** o Gemini deu a melhor resposta dos modelos testados — correta, completa e sem erro de conteúdo —, em 3 a 4 segundos no modo padrão. Dois cuidados para quando o agente usar o Gemini: o limite de tokens de saída inclui o [raciocínio](docs/glossario.md#thinking) (com limite de 400, ele gastou 383 pensando e cortou a resposta), então o nível de raciocínio deve ser fixado em `low`; e o plano gratuito oscila — uma chamada recusada por "alta demanda" e tempos de 2,7 a 20,3 segundos na mesma pergunta. Números completos no comparativo do `plan.md` §5.
+- **Descartado:** colocar crédito na Anthropic agora (custo sem necessidade para o experimento); usar os créditos mensais do Google AI Pro (exigem ativar um programa à parte, e o plano gratuito basta); tirar o conector da Anthropic (custaria pouco mantê-lo e ele permite mostrar três fornecedores na apresentação).
+
 ---
 
 ## Pendências de decisão
 
 Decisões já identificadas, ainda não tomadas (viram entradas datadas quando forem resolvidas):
 
-- Versionar ou não o arquivo `desafio.sqlite` no repositório (tarefa T1.4).
-- Qual modelo usar como principal na demonstração — depende do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e do teste de memória com o Google Meet aberto (T11.6).
+- Qual modelo usar como principal na demonstração — depende do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
 - Levar ou não o modelo reserva `qwen3:1.7b` para a apresentação (T11.5).

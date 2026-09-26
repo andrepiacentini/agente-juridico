@@ -7,9 +7,9 @@ Chat de IA que responde, em português, perguntas sobre uma base de processos ju
 | Item | Escolha |
 |---|---|
 | **Linguagem** | Python 3.12, gerenciado pelo [uv](https://docs.astral.sh/uv/) |
-| **Frameworks** | [Pydantic AI](https://ai.pydantic.dev/) (laço do agente e ferramentas) · [Chainlit](https://chainlit.io/) (interface web de chat) |
-| **Bibliotecas** | `sqlite3` da biblioteca padrão, com [FTS5](https://www.sqlite.org/fts5.html) para busca textual · `pytest` para os testes |
-| **Provedor de modelo** | [Ollama](https://ollama.com/) com `qwen3:4b`, rodando localmente (padrão) · Anthropic Claude na nuvem (alternativa). A troca é feita pela variável de ambiente `LLM_MODEL`, sem alterar o código |
+| **Frameworks** | [Pydantic AI](https://ai.pydantic.dev/) (laço do agente e ferramentas; pacote enxuto com os provedores Ollama, Google e Anthropic) · [Chainlit](https://chainlit.io/) (interface web de chat) |
+| **Bibliotecas** | `sqlite3` da biblioteca padrão, com [FTS5](https://www.sqlite.org/fts5.html) para busca textual · `python-dotenv` para ler o `.env` · `pytest` para os testes |
+| **Provedor de modelo** | [Ollama](https://ollama.com/) com `qwen3:4b-instruct-2507-q4_K_M` (Qwen3 4B sem modo raciocínio), rodando localmente (padrão) · Google Gemini 3.8 Flash na nuvem, pelo plano gratuito (alternativa) · Anthropic Claude na nuvem (opcional, com crédito). A troca é feita pela variável de ambiente `LLM_MODEL`, sem alterar o código |
 | **Arquitetura** | Agente com ferramentas tipadas sobre SQL, **sem RAG vetorial**. As ferramentas devolvem primeiro os metadados (ids, tipos, datas) e o texto de um documento só quando ele é pedido. Uma ferramenta de SQL livre, restrita a consultas de leitura, cobre perguntas imprevistas. O banco é aberto somente para leitura |
 
 As justificativas de cada escolha e as alternativas descartadas estão em [`DECISOES.md`](DECISOES.md).

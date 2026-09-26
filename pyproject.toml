@@ -1,0 +1,25 @@
+[project]
+name = "case-assistant"
+version = "0.1.0"
+description = "Assistente de IA que consulta processos judiciais sintéticos (desafio.sqlite) e cita as fontes."
+authors = [
+    { name = "Andre Piacentini", email = "eu@andrepiacentini.com.br" }
+]
+requires-python = ">=3.12,<3.13"
+dependencies = [
+    "chainlit>=2.12.0",
+    "pydantic-ai-slim[anthropic,google,openai]>=2.50.0",
+    "python-dotenv>=1.2.3",
+]
+
+[project.scripts]
+case-assistant = "case_assistant.cli:main"
+
+[build-system]
+requires = ["uv_build>=0.12.19,<0.13.0"]
+build-backend = "uv_build"
+
+[dependency-groups]
+dev = [
+    "pytest>=9.1.1",
+]
