@@ -336,7 +336,7 @@ Ambiente local verificado: Ollama instalado (modelos presentes: `llama3.1:8b`, `
 
 ## 6. Estrutura do projeto
 
-Borda contínua = arquivo que já existe · borda tracejada = planejado (criado a partir do E01). Grupos com `/` no nome são pastas; os demais (Entregáveis, Insumos, Configuração) só agrupam arquivos da raiz.
+Borda contínua = arquivo que já existe (os módulos `tools`, `prompts`, `agent`, `cli` e `app.py` ainda são esqueletos, preenchidos nos épicos indicados na docstring de cada um) · borda tracejada = planejado. Grupos com `/` no nome são pastas; os demais (Entregáveis, Insumos, Configuração) só agrupam arquivos da raiz.
 
 ```mermaid
 flowchart LR
@@ -372,6 +372,7 @@ flowchart LR
 
     subgraph SRC["src/case_assistant/"]
         DB["db.py<br/><i>conexão ro, FTS5 em TEMP</i>"]
+        CASENUM["case_number.py<br/><i>número CNJ no texto</i>"]
         TOOLS["tools.py<br/><i>as 7 ferramentas</i>"]
         PROMPTS["prompts.py<br/><i>system prompt</i>"]
         AGENT["agent.py<br/><i>loop Pydantic AI + sessão</i>"]
@@ -386,10 +387,10 @@ flowchart LR
     end
 
     ROOT --> ENTREGA & DADOS & DOCS & PROJECT
-    ROOT -.-> CONFIG & SRC & APP & TESTS
+    ROOT --> CONFIG & SRC & APP & TESTS
 
     classDef planned stroke-dasharray: 5 5,fill:#f7f7f7,color:#555
-    class PYPROJECT,ENV,GITIGNORE,DB,TOOLS,PROMPTS,AGENT,CLI,APP,TTOOLS,GOLDEN planned
+    class TTOOLS,GOLDEN planned
 ```
 
 Os nomes dos arquivos de código seguem a regra de identificadores em inglês (D19). O pacote `src/case_assistant/` (D23) substitui o `src/agente/` das versões anteriores deste plano.
