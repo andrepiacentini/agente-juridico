@@ -215,6 +215,11 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** ampliar o índice de busca por palavras para assunto e classe (resolveria só a busca por texto, não filtros por data, valor, juiz ou situação); confiar apenas no SQL livre (risco de coluna inventada ou regra do banco esquecida).
 - **Uso de IA:** a análise de cobertura foi feita pelo Claude Code a pedido do autor, enumerando famílias de perguntas contra o perfil real do banco; a lacuna e a ferramenta foram propostas pela IA e aprovadas pelo autor.
 
+### D37 — O lado de cada advogado é deduzido pelas peças que só um lado apresenta
+- **Decisão:** a ferramenta `list_documents` identifica que lado cada advogado representa. Peças que só o autor apresenta (petição inicial, réplica, emenda à inicial) e peças que só o réu apresenta (contestação, exceção de pré-executividade, embargos à execução fiscal) definem o lado; as demais peças — manifestações, apelação, contrarrazões — herdam o lado pelo número da OAB de quem assinou. A ferramenta também avisa quando a OAB cadastrada como autora do documento não aparece entre as assinaturas do texto, e quando um mesmo advogado assina peças dos dois lados.
+- **Por quê:** o banco não tem tabela de advogados; eles só aparecem no campo de autor dos documentos. A pergunta 2 do edital pede "os advogados do processo", e dizer quem representa quem é o que torna a resposta útil — sem deixar o modelo adivinhar. A regra identifica o lado de todos os advogados do banco (3.683 do autor, 1.831 do réu). Ao conferir a assinatura, apareceu uma armadilha: a petição de acordo é assinada pelos advogados dos dois lados, então comparar só com a última assinatura acusaria 561 divergências falsas; o certo é verificar se a OAB cadastrada está entre as assinaturas (309 divergências reais).
+- **Descartado:** deixar o lado para o modelo deduzir lendo os documentos (caro e sujeito a erro num modelo pequeno); comparar o autor cadastrado só com a última assinatura do texto (falso positivo em toda petição de acordo).
+
 ---
 
 ## Pendências de decisão

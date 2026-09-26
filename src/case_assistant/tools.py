@@ -1,6 +1,7 @@
 """Ferramentas que o agente chama para consultar o banco; devolvem metadados e só leem texto sob demanda (E03, E04)."""
 
 import functools
+import re
 import sqlite3
 import unicodedata
 from collections.abc import Callable
@@ -55,6 +56,22 @@ LIST_MOVEMENTS_QUERY = """
 """
 FINAL_JUDGMENT_CODE = 9848  # Trânsito em Julgado
 APPEAL_CODE = 9246  # Recurso de Apelação Interposto
+# O texto só é lido aqui para conferir a assinatura; nunca volta na resposta (metadados primeiro, D05).
+LIST_DOCUMENTS_QUERY = """
+    SELECT id, tipo, autor, dt_juntada, num_paginas, texto FROM documento
+    WHERE processo_id = ?
+    ORDER BY dt_juntada, id
+"""
+OAB_PATTERN = re.compile(r"OAB/([A-Z]{2})\s*([\d.]+)")
+# Peças que só um dos lados apresenta; as demais herdam o lado pela OAB de quem assinou.
+SIDE_BY_ANCHOR_DOCUMENT_TYPE = {
+    "Petição Inicial": "autor",
+    "Réplica": "autor",
+    "Emenda à Inicial": "autor",
+    "Contestação": "réu",
+    "Exceção de Pré-Executividade": "réu",
+    "Embargos à Execução Fiscal": "réu",
+}
 CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
@@ -258,6 +275,89 @@ def _timeline_warnings(rows: list[sqlite3.Row]) -> list[str]:
             f"Trânsito em julgado ({final_judgment_date}) sem movimentação de sentença no andamento. "
             "Merece conferência: a sentença pode não ter sido registrada."
         )
+    return warnings
+
+
+@_reports_missing_case
+def list_documents(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Índice dos documentos (id, tipo, autor, data, páginas) sem o texto, com os advogados e o lado de cada um."""
+    rows = connection.execute(LIST_DOCUMENTS_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
+    sides = _lawyer_sides(rows)
+    lawyers = _lawyers(rows, sides)
+    return {
+        "found": True,
+        "case_number": extract_case_number(case_number),
+        "documents": [_document_metadata(row, sides) for row in rows],
+        "lawyers": lawyers,
+        "warnings": _signature_warnings(rows) + [
+            f"{lawyer['name']} ({lawyer['oab']}) assina peças dos dois lados (autor e réu) neste processo; merece conferência."
+            for lawyer in lawyers
+            if lawyer["side"] == "ambos os lados"
+        ],
+    }
+
+
+def _oab(text: str) -> str | None:
+    match = OAB_PATTERN.search(text)
+    return f"OAB/{match.group(1)} {match.group(2)}" if match else None
+
+
+def _signed_oabs(text: str) -> list[str]:
+    """Todas as OABs do texto: a petição de acordo, por exemplo, é assinada pelos advogados dos dois lados."""
+    return list(dict.fromkeys(f"OAB/{state} {number}" for state, number in OAB_PATTERN.findall(text)))
+
+
+def _lawyer_sides(rows: list[sqlite3.Row]) -> dict[str, str]:
+    sides_by_oab: dict[str, set[str]] = {}
+    for row in rows:
+        oab, anchor_side = _oab(row["autor"]), SIDE_BY_ANCHOR_DOCUMENT_TYPE.get(row["tipo"])
+        if oab is not None:
+            sides_by_oab.setdefault(oab, set())
+            if anchor_side is not None:
+                sides_by_oab[oab].add(anchor_side)
+    return {oab: _side_label(sides) for oab, sides in sides_by_oab.items()}
+
+
+def _side_label(sides: set[str]) -> str:
+    if len(sides) > 1:
+        return "ambos os lados"
+    return next(iter(sides), "não identificado")
+
+
+def _document_metadata(row: sqlite3.Row, sides: dict[str, str]) -> dict[str, Any]:
+    oab = _oab(row["autor"])
+    return {
+        "id": row["id"],
+        "type": row["tipo"],
+        "author": row["autor"],
+        "date": row["dt_juntada"],
+        "pages": row["num_paginas"],
+        "lawyer_side": sides[oab] if oab else None,
+    }
+
+
+def _lawyers(rows: list[sqlite3.Row], sides: dict[str, str]) -> list[dict[str, Any]]:
+    lawyers: dict[str, dict[str, Any]] = {}
+    for row in rows:
+        oab = _oab(row["autor"])
+        if oab is None:
+            continue
+        lawyer = lawyers.setdefault(
+            oab, {"name": row["autor"].split(" — ")[0], "oab": oab, "side": sides[oab], "document_ids": []}
+        )
+        lawyer["document_ids"].append(row["id"])
+    return list(lawyers.values())
+
+
+def _signature_warnings(rows: list[sqlite3.Row]) -> list[str]:
+    warnings = []
+    for row in rows:
+        registered, signed = _oab(row["autor"]), _signed_oabs(row["texto"])
+        if registered is not None and signed and registered not in signed:
+            warnings.append(
+                f"Documento {row['id']}: o autor cadastrado ({row['autor']}) "
+                f"difere da assinatura no texto ({', '.join(signed)})."
+            )
     return warnings
 
 
