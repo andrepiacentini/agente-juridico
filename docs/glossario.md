@@ -32,6 +32,10 @@ Biblioteca Python que cria uma tela de chat no navegador com poucas linhas de c�
 ### Chunking (fatiamento)
 Cortar documentos longos em pedaços menores para caberem no [RAG](#rag). Aqui é desnecessário (cada documento é curto) e prejudicial (pode cortar uma sentença no meio da fundamentação).
 
+<a id="ci"></a>
+### CI (integração contínua) / GitHub Actions
+Servidor que, a cada mudança enviada ao GitHub, instala o projeto do zero e roda os [testes](#teste-automatizado) automaticamente. O resultado aparece no [pull request](#pull-request) como um "check" verde ou vermelho. GitHub Actions é o serviço do GitHub que faz isso.
+
 <a id="claude-md"></a>
 ### CLAUDE.md e AGENTS.md
 Arquivos de instruções que o assistente de IA lê sozinho ao começar a trabalhar no projeto: regras, comandos e decisões que ele precisa respeitar. O `CLAUDE.md` é lido pelo Claude Code; o `AGENTS.md` é um padrão aberto lido por várias outras ferramentas. Aqui o conteúdo fica só no `AGENTS.md` e o `CLAUDE.md` o importa.

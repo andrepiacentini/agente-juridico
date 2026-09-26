@@ -24,7 +24,7 @@ uv sync                            # Python 3.12 pinado; o Python do sistema é 
 ollama pull qwen3:4b-instruct-2507-q4_K_M   # modelo local padrão (D25)
 uv run case-assistant              # chat no terminal (cli.py) — plano B da demo; implementado no E05
 uv run chainlit run app.py -w      # UI web; implementada no E10
-uv run pytest                      # testes (não precisam de LLM)
+uv run pytest                      # testes (não precisam de LLM); também rodam na CI em todo PR
 uv run pytest tests/test_tools.py -k "without_documents"   # um teste (nomes em inglês, D19)
 ```
 
@@ -84,7 +84,8 @@ Todo trabalho de um épico acontece em branches próprias; nunca diretamente na 
 2. **Toda tarefa:** crie uma branch nova **a partir da branch do épico**, nunca da `main`: `<tipo>/t<épico>.<n>-<slug-da-tarefa>` (ex.: `feat/t3.2-list-parties`).
 3. **Antes de criar:** `git fetch` e verifique se a branch do épico já existe, localmente ou em `origin`. Se existir, parta dela atualizada, sem recriá-la.
 4. **Fechamento:** tarefa concluída volta para a branch do épico por pull request; épico concluído (todas as tarefas `[x]`) volta para a `main`.
-5. **Merge é do autor**, nunca do assistente. **Depois do merge**, apague a branch local e remota somente se o PR estiver `MERGED` e todos os checks estiverem verdes (sem checks configurados conta como verde; check falho ou pendente → não apague, avise). Volte antes para a base do PR atualizada; use `git branch -d` (nunca `-D`), `git push origin --delete <branch>` se ainda existir no remoto e `git fetch --prune`. Branch `epic/` só é apagada quando o épico for mergeado na `main`.
+5. **CI obrigatória na prática:** todo PR roda o workflow `tests` (`.github/workflows/tests.yml`). O plano do GitHub não permite bloquear o merge (repositório privado sem Pro), então a regra é do fluxo: **merge só com o check `tests` verde**. Depois de abrir o PR, acompanhe com `gh pr checks <n> --watch` e informe o resultado ao autor; se falhar, corrija antes de pedir revisão.
+6. **Merge é do autor**, nunca do assistente. **Depois do merge**, apague a branch local e remota somente se o PR estiver `MERGED` e todos os checks estiverem verdes (sem checks configurados conta como verde; check falho ou pendente → não apague, avise). Volte antes para a base do PR atualizada; use `git branch -d` (nunca `-D`), `git push origin --delete <branch>` se ainda existir no remoto e `git fetch --prune`. Branch `epic/` só é apagada quando o épico for mergeado na `main`.
 
 **Nomes:** sempre em inglês, minúsculas, palavras separadas por hífen, com o prefixo (pasta) conforme o objetivo:
 
