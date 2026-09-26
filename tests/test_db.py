@@ -2,11 +2,13 @@
 
 from contextlib import closing
 
+import shutil
 import sqlite3
 
 import pytest
+from database_integrity import REFERENCE_DATABASE_SHA256, sha256_of
 
-from case_assistant.db import DatabaseNotFoundError, connect
+from case_assistant.db import DEFAULT_DATABASE_PATH, DatabaseNotFoundError, connect
 
 TOTAL_CASES = 10_000
 WRITE_STATEMENTS = {
@@ -57,3 +59,19 @@ def test_refused_writes_leave_data_unchanged() -> None:
 
     assert total == TOTAL_CASES
     assert first_case_status == "julgado"
+
+
+def test_original_database_matches_reference_hash() -> None:
+    assert sha256_of(DEFAULT_DATABASE_PATH) == REFERENCE_DATABASE_SHA256
+
+
+def test_reference_hash_detects_a_single_changed_byte(tmp_path) -> None:
+    database_copy = tmp_path / "copy.sqlite"
+    shutil.copyfile(DEFAULT_DATABASE_PATH, database_copy)
+    with database_copy.open("r+b") as file:
+        file.seek(-1, 2)
+        last_byte = file.read(1)
+        file.seek(-1, 2)
+        file.write(bytes([last_byte[0] ^ 0xFF]))
+
+    assert sha256_of(database_copy) != REFERENCE_DATABASE_SHA256
