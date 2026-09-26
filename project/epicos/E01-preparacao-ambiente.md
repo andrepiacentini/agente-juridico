@@ -77,3 +77,10 @@
 - **Pronto quando:** a coluna do Claude está preenchida, ou a tarefa é cancelada no fim do projeto por falta de crédito.
 - **Depende de:** T1.7.
 - **Para explicar à banca:** "O código não sabe qual fornecedor está usando: troquei de Claude para Gemini só mudando o `.env`."
+
+### T1.11 — Rodar os testes na CI a cada pull request `[x]`
+- **Objetivo:** os testes viram uma etapa de todo PR no GitHub, sem depender de rodá-los na máquina de quem desenvolve (D33).
+- **Passos:** criar `.github/workflows/tests.yml` com GitHub Actions: em todo pull request e em push na `main`, instalar com `uv sync --locked` e rodar `uv run pytest`; sem chaves de API (os testes não usam IA); acrescentar a regra "merge só com o check `tests` verde" ao fluxo de branches do `AGENTS.md` e o selo de status ao README.
+- **Pronto quando:** o PR desta tarefa mostra o check `tests` verde no GitHub.
+- **Depende de:** T1.5, T1.6.
+- **Para explicar à banca:** "Cada mudança passa pelos testes num servidor limpo do GitHub antes de entrar; o histórico de PRs mostra isso."
