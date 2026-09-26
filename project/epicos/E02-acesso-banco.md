@@ -28,9 +28,9 @@
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Comparo a impressão digital do arquivo antes e depois — é a prova de que o dado original está intacto."
 
-### T2.4 — Reconhecer e validar o número do processo `[ ]`
+### T2.4 — Reconhecer e validar o número do processo `[x]`
 - **Objetivo:** função que acha um número no formato CNJ dentro de um texto e o padroniza.
-- **Passos:** expressão regular para `NNNNNNN-DD.AAAA.J.TR.OOOO`; aceitar também o número só com dígitos (20 dígitos) e formatar; testar com o 3161 e com um número inexistente.
+- **Passos:** em `src/case_assistant/case_number.py`, expressão regular para `NNNNNNN-DD.AAAA.J.TR.OOOO`; aceitar também o número só com dígitos (20 dígitos) e formatar; testar com o 3161, com um número bem formado que não existe no banco (a existência é conferida pelas ferramentas, no E03) e com os 10.000 números do banco.
 - **Pronto quando:** `extract_case_number("resuma o 0000007-79.2023.8.99.9014")` devolve o número, e texto sem número devolve `None`.
 - **Depende de:** T1.6.
 - **Para explicar à banca:** "O número do processo é a chave de tudo; reconheço ele por código, sem depender do modelo acertar a digitação."
