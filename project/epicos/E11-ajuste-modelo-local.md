@@ -9,7 +9,7 @@
 
 ### T11.1 — Tamanho da memória de conversa do modelo `[ ]`
 - **Objetivo:** configurar a janela de contexto em 16 mil tokens e a compactação da memória do modelo (`q8_0`).
-- **Passos:** configurar `num_ctx` e `OLLAMA_KV_CACHE_TYPE=q8_0`; medir uso de RAM com o Monitor de Atividade.
+- **Passos:** configurar `num_ctx` e `OLLAMA_KV_CACHE_TYPE=q8_0`; medir uso de RAM com o Monitor de Atividade. Urgência medida na T5.6 (D40): o Ollama está em 4.096 tokens e instruções + ferramentas já ocupam ~2.900 — um resumo com documentos lidos estouraria sem aviso. Verificar se o prefixo `ollama:` do Pydantic AI repassa `num_ctx` ou se é preciso configurar no servidor (`OLLAMA_CONTEXT_LENGTH`).
 - **Pronto quando:** o uso total fica abaixo de ~7 GB durante a pergunta de resumo.
 - **Depende de:** E05.
 - **Para explicar à banca:** "Calculei o orçamento de memória antes: modelo, contexto e sistema cabem em 7 dos 8 GB."
@@ -31,7 +31,7 @@
 
 ### T11.4 — Enxugar as respostas das ferramentas `[ ]`
 - **Objetivo:** reduzir o volume de dados que as ferramentas devolvem, se a T11.3 mostrar lentidão.
-- **Passos:** identificar a ferramenta com resposta maior; remover campos não usados; medir de novo.
+- **Passos:** identificar a ferramenta com resposta maior; remover campos não usados; medir de novo. Pista da T5.4: instruções + descrições das 9 ferramentas somam ~2.900 tokens de entrada, e a 1ª pergunta da sessão leva 19–27 s (as seguintes, 1–2 s) — enxugar as descrições e/ou "aquecer" o modelo ao abrir a sessão.
 - **Pronto quando:** o tempo melhorou sem piorar o placar do E09 (ou a tarefa é cancelada por não ser necessária).
 - **Depende de:** T11.3.
 - **Para explicar à banca:** "Menos texto enviado ao modelo significa resposta mais rápida."

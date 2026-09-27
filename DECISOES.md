@@ -232,11 +232,56 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** validar texto sempre tem brechas (comentários, formas pouco usuais de escrever um comando); o autorizador decide pelo que o banco realmente vai fazer, não pelo texto. A conexão somente leitura já impede escrita no arquivo, mas não impede tudo — por exemplo, criar tabelas temporárias ou anexar outro arquivo; o autorizador cobre isso. Ao testar, a primeira versão bloqueou até a busca no índice de palavras; registrando as operações pedidas, apareceu a leitura do `data_version`, liberada de forma exata (sem valor atribuído) — `PRAGMA data_version = 5` continua negado.
 - **Descartado:** confiar só na validação do texto (brechas); confiar só na conexão somente leitura (não barra tabelas temporárias nem anexos); liberar pragmas em geral para o índice funcionar.
 
+### D40 — Primeiro teste de ponta a ponta com o modelo local: acerta a ferramenta e os dados, falta citar a fonte
+- **Decisão:** registrar o resultado do primeiro teste real (T5.6) e levar os dois problemas encontrados para as tarefas que já existem: a citação de dados do cadastro para a T7.7 e o tamanho do contexto do modelo para a T11.1.
+- **Resultado:** a pergunta "Quem são as partes do processo 0000007-79.2023.8.99.9014?" foi feita 3 vezes ao [modelo local](docs/glossario.md#modelo-local) (`qwen3:4b-instruct-2507`), cada vez numa conversa nova. Nas 3, o agente escolheu a [ferramenta](docs/glossario.md#ferramenta) certa (`list_parties`), trouxe as partes corretas — autor João Ziegler Rocha (pessoa física, com CPF) e réu Operadora de Saúde Cambirela Ltda (pessoa jurídica, com CNPJ) — e informou que não havia avisos no cadastro. Tempo: 35 s na primeira (modelo ainda "frio"), 13–14 s nas seguintes; duas chamadas ao modelo por pergunta (uma para escolher a ferramenta, outra para redigir), ~6 mil [tokens](docs/glossario.md#token) de entrada no total.
+- **Por quê registrar os problemas, e não corrigir agora:** (1) nenhuma das respostas citou a fonte. As instruções só ensinam a citar documento e movimentação, e as partes vêm do cadastro do processo — o modelo não tinha formato para usar; é uma lacuna da regra, tratada na T7.7 (citação obrigatória), com um formato para dados do cadastro. (2) O Ollama estava usando uma [janela de contexto](docs/glossario.md#contexto) de 4.096 tokens, e só as instruções e as descrições das ferramentas ocupam ~2.900. Nesta pergunta coube; num resumo, com documentos lidos, o excesso seria cortado sem aviso. A T11.1 já prevê subir o contexto para 16 mil tokens.
+- **Uso de IA:** o Claude Code rodou o teste 3 vezes em vez de uma, porque o modelo não responde sempre igual, e notou o limite de contexto na saída do Ollama.
+
+### D41 — Mesma pergunta no Gemini: igual no acerto, duas vezes mais rápido, instável no plano gratuito
+- **Decisão:** registrar a comparação da T5.7 como base para a escolha do modelo da demonstração (pendência já listada) e tratar as recusas temporárias do plano gratuito antes da apresentação.
+- **Resultado:** a pergunta da D40 foi repetida 3 vezes com o Gemini 3.8 Flash, trocando apenas o `.env` (`LLM_MODEL=google:gemini-3.8-flash`, `LLM_THINKING=low`) — **nenhuma linha de código mudou**. O Gemini acertou a ferramenta e as partes nas 3 vezes, como o modelo local, em 6 a 11 segundos por pergunta (o local levou 35 s na primeira e 13–14 s nas seguintes), e em 2 das 3 respostas citou a fonte por conta própria, num formato improvisado. Em compensação, na primeira rodada o serviço recusou o pedido duas vezes com erro 503 ("alta demanda") e a resposta só veio na terceira tentativa, cerca de 27 segundos depois.
+
+  | | Modelo local | Gemini 3.8 Flash |
+  |---|---|---|
+  | Ferramenta e dados corretos | 3/3 | 3/3 |
+  | Tempo por pergunta | 35 s (1ª) · 13–14 s | 6–11 s |
+  | Cita a fonte | 0/3 | 2/3, formato próprio |
+  | Recusas do serviço | 0 | 2 (503) |
+
+- **Por quê:** a troca só por configuração é a portabilidade prometida na D08 funcionando de ponta a ponta. A velocidade favorece o Gemini numa apresentação; a instabilidade do plano gratuito favorece o local. Sem tratamento, uma recusa aparece para a banca como falha. Repetir automaticamente os pedidos recusados temporariamente, com uma espera curta, resolve a maior parte dos casos e vale para qualquer provedor.
+- **Uso de IA:** o autor observou que o modelo local estava lento e pediu para seguir com o teste no Gemini; o Claude Code contou as recusas do serviço em vez de apenas repetir até funcionar, porque a taxa de falhas também é dado para a decisão.
+
+### D42 — Resumo do processo (T5.8), primeira tentativa: o modelo local fica raso e a cota gratuita do Gemini é de 20 pedidos por dia
+- **Decisão:** registrar o resultado parcial da T5.8 e as três correções que ele pediu, antes de repetir o teste: (1) um roteiro de resumo nas instruções do agente; (2) novas tentativas por pedido, e não pela pergunta inteira; (3) não repetir quando a cota do dia acabou. A escolha de um modelo em nuvem com cota suficiente virou pendência de decisão.
+- **Resultado com o [modelo local](docs/glossario.md#modelo-local):** a pergunta 1 do edital ("Resuma o processo 0000007-79.2023.8.99.9014, destacando os principais fatos e o andamento processual") foi feita 3 vezes. Nas 3, o agente chamou só `find_case` e respondeu com o cartão do processo: não consultou o andamento, não abriu o índice de documentos e não leu a petição inicial nem a sentença — logo, os "principais fatos" ficaram no assunto ("acidente de trânsito"), sem pedidos, sem argumentos e sem o resultado da sentença. Em 1 das 3 respostas escreveu "responsabilidade civil por danos causados ao autor", dedução do assunto que não veio de nenhuma [ferramenta](docs/glossario.md#ferramenta) — uma pequena [alucinação](docs/glossario.md#alucinacao). Tempo: 29 a 56 segundos. O critério da tarefa não foi atingido.
+- **Resultado com o Gemini:** não foi possível testar. Primeiro o serviço recusou três vezes seguidas (503, 429, 503 — as novas tentativas da T5.9 funcionaram e avisaram o usuário, mas não bastaram); depois veio a explicação: o plano gratuito permite **20 pedidos por dia** para o `gemini-3.8-flash` (`GenerateRequestsPerDayPerProjectPerModel-FreeTier`), e os testes do dia já tinham consumido a cota. Uma pergunta simples usa 2 pedidos e um resumo, 4 ou mais: são 5 a 10 perguntas por dia — insuficiente para a bateria de avaliação (E09), para ensaios e para a apresentação. A D30 tinha registrado que o limite não era publicado; agora ele está medido.
+- **Por quê as correções:** (1) um modelo pequeno para na primeira ferramenta que já dá "alguma" resposta; passos explícitos (cartão → andamento → índice de documentos → ler petição inicial e sentença → redigir citando) costumam funcionar melhor do que esperar que ele deduza o caminho — e ajudam também o modelo em nuvem. (2) Um resumo faz vários pedidos ao modelo; repetir a pergunta inteira a cada recusa gasta mais cota e ajuda a provocar o 429. (3) Quando a recusa é "cota do dia esgotada", repetir em segundos não adianta: o certo é dizer isso ao usuário.
+- **Descartado:** repetir o teste do Gemini até funcionar (consumiria a cota do dia seguinte e não resolveria o limite); considerar a T5.8 concluída com o resumo raso do modelo local.
+- **Uso de IA:** o Claude Code parou o teste ao ler a mensagem de cota, em vez de continuar tentando; notou a alucinação comparando cada frase do resumo com o que as ferramentas devolveram.
+
+### D43 — Roteiro de resumo nas instruções; com o Gemini pago, a pergunta 1 do edital passa
+- **Decisão:** as instruções do agente ganham um roteiro para resumir um processo — dados básicos, andamento, índice de documentos, leitura da petição inicial, da contestação e da sentença, redação citando cada fonte — e a regra de não deduzir fatos do assunto ou da classe do processo. A cota do Gemini foi resolvida ativando a cobrança do projeto com os créditos do Google AI Pro (D42). A T5.8 fica concluída.
+- **Resultado:** a mesma pergunta da D42 ("Resuma o processo 0000007-79.2023.8.99.9014…"), 2 rodadas por modelo:
+
+  | | Modelo local + roteiro | Gemini 3.8 Flash (pago) + roteiro |
+  |---|---|---|
+  | Seguiu o roteiro e leu inicial, contestação e sentença | sim | sim (e, numa rodada, também a apelação) |
+  | Fatos e resultado (parcialmente procedente, R$ 1.523,18) | corretos | corretos |
+  | Honorários | errou em 1 de 2 | corretos nas 2 |
+  | Andamento com a fase recursal (embargos, apelação, remessa) | omitiu | completo |
+  | Cita a fonte com o id | 0 de 2 | quase toda frase ([doc. 7865 — Petição Inicial, 08/01/2024]) |
+  | Tempo | 128–144 s | 12–15 s |
+
+- **Por quê:** o roteiro resolveu o problema principal da D42 — o [modelo local](docs/glossario.md#modelo-local) passou a ler os documentos em vez de parar no cartão do processo —, mas ele continua lento para uma apresentação e ainda erra detalhes. Para ler três documentos, foi preciso subir a [janela de contexto](docs/glossario.md#contexto) do Ollama para 8.192 [tokens](docs/glossario.md#token) (no limite: o último pedido usou 7.950); o valor final e o uso de memória são decididos na T11.1. Correção da D40: o Ollama **não** corta o excesso em silêncio — ele recusa o pedido com erro explícito ("exceeds the available context size"), e o agente não repete esse erro, porque não é temporário.
+- **Pontos para depois:** o resumo expõe nomes de ferramentas como fonte de dados do cadastro ("[find_case]") — formato a definir na T7.7; e nenhum modelo apontou datas do próprio banco que não fecham no 3161 (trânsito em julgado registrado três dias depois da apelação; remessa à instância superior antes da juntada da apelação) — o aviso da T3.6 só cobre recurso *depois* do trânsito; fica para o E07.
+- **Uso de IA:** o Claude Code conferiu cada fato dos resumos contra os textos da sentença e as movimentações antes de avaliar; foi assim que apareceram o erro de honorários e a omissão da fase recursal no modelo local.
+
 ---
 
 ## Pendências de decisão
 
 Decisões já identificadas, ainda não tomadas (viram entradas datadas quando forem resolvidas):
 
-- Qual modelo usar como principal na demonstração — depende do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
+- Qual modelo usar como principal na demonstração — depende das comparações da D41 e da D43 (no resumo, Gemini pago em 12–15 s e completo × local em 2 min e com erros) (Gemini duas vezes mais rápido, mas com recusas no plano gratuito), do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
 - Levar ou não o modelo reserva `qwen3:1.7b` para a apresentação (T11.5).

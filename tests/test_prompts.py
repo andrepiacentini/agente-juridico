@@ -6,11 +6,17 @@ from contextlib import closing
 import pytest
 
 from case_assistant.db import connect
-from case_assistant.prompts import DATABASE_DESCRIPTION
+from case_assistant import sql_query, tools
+from case_assistant.prompts import DATABASE_DESCRIPTION, SYSTEM_PROMPT
 from case_assistant.sql_query import run_sql
 
 # Estimativa conservadora para português: ~3,5 caracteres por token.
 MAX_CHARACTERS_FOR_800_TOKENS = 2_800
+MAX_CHARACTERS_FOR_1500_TOKENS = 5_250
+AGENT_TOOLS = (
+    "find_case", "list_parties", "list_movements", "list_documents", "read_document",
+    "search_text", "search_parties", "search_cases", "run_sql",
+)
 
 
 @pytest.fixture(scope="module")
@@ -59,3 +65,48 @@ def test_example_queries_in_the_description_really_run(connection) -> None:
     for example in examples:
         result = run_sql(connection, example)
         assert result["found"] is True, (example, result)
+
+
+def test_system_prompt_includes_the_database_description() -> None:
+    assert DATABASE_DESCRIPTION in SYSTEM_PROMPT
+
+
+def test_system_prompt_fits_in_about_1500_tokens() -> None:
+    assert len(SYSTEM_PROMPT) <= MAX_CHARACTERS_FOR_1500_TOKENS
+
+
+def test_every_tool_mentioned_exists_in_the_code() -> None:
+    mentioned = set(re.findall(r"\b([a-z]+_[a-z_]+)\(\)", SYSTEM_PROMPT))
+
+    assert mentioned == set(AGENT_TOOLS)
+    assert all(hasattr(tools, name) or hasattr(sql_query, name) for name in mentioned)
+
+
+@pytest.mark.parametrize(
+    "rule",
+    [
+        "português",
+        "[doc 7878 — Sentença, 18/02/2026]",
+        "[mov. 9219 — Sentença com Resolução do Mérito, 18/02/2026]",
+        "Não consta",
+        "PROPOSTA DE MINUTA — texto não proferido",
+        "homonym_notice",
+        "warnings",
+    ],
+)
+def test_system_prompt_has_the_core_rules(rule: str) -> None:
+    assert rule in SYSTEM_PROMPT
+
+
+def test_system_prompt_has_a_summary_playbook_in_tool_order() -> None:
+    playbook = SYSTEM_PROMPT[SYSTEM_PROMPT.index("Para resumir um processo"):]
+    steps = ["find_case()", "list_movements()", "list_documents()", "read_document()"]
+
+    positions = [playbook.index(step) for step in steps]
+    assert positions == sorted(positions)
+    assert "petição inicial" in playbook and "sentença" in playbook
+    assert "sem documentos" in playbook  # 63% dos processos: resumir pelo andamento
+
+
+def test_system_prompt_forbids_deducing_facts_from_subject() -> None:
+    assert "Não deduza fatos do assunto ou da classe do processo" in SYSTEM_PROMPT
