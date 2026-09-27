@@ -96,3 +96,17 @@ def test_every_tool_mentioned_exists_in_the_code() -> None:
 )
 def test_system_prompt_has_the_core_rules(rule: str) -> None:
     assert rule in SYSTEM_PROMPT
+
+
+def test_system_prompt_has_a_summary_playbook_in_tool_order() -> None:
+    playbook = SYSTEM_PROMPT[SYSTEM_PROMPT.index("Para resumir um processo"):]
+    steps = ["find_case()", "list_movements()", "list_documents()", "read_document()"]
+
+    positions = [playbook.index(step) for step in steps]
+    assert positions == sorted(positions)
+    assert "petição inicial" in playbook and "sentença" in playbook
+    assert "sem documentos" in playbook  # 63% dos processos: resumir pelo andamento
+
+
+def test_system_prompt_forbids_deducing_facts_from_subject() -> None:
+    assert "Não deduza fatos do assunto ou da classe do processo" in SYSTEM_PROMPT

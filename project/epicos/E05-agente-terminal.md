@@ -58,11 +58,12 @@
 - **Depende de:** T5.6.
 - **Para explicar à banca:** "Troquei o modelo mudando uma linha de configuração, ao vivo."
 
-### T5.8 — Pergunta 1 do edital: resumo do processo `[ ]`
+### T5.8 — Pergunta 1 do edital: resumo do processo `[x]`
 - **Objetivo:** responder "Resuma o processo 0000007-79.2023.8.99.9014, destacando os principais fatos e o andamento processual".
 - **Passos:** rodar nos dois modelos; conferir se leu a petição inicial e a sentença e se citou os ids.
 - **Pronto quando:** o resumo está correto, cita documentos e o que deu errado (se algo) está anotado.
 - **Primeira tentativa (D42):** modelo local chamou só `find_case` nas 3 rodadas — resumo raso, sem ler petição inicial nem sentença, e uma pequena alucinação em 1 de 3; Gemini não testado — cota gratuita de 20 pedidos/dia esgotada. Antes de repetir: roteiro de resumo nas instruções; novas tentativas por pedido e sem repetir cota diária esgotada (ajustes da T5.9); modelo em nuvem com cota suficiente (pendência).
+- **Resultado (D43):** com o roteiro de resumo nas instruções, os dois modelos leem inicial, contestação e sentença. Gemini pago: resumo correto, completo (inclui a fase recursal) e citado, em 12–15 s. Local: correto no essencial, mas omite a fase recursal, erra honorários em 1 de 2 e não cita ids, em 128–144 s; exigiu contexto de 8.192 tokens no Ollama.
 - **Depende de:** T5.7.
 - **Para explicar à banca:** "O resumo segue o caminho: dados básicos → índice dos documentos → leitura só dos relevantes → texto com citações."
 
