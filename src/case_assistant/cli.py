@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 from pydantic_ai import Agent
 from pydantic_ai.messages import ModelMessage, ToolCallPart
 
-from case_assistant.agent import ModelNotConfiguredError, build_agent
+from case_assistant.agent import ModelNotConfiguredError, build_agent, run_with_retries
 from case_assistant.session import Session, open_session
 
 WELCOME = "Assistente de processos do TJSC. Pergunte em português; digite 'sair' para encerrar."
@@ -64,7 +64,7 @@ def _ask(
     history: list[ModelMessage],
     write: Callable[[str], None] = print,
 ) -> tuple[str, list[ModelMessage]]:
-    result = agent.run_sync(question, message_history=history, deps=session)
+    result = run_with_retries(agent, question, history, session, on_retry=write)
     for line in _tool_call_lines(result.new_messages()):
         write(line)
     return result.output, result.all_messages()
