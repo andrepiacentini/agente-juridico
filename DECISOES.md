@@ -220,6 +220,11 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** o banco não tem tabela de advogados; eles só aparecem no campo de autor dos documentos. A pergunta 2 do edital pede "os advogados do processo", e dizer quem representa quem é o que torna a resposta útil — sem deixar o modelo adivinhar. A regra identifica o lado de todos os advogados do banco (3.683 do autor, 1.831 do réu). Ao conferir a assinatura, apareceu uma armadilha: a petição de acordo é assinada pelos advogados dos dois lados, então comparar só com a última assinatura acusaria 561 divergências falsas; o certo é verificar se a OAB cadastrada está entre as assinaturas (309 divergências reais).
 - **Descartado:** deixar o lado para o modelo deduzir lendo os documentos (caro e sujeito a erro num modelo pequeno); comparar o autor cadastrado só com a última assinatura do texto (falso positivo em toda petição de acordo).
 
+### D38 — Busca de pessoas numa ferramenta própria; a pessoa é o CPF/CNPJ
+- **Decisão:** a busca de partes pelo nome virou uma ferramenta separada, `search_parties`, em vez de um modo da busca de termos nos documentos. Ela agrupa os resultados por CPF/CNPJ — cada documento é uma pessoa —, lista os processos e o polo de cada uma e, quando há mais de uma pessoa, avisa o agente para perguntar de qual se trata.
+- **Por quê:** buscar pessoas e buscar termos têm entradas e respostas diferentes (pessoas com processos × trechos de documentos); juntar as duas numa ferramenta só confundiria um modelo pequeno na hora de escolher e de ler a resposta. Agrupar pelo documento resolve os 643 nomes homônimos, que viram pessoas separadas. A análise mostrou também o problema inverso: 332 CPFs/CNPJs aparecem no cadastro com mais de um nome — às vezes erro de digitação ("Imobiliária Mendes" × "Mendez"), às vezes empresas completamente diferentes com o mesmo CNPJ. A ferramenta não tem como saber qual é o caso, então mostra todos os nomes e avisa, sem escolher.
+- **Descartado:** agrupar por nome (juntaria pessoas diferentes); escolher um dos nomes quando o documento tem vários (seria corrigir o cadastro por palpite).
+
 ---
 
 ## Pendências de decisão

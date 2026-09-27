@@ -7,7 +7,7 @@ import sqlite3
 import pytest
 
 from case_assistant.db import connect, create_search_index
-from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document, search_text
+from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document, search_parties, search_text
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -477,3 +477,71 @@ def test_search_text_respects_limit(indexed_connection) -> None:
 
 def test_search_text_reports_missing_case_filter(indexed_connection) -> None:
     assert search_text(indexed_connection, "ônus", case_number=MISSING_CASE_NUMBER)["found"] is False
+
+
+def test_search_parties_finds_person_with_cases_and_pole(indexed_connection) -> None:
+    result = search_parties(indexed_connection, "João Ziegler Rocha")
+
+    assert result["found"] is True
+    assert result["total_people"] == 1
+    assert "homonym_notice" not in result
+    person = result["people"][0]
+    assert person["document"] == "999.539.988-87"
+    assert person["person_type"] == "pessoa física"
+    assert person["names"] == ["João Ziegler Rocha"]
+    assert {"case_number": REFERENCE_CASE_NUMBER, "pole": "ativo"} in person["cases"]
+
+
+def test_search_parties_ignores_accents_and_word_order(indexed_connection) -> None:
+    result = search_parties(indexed_connection, "rocha joao")
+
+    assert "999.539.988-87" in {person["document"] for person in result["people"]}
+
+
+def test_search_parties_separates_homonyms_and_asks_which_one(indexed_connection) -> None:
+    result = search_parties(indexed_connection, "Ademir Fabris")
+
+    assert result["total_people"] == 2
+    assert [person["case_count"] for person in result["people"]] == [2, 1]  # quem tem mais processos primeiro
+    assert result["homonym_notice"] == (
+        "Há 2 pessoas diferentes (CPF/CNPJ distintos) com esse nome. Pergunte de qual se trata antes de responder."
+    )
+
+
+def test_search_parties_warns_when_same_document_has_different_names(indexed_connection) -> None:
+    result = search_parties(indexed_connection, "Imobiliária Mendes")
+    person = next(person for person in result["people"] if person["document"] == "99.015.411/0001-85")
+
+    assert person["names"] == ["Imobiliária Mendes Ltda", "Imobiliária Mendez Ltda"]
+    assert person["case_count"] == 1  # as duas linhas do cadastro estão no mesmo processo
+    assert (
+        "O documento 99.015.411/0001-85 aparece no cadastro com nomes diferentes: "
+        "Imobiliária Mendes Ltda, Imobiliária Mendez Ltda."
+    ) in result["warnings"]
+
+
+def test_search_parties_caps_people_and_cases(indexed_connection) -> None:
+    result = search_parties(indexed_connection, "Maria")
+
+    assert len(result["people"]) == 10
+    assert result["total_people"] > 10
+    assert all(len(person["cases"]) <= 10 for person in result["people"])
+
+
+def test_search_parties_without_matches_says_so(indexed_connection) -> None:
+    assert search_parties(indexed_connection, "Xyzabc Inexistente") == {
+        "found": False,
+        "message": "Nenhuma parte com o nome 'Xyzabc Inexistente'.",
+    }
+
+
+def test_search_parties_flags_every_homonym_in_database(indexed_connection) -> None:
+    homonym_names = [
+        row["nome"]
+        for row in indexed_connection.execute(
+            "SELECT nome FROM parte GROUP BY nome HAVING COUNT(DISTINCT documento) > 1"
+        )
+    ]
+
+    assert len(homonym_names) == 643
+    assert all("homonym_notice" in search_parties(indexed_connection, name) for name in homonym_names)
