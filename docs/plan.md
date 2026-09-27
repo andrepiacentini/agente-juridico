@@ -255,7 +255,7 @@ stateDiagram-v2
 | `buscar_texto` (`search_text`) | `termo`, opcional `tipo`/`numero` | Hits FTS5 com snippet e ids | Termos nos documentos |
 | `search_parties` (T3.10, D38) | nome | Pessoas por CPF/CNPJ, com nomes, processos e polo | Separa homônimos e pede desambiguação |
 | `search_cases` (T3.11, D36) | filtros: assunto, classe, comarca, vara, magistrado, situação, datas, valor; ordenação; limite | Total + lista compacta (número, classe, assunto, comarca, situação, data, valor) | Perguntas "quais/quantos processos…" sem SQL do modelo; texto comparado sem acento/caixa |
-| `consultar_sql` | `sql` | Linhas (máx. 50) | Só `SELECT`/`WITH`; sem `;`, `PRAGMA`, `ATTACH`; timeout 5 s; conexão `mode=ro` |
+| `consultar_sql` (`run_sql`) | `sql` | Linhas (máx. 50) | Só `SELECT`/`WITH`; sem `;`, `PRAGMA`, `ATTACH`; autorizador do SQLite (D39); timeout 5 s; conexão `mode=ro` |
 
 Ferramentas retornam **dados compactos por padrão e texto completo só sob demanda**. É isso que faz funcionar em 8 GB: o modelo nunca recebe 19 documentos de uma vez a menos que peça.
 
