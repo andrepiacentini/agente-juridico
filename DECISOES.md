@@ -225,6 +225,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê:** buscar pessoas e buscar termos têm entradas e respostas diferentes (pessoas com processos × trechos de documentos); juntar as duas numa ferramenta só confundiria um modelo pequeno na hora de escolher e de ler a resposta. Agrupar pelo documento resolve os 643 nomes homônimos, que viram pessoas separadas. A análise mostrou também o problema inverso: 332 CPFs/CNPJs aparecem no cadastro com mais de um nome — às vezes erro de digitação ("Imobiliária Mendes" × "Mendez"), às vezes empresas completamente diferentes com o mesmo CNPJ. A ferramenta não tem como saber qual é o caso, então mostra todos os nomes e avisa, sem escolher.
 - **Descartado:** agrupar por nome (juntaria pessoas diferentes); escolher um dos nomes quando o documento tem vários (seria corrigir o cadastro por palpite).
 
+## 27/09/2026
+
+### D39 — Terceira camada de proteção no SQL livre: o autorizador do próprio SQLite
+- **Decisão:** a consulta livre (`run_sql`) é protegida em três camadas, e não duas como previa o plano: (1) a validação do texto aceita um único comando de leitura; (2) enquanto a consulta roda, um **autorizador** do SQLite — uma função que o banco consulta antes de cada operação — permite só leitura e funções e nega todo o resto; (3) a conexão é [somente leitura](docs/glossario.md#somente-leitura) (D04). A única exceção no autorizador é o `PRAGMA data_version`, uma leitura de contador que o índice de busca ([FTS5](docs/glossario.md#fts5)) faz por dentro.
+- **Por quê:** validar texto sempre tem brechas (comentários, formas pouco usuais de escrever um comando); o autorizador decide pelo que o banco realmente vai fazer, não pelo texto. A conexão somente leitura já impede escrita no arquivo, mas não impede tudo — por exemplo, criar tabelas temporárias ou anexar outro arquivo; o autorizador cobre isso. Ao testar, a primeira versão bloqueou até a busca no índice de palavras; registrando as operações pedidas, apareceu a leitura do `data_version`, liberada de forma exata (sem valor atribuído) — `PRAGMA data_version = 5` continua negado.
+- **Descartado:** confiar só na validação do texto (brechas); confiar só na conexão somente leitura (não barra tabelas temporárias nem anexos); liberar pragmas em geral para o índice funcionar.
+
 ---
 
 ## Pendências de decisão
