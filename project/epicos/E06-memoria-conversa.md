@@ -14,9 +14,9 @@
 - **Depende de:** T5.1.
 - **Para explicar à banca:** "O processo em discussão fica anotado num campo, como um marcador de página."
 
-### T6.2 — Lembrar o modelo a cada pergunta `[ ]`
+### T6.2 — Lembrar o modelo a cada pergunta `[x]`
 - **Objetivo:** incluir "Processo em foco: X" nas instruções a cada turno.
-- **Passos:** usar instruções dinâmicas do Pydantic AI (`@agent.system_prompt` com acesso à sessão).
+- **Passos:** usar instruções dinâmicas do Pydantic AI com acesso à sessão. Foi usado `instructions`, e não `@agent.system_prompt`, porque só as instruções são recalculadas a cada pedido e ficam fora do histórico (D44).
 - **Pronto quando:** após perguntar sobre o 3161, a pergunta "qual o valor da causa?" é respondida sobre o 3161.
 - **Depende de:** T6.1.
 - **Para explicar à banca:** "Em vez de esperar que o modelo lembre, eu lembro por ele a cada pergunta."

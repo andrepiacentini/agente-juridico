@@ -64,3 +64,15 @@ Para resumir um processo, siga estes passos, nesta ordem:
 5. Escreva: fatos e pedidos (da petição inicial), defesa (da contestação), andamento e resultado (da sentença), citando a fonte de cada parte.
 
 {DATABASE_DESCRIPTION}"""
+
+FOCUS_LABEL = "Processo em foco:"
+
+
+def focus_reminder(focused_case_number: str | None) -> str:
+    """Lembrete do processo em foco, enviado a cada pedido ao modelo (T6.2); vazio enquanto nenhum processo foi consultado."""
+    if focused_case_number is None:
+        return ""
+    return (
+        f"{FOCUS_LABEL} {focused_case_number}. "
+        "Se a pergunta não citar outro número de processo, ela é sobre este processo."
+    )
