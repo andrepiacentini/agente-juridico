@@ -100,6 +100,22 @@ SEARCH_TEXT_COUNT_QUERY = """
       AND (:document_type IS NULL OR d.tipo = :document_type)
 """
 WORD_PATTERN = re.compile(r"\w+")
+SEARCH_PARTIES_MAX_PEOPLE, SEARCH_PARTIES_MAX_CASES = 10, 10
+MATCHING_PARTY_DOCUMENTS_QUERY = """
+    SELECT DISTINCT pa.documento FROM temp.party_search
+    JOIN parte pa ON pa.id = party_search.rowid
+    WHERE party_search MATCH ?
+"""
+# A pessoa é o CPF/CNPJ: 643 nomes são homônimos com documentos diferentes,
+# e 332 documentos aparecem no cadastro com mais de um nome.
+PARTY_CASES_QUERY = """
+    SELECT pa.documento, pa.nome, p.numero, pp.polo
+    FROM parte pa
+    JOIN processo_parte pp ON pp.parte_id = pa.id
+    JOIN processo p ON p.id = pp.processo_id
+    WHERE pa.documento IN ({placeholders})
+    ORDER BY p.numero
+"""
 CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
@@ -410,6 +426,59 @@ def search_text(
                 ],
             }
     return {"found": False, "message": f"Nenhum documento menciona '{term}'."}
+
+
+def search_parties(connection: sqlite3.Connection, name: str) -> dict[str, Any]:
+    """Pessoas cujo nome contém as palavras buscadas, separadas por CPF/CNPJ, com os processos e o polo de cada uma."""
+    words = WORD_PATTERN.findall(name)
+    if not words:
+        return {"found": False, "message": f"O nome '{name}' não tem palavras para buscar."}
+    ensure_search_index(connection)
+    query = " ".join(f'"{word}"' for word in words)
+    documents = [row["documento"] for row in connection.execute(MATCHING_PARTY_DOCUMENTS_QUERY, (query,))]
+    if not documents:
+        return {"found": False, "message": f"Nenhuma parte com o nome '{name}'."}
+
+    people = _people_by_document(connection, documents)
+    shown = people[:SEARCH_PARTIES_MAX_PEOPLE]
+    result: dict[str, Any] = {
+        "found": True,
+        "query": name,
+        "total_people": len(people),
+        "people": [
+            {**person, "cases": person["cases"][:SEARCH_PARTIES_MAX_CASES]} for person in shown
+        ],
+        "warnings": [
+            f"O documento {person['document']} aparece no cadastro com nomes diferentes: {', '.join(person['names'])}."
+            for person in shown
+            if len(person["names"]) > 1
+        ],
+    }
+    if len(people) > 1:
+        result["homonym_notice"] = (
+            f"Há {len(people)} pessoas diferentes (CPF/CNPJ distintos) com esse nome. "
+            "Pergunte de qual se trata antes de responder."
+        )
+    return result
+
+
+def _people_by_document(connection: sqlite3.Connection, documents: list[str]) -> list[dict[str, Any]]:
+    query = PARTY_CASES_QUERY.format(placeholders=", ".join("?" * len(documents)))
+    people: dict[str, dict[str, Any]] = {}
+    for row in connection.execute(query, documents):
+        person = people.setdefault(
+            row["documento"],
+            {"document": row["documento"], "person_type": _person_type(row["documento"]), "names": [], "cases": []},
+        )
+        if row["nome"] not in person["names"]:
+            person["names"].append(row["nome"])
+        case = {"case_number": row["numero"], "pole": row["polo"]}
+        if case not in person["cases"]:
+            person["cases"].append(case)
+    for person in people.values():
+        person["names"].sort()
+        person["case_count"] = len({case["case_number"] for case in person["cases"]})
+    return sorted(people.values(), key=lambda person: (-person["case_count"], person["document"]))
 
 
 def _search_queries(words: list[str]) -> list[tuple[str, str]]:

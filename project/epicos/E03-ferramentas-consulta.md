@@ -7,7 +7,7 @@
 
 Regra que vale para todas: ferramentas de listagem devolvem **dados resumidos** (ids, tipos, datas). Só `read_document` devolve texto completo.
 
-Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `find_case` (buscar_processo), `list_parties` (listar_partes), `list_movements` (listar_movimentacoes), `list_documents` (listar_documentos), `read_document` (ler_documento), `search_text` (buscar_texto), `search_cases` (nova, T3.11). Todas ficam em `src/case_assistant/tools.py`, recebem a conexão aberta (não a abrem) e devolvem um dicionário; "não encontrado" é uma resposta, não um erro.
+Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `find_case` (buscar_processo), `list_parties` (listar_partes), `list_movements` (listar_movimentacoes), `list_documents` (listar_documentos), `read_document` (ler_documento), `search_text` (buscar_texto, termos em documentos), `search_parties` (buscar_texto, nomes de partes — separada na T3.10, D38), `search_cases` (nova, T3.11). Todas ficam em `src/case_assistant/tools.py`, recebem a conexão aberta (não a abrem) e devolvem um dicionário; "não encontrado" é uma resposta, não um erro.
 
 ---
 
@@ -74,9 +74,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T2.5.
 - **Para explicar à banca:** "Busca por palavra, não por 'significado parecido' — resolve o que o edital pede sem precisar de banco vetorial."
 
-### T3.10 — `search_text`: nomes de partes e homônimos `[ ]`
+### T3.10 — `search_parties`: nomes de partes e homônimos `[x]`
 - **Objetivo:** buscar uma pessoa pelo nome e separar pessoas diferentes com o mesmo nome.
-- **Passos:** buscar no índice de `parte.nome`; agrupar resultados por CPF/CNPJ; sinalizar quando houver mais de uma pessoa.
+- **Passos:** ferramenta própria, `search_parties` (D38); buscar no índice de `parte.nome` com todas as palavras, sem acento e em qualquer ordem; agrupar por CPF/CNPJ — a pessoa é o documento; cada pessoa traz nomes cadastrados, pessoa física/jurídica, processos com polo e total; mais de uma pessoa gera `homonym_notice` pedindo ao agente que pergunte de qual se trata (conferido nos 643 nomes homônimos); documento com mais de um nome no cadastro (332 casos, de "Mendes"/"Mendez" a empresas diferentes com o mesmo CNPJ) gera aviso; limites de 10 pessoas e 10 processos por pessoa, com totais informados. Medido: 1 a 23 ms.
 - **Pronto quando:** teste com um nome homônimo conhecido devolve duas ou mais pessoas separadas, cada uma com seus processos.
 - **Depende de:** T2.5.
 - **Para explicar à banca:** "Há 643 nomes repetidos com documentos diferentes; a ferramenta separa as pessoas e o agente pergunta de qual se trata."
