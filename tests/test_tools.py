@@ -7,7 +7,7 @@ import sqlite3
 import pytest
 
 from case_assistant.db import connect, create_search_index
-from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document, search_parties, search_text
+from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document, search_cases, search_parties, search_text
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -545,3 +545,67 @@ def test_search_parties_flags_every_homonym_in_database(indexed_connection) -> N
 
     assert len(homonym_names) == 643
     assert all("homonym_notice" in search_parties(indexed_connection, name) for name in homonym_names)
+
+
+def case_numbers(result) -> set[str]:
+    return {case["case_number"] for case in result["cases"]}
+
+
+def test_search_cases_by_subject_ignores_accents_and_case(connection) -> None:
+    result = search_cases(connection, subject="plano de saude")
+
+    assert result["total"] == 444
+    assert len(result["cases"]) == 20
+    assert set(result["cases"][0]) == {
+        "case_number", "case_class", "subject", "district", "status", "filing_date", "claim_value"
+    }
+
+
+def test_search_cases_combines_class_and_district(connection) -> None:
+    assert search_cases(connection, case_class="execução fiscal", district="joinville")["total"] == 127
+
+
+def test_search_cases_by_judge(connection) -> None:
+    result = search_cases(connection, judge="Luiz Bonetti Vasconcelos", limit=50)
+
+    assert result["total"] == 23
+    assert REFERENCE_CASE_NUMBER in case_numbers(result)
+
+
+def test_search_cases_by_status_and_filing_period(connection) -> None:
+    result = search_cases(connection, status="Em Andamento", filing_date_from="2024-01-01", filing_date_to="2024-12-31")
+
+    assert result["total"] == 389
+    assert {case["status"] for case in result["cases"]} == {"em andamento"}
+
+
+def test_search_cases_orders_by_claim_value(connection) -> None:
+    result = search_cases(connection, claim_value_min=1_000_000, order_by="claim_value", limit=3)
+
+    assert [case["claim_value"] for case in result["cases"]] == [9_999_999_999.0, 1_267_818.19, 1_217_252.87]
+
+
+def test_search_cases_limit_keeps_total(connection) -> None:
+    result = search_cases(connection, subject="plano de saude", limit=500)
+
+    assert len(result["cases"]) == 50
+    assert result["total"] == 444
+
+
+def test_search_cases_requires_at_least_one_filter(connection) -> None:
+    result = search_cases(connection)
+
+    assert result["found"] is False
+    assert "ao menos um filtro" in result["message"]
+
+
+def test_search_cases_rejects_invalid_date_and_order(connection) -> None:
+    assert "data" in search_cases(connection, filing_date_from="13/2024")["message"]
+    assert "ordenação" in search_cases(connection, subject="saúde", order_by="nome")["message"].lower()
+
+
+def test_search_cases_without_matches_says_so(connection) -> None:
+    assert search_cases(connection, subject="assunto inexistente xyz") == {
+        "found": False,
+        "message": "Nenhum processo atende aos filtros.",
+    }

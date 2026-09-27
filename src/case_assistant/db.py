@@ -4,6 +4,8 @@ import os
 import sqlite3
 from pathlib import Path
 
+from case_assistant.text_normalization import comparable_district, comparable_text
+
 DATABASE_PATH_VARIABLE = "DATABASE_PATH"
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parents[2] / "desafio.sqlite"
 # Sem acentos e sem diferença de maiúsculas: "onus" encontra "Ônus".
@@ -22,6 +24,9 @@ def connect() -> sqlite3.Connection:
 
     connection = sqlite3.connect(f"{database_path.as_uri()}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
+    # Funções só de comparação, para filtrar sem acento/caixa dentro do SQL (T3.11); não alteram dados.
+    connection.create_function("comparable_text", 1, comparable_text, deterministic=True)
+    connection.create_function("comparable_district", 1, comparable_district, deterministic=True)
     return connection
 
 

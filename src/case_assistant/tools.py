@@ -3,12 +3,12 @@
 import functools
 import re
 import sqlite3
-import unicodedata
 from collections.abc import Callable
 from typing import Any
 
 from case_assistant.case_number import CASE_NUMBER_PATTERN, extract_case_number
 from case_assistant.db import ensure_search_index
+from case_assistant.text_normalization import comparable_district, comparable_text
 
 # LEFT JOIN: 1.044 processos não têm magistrado e não podem sumir da consulta.
 # LOWER(TRIM()): a situação vem como "Julgado", "JULGADO" ou "julgado" e é devolvida sempre em minúsculas.
@@ -101,6 +101,15 @@ SEARCH_TEXT_COUNT_QUERY = """
 """
 WORD_PATTERN = re.compile(r"\w+")
 SEARCH_PARTIES_MAX_PEOPLE, SEARCH_PARTIES_MAX_CASES = 10, 10
+SEARCH_CASES_DEFAULT_LIMIT, SEARCH_CASES_MAX_LIMIT = 20, 50
+ISO_DATE_PATTERN = re.compile(r"\d{4}-\d{2}-\d{2}")
+SEARCH_CASES_ORDER_COLUMNS = {"filing_date": "p.dt_aut", "sentence_date": "p.data_sentenca", "claim_value": "p.valor_causa"}
+# LEFT JOIN: 1.044 processos não têm magistrado. Textos comparados sem acento/caixa (funções registradas em db.py).
+SEARCH_CASES_FROM = """
+    FROM processo p
+    LEFT JOIN unidade u ON u.id = p.unidade_id
+    LEFT JOIN magistrado m ON m.id = p.magistrado_id
+"""
 MATCHING_PARTY_DOCUMENTS_QUERY = """
     SELECT DISTINCT pa.documento FROM temp.party_search
     JOIN parte pa ON pa.id = party_search.rowid
@@ -122,8 +131,6 @@ ACTIVE_UNIT_STATUS = "ativa"
 # Acima disso só existe um valor no banco: 9.999.999.999, com cara de preenchimento; o seguinte é 1,27 milhão.
 IMPLAUSIBLE_CLAIM_VALUE = 100_000_000
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
-# Abreviações de comarca encontradas no banco ("S. José", "Bal. Camboriú", "Sto. Amaro da Imperatriz").
-DISTRICT_ABBREVIATIONS = {"s.": "sao", "sto.": "santo", "bal.": "balneario"}
 
 
 class NotFoundError(Exception):
@@ -201,7 +208,7 @@ def _registry_warnings(case: dict[str, Any]) -> list[str]:
 
     district, unit_district = case["district"], case["court_unit_district"]
     if district != unit_district:
-        if _comparable_district(district) == _comparable_district(unit_district):
+        if comparable_district(district) == comparable_district(unit_district):
             warnings.append(
                 f"A comarca está grafada de forma diferente no processo ('{district}') e na vara ('{unit_district}')."
             )
@@ -228,15 +235,7 @@ def _brazilian_currency(value: float) -> str:
     return "R$ " + f"{value:,.2f}".replace(",", "\u00a0").replace(".", ",").replace("\u00a0", ".")
 
 
-def _comparable_text(text: str) -> str:
-    """Só para comparar: sem acento, sem diferença de caixa e de espaços."""
-    without_accents = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
-    return " ".join(without_accents.lower().split())
 
-
-def _comparable_district(district: str) -> str:
-    """Como `_comparable_text`, com as abreviações de comarca do banco por extenso."""
-    return " ".join(DISTRICT_ABBREVIATIONS.get(word, word) for word in _comparable_text(district).split())
 
 
 def _judgment(connection: sqlite3.Connection, case_id: int, sentence_date: str | None) -> dict[str, Any]:
@@ -462,6 +461,76 @@ def search_parties(connection: sqlite3.Connection, name: str) -> dict[str, Any]:
     return result
 
 
+def search_cases(
+    connection: sqlite3.Connection,
+    subject: str | None = None,
+    case_class: str | None = None,
+    district: str | None = None,
+    court_unit: str | None = None,
+    judge: str | None = None,
+    status: str | None = None,
+    filing_date_from: str | None = None,
+    filing_date_to: str | None = None,
+    sentence_date_from: str | None = None,
+    sentence_date_to: str | None = None,
+    claim_value_min: float | None = None,
+    claim_value_max: float | None = None,
+    order_by: str = "filing_date",
+    limit: int = SEARCH_CASES_DEFAULT_LIMIT,
+) -> dict[str, Any]:
+    """Processos por atributo: assunto, classe, comarca, vara, magistrado, situação, período e valor — total e lista.
+
+    Filtros de texto são "contém", sem diferença de acento e de maiúsculas. Datas no formato AAAA-MM-DD.
+    Ordenação: "filing_date" (autuação), "sentence_date" ou "claim_value", sempre do maior para o menor.
+    """
+    dates = [filing_date_from, filing_date_to, sentence_date_from, sentence_date_to]
+    if any(date is not None and not ISO_DATE_PATTERN.fullmatch(date) for date in dates):
+        return {"found": False, "message": "Use datas no formato AAAA-MM-DD (ex.: 2024-01-31)."}
+    if order_by not in SEARCH_CASES_ORDER_COLUMNS:
+        return {"found": False, "message": f"Ordenação '{order_by}' inválida. Use: {', '.join(SEARCH_CASES_ORDER_COLUMNS)}."}
+
+    text_filters = [
+        ("comparable_text(p.assunto)", subject, comparable_text),
+        ("comparable_text(p.classe)", case_class, comparable_text),
+        ("comparable_district(p.comarca)", district, comparable_district),
+        ("comparable_text(u.vara)", court_unit, comparable_text),
+        ("comparable_text(m.nome)", judge, comparable_text),
+    ]
+    conditions = [f"{column} LIKE ?" for column, value, _ in text_filters if value]
+    parameters: list[Any] = [f"%{normalize(value)}%" for _, value, normalize in text_filters if value]
+    range_filters = [
+        ("LOWER(TRIM(p.situacao)) =", comparable_text(status)),
+        ("p.dt_aut >=", filing_date_from), ("p.dt_aut <=", filing_date_to),
+        ("p.data_sentenca >=", sentence_date_from), ("p.data_sentenca <=", sentence_date_to),
+        ("p.valor_causa >=", claim_value_min), ("p.valor_causa <=", claim_value_max),
+    ]
+    conditions += [f"{expression} ?" for expression, value in range_filters if value is not None]
+    parameters += [value for _, value in range_filters if value is not None]
+    if not conditions:
+        return {"found": False, "message": "Informe ao menos um filtro (assunto, classe, comarca, vara, magistrado, situação, datas ou valor)."}
+
+    where = " WHERE " + " AND ".join(conditions)
+    total = connection.execute(f"SELECT COUNT(*) AS total {SEARCH_CASES_FROM}{where}", parameters).fetchone()["total"]
+    if not total:
+        return {"found": False, "message": "Nenhum processo atende aos filtros."}
+    order_column = SEARCH_CASES_ORDER_COLUMNS[order_by]
+    rows = connection.execute(
+        f"SELECT p.numero, p.classe, p.assunto, p.comarca, LOWER(TRIM(p.situacao)) AS situacao, p.dt_aut, p.valor_causa"
+        f" {SEARCH_CASES_FROM}{where} ORDER BY {order_column} IS NULL, {order_column} DESC, p.numero LIMIT ?",
+        [*parameters, max(1, min(limit, SEARCH_CASES_MAX_LIMIT))],
+    ).fetchall()
+    return {
+        "found": True,
+        "total": total,
+        "cases": [
+            {"case_number": row["numero"], "case_class": row["classe"], "subject": row["assunto"],
+             "district": row["comarca"], "status": row["situacao"], "filing_date": row["dt_aut"],
+             "claim_value": row["valor_causa"]}
+            for row in rows
+        ],
+    }
+
+
 def _people_by_document(connection: sqlite3.Connection, documents: list[str]) -> list[dict[str, Any]]:
     query = PARTY_CASES_QUERY.format(placeholders=", ".join("?" * len(documents)))
     people: dict[str, dict[str, Any]] = {}
@@ -493,9 +562,9 @@ def _search_queries(words: list[str]) -> list[tuple[str, str]]:
 
 
 def _canonical_document_type(connection: sqlite3.Connection, document_type: str) -> str | None:
-    wanted = _comparable_text(document_type)
+    wanted = comparable_text(document_type)
     for row in connection.execute("SELECT DISTINCT tipo FROM documento"):
-        if _comparable_text(row["tipo"]) == wanted:
+        if comparable_text(row["tipo"]) == wanted:
             return row["tipo"]
     return None
 

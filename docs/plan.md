@@ -375,6 +375,7 @@ flowchart LR
     subgraph SRC["src/case_assistant/"]
         DB["db.py<br/><i>conexão ro, FTS5 em TEMP</i>"]
         CASENUM["case_number.py<br/><i>número CNJ no texto</i>"]
+        TEXTNORM["text_normalization.py<br/><i>comparar sem acento/caixa</i>"]
         TOOLS["tools.py<br/><i>as 7 ferramentas</i>"]
         PROMPTS["prompts.py<br/><i>system prompt</i>"]
         AGENT["agent.py<br/><i>loop Pydantic AI + sessão</i>"]
