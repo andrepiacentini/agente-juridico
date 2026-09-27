@@ -9,7 +9,7 @@
 
 ### T11.1 — Tamanho da memória de conversa do modelo `[ ]`
 - **Objetivo:** configurar a janela de contexto em 16 mil tokens e a compactação da memória do modelo (`q8_0`).
-- **Passos:** configurar `num_ctx` e `OLLAMA_KV_CACHE_TYPE=q8_0`; medir uso de RAM com o Monitor de Atividade.
+- **Passos:** configurar `num_ctx` e `OLLAMA_KV_CACHE_TYPE=q8_0`; medir uso de RAM com o Monitor de Atividade. Urgência medida na T5.6 (D40): o Ollama está em 4.096 tokens e instruções + ferramentas já ocupam ~2.900 — um resumo com documentos lidos estouraria sem aviso. Verificar se o prefixo `ollama:` do Pydantic AI repassa `num_ctx` ou se é preciso configurar no servidor (`OLLAMA_CONTEXT_LENGTH`).
 - **Pronto quando:** o uso total fica abaixo de ~7 GB durante a pergunta de resumo.
 - **Depende de:** E05.
 - **Para explicar à banca:** "Calculei o orçamento de memória antes: modelo, contexto e sistema cabem em 7 dos 8 GB."
