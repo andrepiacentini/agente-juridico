@@ -67,9 +67,9 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Texto só é carregado quando o agente pede, e sempre com o id para ele citar a fonte."
 
-### T3.9 — `search_text`: termos nos documentos `[ ]`
+### T3.9 — `search_text`: termos nos documentos `[x]`
 - **Objetivo:** encontrar documentos que mencionam um termo, com um trecho em volta.
-- **Passos:** usar o índice da T2.5; filtros opcionais por tipo de documento e por processo; limitar a quantidade de resultados.
+- **Passos:** usar o índice da T2.5 (criado na primeira busca da sessão, `ensure_search_index`, D32); o termo é quebrado em palavras e cada uma vai entre aspas — o texto do usuário nunca vira sintaxe do FTS5 (`boa-fé`, `art. 373`, `AND` não quebram a busca); primeiro frase exata, depois todas as palavras em qualquer ordem, informando o modo usado; filtros opcionais por processo e por tipo de documento (tipo aceito em qualquer grafia; tipo inexistente devolve a lista de tipos válidos); resultados por relevância, com total, limite padrão 10 e máximo 20. Medido: 0,4 s na primeira busca (monta o índice), ~6 ms nas seguintes.
 - **Pronto quando:** teste com "inversão do ônus" devolve documentos com id e trecho.
 - **Depende de:** T2.5.
 - **Para explicar à banca:** "Busca por palavra, não por 'significado parecido' — resolve o que o edital pede sem precisar de banco vetorial."

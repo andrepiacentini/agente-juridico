@@ -41,3 +41,12 @@ def create_search_index(connection: sqlite3.Connection) -> None:
         CREATE VIRTUAL TABLE temp.party_search USING fts5(nome, tokenize='{SEARCH_TOKENIZER}');
         INSERT INTO temp.party_search (rowid, nome) SELECT id, nome FROM main.parte;
     """)
+
+
+def ensure_search_index(connection: sqlite3.Connection) -> None:
+    """Cria o índice de busca só se esta conexão ainda não o tiver — o custo é pago uma vez por sessão (D32)."""
+    exists = connection.execute(
+        "SELECT 1 FROM sqlite_temp_master WHERE type = 'table' AND name = 'document_search'"
+    ).fetchone()
+    if exists is None:
+        create_search_index(connection)
