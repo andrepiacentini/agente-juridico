@@ -35,9 +35,9 @@
 - **Depende de:** T4.1.
 - **Para explicar à banca:** "Quando o agente erra, ele lê o erro e pode corrigir — é assim que ele aprende dentro da própria conversa."
 
-### T4.5 — Descrição do banco para o modelo `[ ]`
+### T4.5 — Descrição do banco para o modelo `[x]`
 - **Objetivo:** um texto curto com tabelas, colunas e as armadilhas conhecidas, para o modelo escrever SQL correto.
-- **Passos:** escrever em `prompts.py` a descrição das 7 tabelas, com notas como "use `LOWER(situacao)`" e "datas são texto AAAA-MM-DD".
+- **Passos:** `DATABASE_DESCRIPTION` em `prompts.py`: as 7 tabelas com todas as colunas e os valores possíveis dos campos de situação/polo; 11 armadilhas medidas nos épicos anteriores (datas, caixa da situação, `LEFT JOIN` do magistrado, três sinais de julgamento, grafia de comarcas com `comparable_district`, polo × `parte.tipo`, homônimos, advogados em `documento.autor`, movimentações órfãs, valores de preenchimento, não listar `texto`); dois exemplos de consulta. Testes conferem, contra o banco, que toda coluna aparece e que os exemplos rodam. Medido: 2.501 caracteres, ~715 tokens.
 - **Pronto quando:** o texto tem menos de ~800 tokens e cobre todas as colunas.
 - **Depende de:** nada (só leitura do `plan.md` §2).
 - **Para explicar à banca:** "O modelo recebe o mapa do banco com os avisos das armadilhas já escritos."
