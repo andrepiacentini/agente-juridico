@@ -110,11 +110,12 @@ Os números abaixo custaram uma sessão de profiling; não os re-derive, use-os 
 - 7 tabelas: `processo` (10.000) no centro; `documento` (25.582, texto íntegro ~21 MB), `movimentacao` (134.046), `processo_parte`/`parte`, `magistrado`, `unidade`. Datas são texto ISO `YYYY-MM-DD`.
 - **63% dos processos (6.309) não têm documento nenhum.** Resumo só por movimentações; minuta impossível.
 - `situacao` tem casing misto (`Julgado`/`JULGADO`/`julgado`) — sempre `LOWER()`.
-- Situação de julgamento nunca vem de um sinal só: cruzar `data_sentenca`, movimentação `9219/9220/9221` e documento tipo `Sentença`. Há 4.426 processos com `data_sentenca` sem documento de sentença e 37 no sentido inverso.
-- `magistrado_id` NULL em 1.044 processos; 2.022 processos têm juiz `aposentado`/`removido`; 1.024 têm `processo.comarca ≠ unidade.comarca`. Reportar, nunca inferir ou "corrigir".
+- Situação de julgamento nunca vem de um sinal só: cruzar `data_sentenca`, movimentação `9219/9220/9221` e documento tipo `Sentença` **ou** `Sentença Homologatória de Acordo` (os números abaixo só batem contando os dois tipos). Há 4.426 processos com `data_sentenca` sem documento de sentença e 37 no sentido inverso.
+- `magistrado_id` NULL em 1.044 processos; 2.022 processos têm juiz `aposentado`/`removido`; 1.024 têm `processo.comarca ≠ unidade.comarca` — mas todas são a **mesma comarca grafada de outro jeito** (espaço sobrando, sem acento, caixa diferente ou abreviação como `S. José`), nenhuma é outra cidade (D34). Reportar, nunca inferir ou "corrigir".
 - 402 movimentações órfãs (processo inexistente) — só aparecem sem JOIN.
-- 643 nomes de parte homônimos com CPF diferente — pedir desambiguação.
-- **Advogados não têm tabela.** Estão em `documento.autor` ("Dr. X — OAB/SC 99.170") e no texto; o metadado `autor` às vezes diverge da assinatura no texto.
+- 643 nomes de parte homônimos com CPF diferente — pedir desambiguação. No sentido inverso, 332 CPFs/CNPJs aparecem com mais de um nome (erros de digitação como "Mendes"/"Mendez", mas também empresas diferentes com o mesmo CNPJ): a pessoa é o documento, e a divergência é reportada (D38).
+- `parte.tipo` (autor/réu) é do cadastro da pessoa, não do processo: contradiz `processo_parte.polo` em 1.633 vínculos. O papel no processo é sempre o `polo` (D35). 99 vínculos repetem a mesma parte no mesmo polo.
+- **Advogados não têm tabela.** Estão em `documento.autor` ("Dr. X — OAB/SC 99.170") e no texto. Em 309 documentos a OAB cadastrada não aparece nas assinaturas do texto; a petição de acordo é assinada pelos advogados dos dois lados (não comparar só com a última OAB); em 8 processos a mesma OAB assina peças dos dois lados. Lado do advogado: D37.
 - Casos de referência: **3161** (`0000007-79.2023.8.99.9014`, 19 docs, sentença parcialmente procedente, juiz aposentado) e **1** (`0000001-43.2021.8.99.9014`, zero docs, `julgado` minúsculo).
 
 ## Ambiente do autor

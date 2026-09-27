@@ -4,6 +4,8 @@ import os
 import sqlite3
 from pathlib import Path
 
+from case_assistant.text_normalization import comparable_district, comparable_text
+
 DATABASE_PATH_VARIABLE = "DATABASE_PATH"
 DEFAULT_DATABASE_PATH = Path(__file__).resolve().parents[2] / "desafio.sqlite"
 # Sem acentos e sem diferença de maiúsculas: "onus" encontra "Ônus".
@@ -22,6 +24,9 @@ def connect() -> sqlite3.Connection:
 
     connection = sqlite3.connect(f"{database_path.as_uri()}?mode=ro", uri=True)
     connection.row_factory = sqlite3.Row
+    # Funções só de comparação, para filtrar sem acento/caixa dentro do SQL (T3.11); não alteram dados.
+    connection.create_function("comparable_text", 1, comparable_text, deterministic=True)
+    connection.create_function("comparable_district", 1, comparable_district, deterministic=True)
     return connection
 
 
@@ -41,3 +46,12 @@ def create_search_index(connection: sqlite3.Connection) -> None:
         CREATE VIRTUAL TABLE temp.party_search USING fts5(nome, tokenize='{SEARCH_TOKENIZER}');
         INSERT INTO temp.party_search (rowid, nome) SELECT id, nome FROM main.parte;
     """)
+
+
+def ensure_search_index(connection: sqlite3.Connection) -> None:
+    """Cria o índice de busca só se esta conexão ainda não o tiver — o custo é pago uma vez por sessão (D32)."""
+    exists = connection.execute(
+        "SELECT 1 FROM sqlite_temp_master WHERE type = 'table' AND name = 'document_search'"
+    ).fetchone()
+    if exists is None:
+        create_search_index(connection)

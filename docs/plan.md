@@ -252,7 +252,9 @@ stateDiagram-v2
 | `listar_movimentacoes` | `numero` | Lista cronológica (código, descrição, data) | Compacta |
 | `listar_documentos` | `numero` | Metadados: id, tipo, autor, data, páginas, tamanho — **sem texto** | Advogados = autores com "OAB" |
 | `ler_documento` | `id` | Texto completo | Só sob demanda |
-| `buscar_texto` | `termo`, opcional `tipo`/`numero` | Hits FTS5 com snippet e ids | Para termos e nomes |
+| `buscar_texto` (`search_text`) | `termo`, opcional `tipo`/`numero` | Hits FTS5 com snippet e ids | Termos nos documentos |
+| `search_parties` (T3.10, D38) | nome | Pessoas por CPF/CNPJ, com nomes, processos e polo | Separa homônimos e pede desambiguação |
+| `search_cases` (T3.11, D36) | filtros: assunto, classe, comarca, vara, magistrado, situação, datas, valor; ordenação; limite | Total + lista compacta (número, classe, assunto, comarca, situação, data, valor) | Perguntas "quais/quantos processos…" sem SQL do modelo; texto comparado sem acento/caixa |
 | `consultar_sql` | `sql` | Linhas (máx. 50) | Só `SELECT`/`WITH`; sem `;`, `PRAGMA`, `ATTACH`; timeout 5 s; conexão `mode=ro` |
 
 Ferramentas retornam **dados compactos por padrão e texto completo só sob demanda**. É isso que faz funcionar em 8 GB: o modelo nunca recebe 19 documentos de uma vez a menos que peça.
@@ -373,6 +375,7 @@ flowchart LR
     subgraph SRC["src/case_assistant/"]
         DB["db.py<br/><i>conexão ro, FTS5 em TEMP</i>"]
         CASENUM["case_number.py<br/><i>número CNJ no texto</i>"]
+        TEXTNORM["text_normalization.py<br/><i>comparar sem acento/caixa</i>"]
         TOOLS["tools.py<br/><i>as 7 ferramentas</i>"]
         PROMPTS["prompts.py<br/><i>system prompt</i>"]
         AGENT["agent.py<br/><i>loop Pydantic AI + sessão</i>"]
