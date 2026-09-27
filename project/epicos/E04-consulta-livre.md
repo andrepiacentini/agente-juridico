@@ -1,4 +1,4 @@
-# E04 — Consulta livre protegida (`consultar_sql`)
+# E04 — Consulta livre protegida (`run_sql`)
 
 [← Roadmap](../ROADMAP.md)
 
@@ -7,12 +7,12 @@
 
 ---
 
-### T4.1 — Aceitar só consultas de leitura `[ ]`
+### T4.1 — Aceitar só consultas de leitura `[x]`
 - **Objetivo:** recusar qualquer comando que não seja `SELECT` ou `WITH`.
-- **Passos:** validar o início do comando; recusar `;` (vários comandos), `PRAGMA` e `ATTACH`; devolver motivo da recusa.
+- **Passos:** em `src/case_assistant/sql_query.py`, `run_sql`: validar que é um único comando começando por `SELECT`/`WITH`, sem palavras de escrita ou administração (`INSERT`, `UPDATE`, `DELETE`, `DROP`, `CREATE`, `ALTER`, `PRAGMA`, `ATTACH`, `DETACH`, `VACUUM`, `REINDEX`) fora de textos entre aspas; aceitar um `;` final; devolver o motivo da recusa. Terceira camada (D39): autorizador do SQLite ativo só durante a consulta, permitindo apenas leitura e funções — com uma única exceção, o `PRAGMA data_version` que o índice de busca faz internamente.
 - **Pronto quando:** `SELECT` passa; `DROP`, `DELETE`, `PRAGMA` e `SELECT 1; DROP ...` são recusados.
 - **Depende de:** T2.1.
-- **Para explicar à banca:** "São duas camadas: a validação recusa o comando e, se algo escapar, a conexão somente leitura barra."
+- **Para explicar à banca:** "São três camadas: a validação recusa o comando; se algo escapar, o próprio SQLite nega qualquer operação que não seja leitura; e, por baixo de tudo, a conexão é somente leitura."
 
 ### T4.2 — Limite de linhas `[ ]`
 - **Objetivo:** nunca devolver mais de 50 linhas ao modelo.

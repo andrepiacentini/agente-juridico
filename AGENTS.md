@@ -38,7 +38,7 @@ Regras que atravessam todo o código:
 
 - **Banco é somente leitura.** Abrir sempre com `file:desafio.sqlite?mode=ro`. Índices FTS5 e views auxiliares vão em `TEMP`, nunca no arquivo. O arquivo `desafio.sqlite` não é modificado nem commitado com alterações.
 - **Metadados primeiro, texto sob demanda.** Ferramentas de listagem devolvem ids/tipos/datas, nunca `documento.texto`; só `ler_documento(id)` devolve texto. É o que faz o agente caber em 8 GB de RAM com `qwen3:4b`.
-- **`consultar_sql` é válvula de escape, não caminho principal.** Só `SELECT`/`WITH`, sem `;`, `PRAGMA`, `ATTACH`; `LIMIT` forçado; timeout. Erros do SQLite voltam ao modelo como observação, com teto de tentativas.
+- **`run_sql` (conceitual: `consultar_sql`) é válvula de escape, não caminho principal.** Três camadas de leitura (D39): validação do texto (só `SELECT`/`WITH`, um comando, sem palavras de escrita/administração), autorizador do SQLite durante a consulta e conexão `mode=ro`; `LIMIT` forçado; timeout. Erros do SQLite voltam ao modelo como observação, com teto de tentativas.
 - **Toda resposta cita a fonte** (`documento.id` + tipo + data, ou a movimentação). A UI (Chainlit) exibe cada tool call como passo — a fundamentação tem que ser visível.
 - **`processo_em_foco`** é estado explícito da sessão, injetado no system prompt a cada turno; ferramentas o usam quando a pergunta não traz número.
 - **Minuta de sentença** sempre abre com "PROPOSTA DE MINUTA — texto não proferido" e é recusada se não houver petição inicial e contestação.
