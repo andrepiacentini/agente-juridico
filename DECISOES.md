@@ -260,12 +260,28 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** repetir o teste do Gemini até funcionar (consumiria a cota do dia seguinte e não resolveria o limite); considerar a T5.8 concluída com o resumo raso do modelo local.
 - **Uso de IA:** o Claude Code parou o teste ao ler a mensagem de cota, em vez de continuar tentando; notou a alucinação comparando cada frase do resumo com o que as ferramentas devolveram.
 
+### D43 — Roteiro de resumo nas instruções; com o Gemini pago, a pergunta 1 do edital passa
+- **Decisão:** as instruções do agente ganham um roteiro para resumir um processo — dados básicos, andamento, índice de documentos, leitura da petição inicial, da contestação e da sentença, redação citando cada fonte — e a regra de não deduzir fatos do assunto ou da classe do processo. A cota do Gemini foi resolvida ativando a cobrança do projeto com os créditos do Google AI Pro (D42). A T5.8 fica concluída.
+- **Resultado:** a mesma pergunta da D42 ("Resuma o processo 0000007-79.2023.8.99.9014…"), 2 rodadas por modelo:
+
+  | | Modelo local + roteiro | Gemini 3.8 Flash (pago) + roteiro |
+  |---|---|---|
+  | Seguiu o roteiro e leu inicial, contestação e sentença | sim | sim (e, numa rodada, também a apelação) |
+  | Fatos e resultado (parcialmente procedente, R$ 1.523,18) | corretos | corretos |
+  | Honorários | errou em 1 de 2 | corretos nas 2 |
+  | Andamento com a fase recursal (embargos, apelação, remessa) | omitiu | completo |
+  | Cita a fonte com o id | 0 de 2 | quase toda frase ([doc. 7865 — Petição Inicial, 08/01/2024]) |
+  | Tempo | 128–144 s | 12–15 s |
+
+- **Por quê:** o roteiro resolveu o problema principal da D42 — o [modelo local](docs/glossario.md#modelo-local) passou a ler os documentos em vez de parar no cartão do processo —, mas ele continua lento para uma apresentação e ainda erra detalhes. Para ler três documentos, foi preciso subir a [janela de contexto](docs/glossario.md#contexto) do Ollama para 8.192 [tokens](docs/glossario.md#token) (no limite: o último pedido usou 7.950); o valor final e o uso de memória são decididos na T11.1. Correção da D40: o Ollama **não** corta o excesso em silêncio — ele recusa o pedido com erro explícito ("exceeds the available context size"), e o agente não repete esse erro, porque não é temporário.
+- **Pontos para depois:** o resumo expõe nomes de ferramentas como fonte de dados do cadastro ("[find_case]") — formato a definir na T7.7; e nenhum modelo apontou datas do próprio banco que não fecham no 3161 (trânsito em julgado registrado três dias depois da apelação; remessa à instância superior antes da juntada da apelação) — o aviso da T3.6 só cobre recurso *depois* do trânsito; fica para o E07.
+- **Uso de IA:** o Claude Code conferiu cada fato dos resumos contra os textos da sentença e as movimentações antes de avaliar; foi assim que apareceram o erro de honorários e a omissão da fase recursal no modelo local.
+
 ---
 
 ## Pendências de decisão
 
 Decisões já identificadas, ainda não tomadas (viram entradas datadas quando forem resolvidas):
 
-- Qual modelo usar como principal na demonstração — depende da comparação da D41 (Gemini duas vezes mais rápido, mas com recusas no plano gratuito), do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
+- Qual modelo usar como principal na demonstração — depende das comparações da D41 e da D43 (no resumo, Gemini pago em 12–15 s e completo × local em 2 min e com erros) (Gemini duas vezes mais rápido, mas com recusas no plano gratuito), do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
 - Levar ou não o modelo reserva `qwen3:1.7b` para a apresentação (T11.5).
-- Qual modelo em nuvem usar com cota suficiente para testes, bateria de avaliação e apresentação (D42): ativar cobrança no Google AI Studio, usar os créditos mensais do Google AI Pro, ou colocar crédito na Anthropic (T1.10).
