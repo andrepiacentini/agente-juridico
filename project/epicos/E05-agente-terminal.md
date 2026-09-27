@@ -21,9 +21,9 @@
 - **Depende de:** T4.5.
 - **Para explicar à banca:** "As regras de comportamento estão num único arquivo, legível por qualquer pessoa."
 
-### T5.3 — Criar o agente com modelo configurável `[ ]`
+### T5.3 — Criar o agente com modelo configurável `[x]`
 - **Objetivo:** criar o agente do Pydantic AI lendo o modelo de `LLM_MODEL`.
-- **Passos:** carregar `.env`; `Agent(model=os.environ["LLM_MODEL"], deps_type=Sessao, system_prompt=...)`; sem nenhum `if` por fornecedor.
+- **Passos:** `build_agent()` em `agent.py`: `Agent(model de LLM_MODEL, deps_type=Session, system_prompt=SYSTEM_PROMPT)`; sem nenhum `if` por fornecedor; `LLM_MODEL` ausente gera erro claro. Nível de raciocínio pela variável opcional `LLM_THINKING`, repassada à configuração genérica `thinking` do Pydantic AI — resolve o "raciocínio low" do Gemini (D30) sem código por fornecedor; o modelo local deixa vazio (não raciocina). Testes com o `TestModel` do Pydantic AI, sem IA nem rede. `.env.example` ganha `LLM_THINKING` e `PYDANTIC_AI_NO_BANNER=1` (esconde um aviso da biblioteca no terminal). Medido com o modelo local: "olá" respondido em 0,9 s (~1.345 tokens de entrada, quase todos das instruções).
 - **Pronto quando:** o agente responde "olá" com o modelo local.
 - **Depende de:** T5.1, T5.2.
 - **Para explicar à banca:** "O mesmo código fala com o modelo local ou com o Gemini; não existe caminho especial para nenhum."
