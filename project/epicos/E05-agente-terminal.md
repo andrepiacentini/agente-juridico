@@ -35,9 +35,9 @@
 - **Depende de:** T5.3, E04.
 - **Para explicar à banca:** "O modelo decide pela descrição de cada ferramenta — por isso elas são curtas e específicas."
 
-### T5.5 — Loop de conversa no terminal `[ ]`
+### T5.5 — Loop de conversa no terminal `[x]`
 - **Objetivo:** `cli.py` que lê a pergunta, responde e guarda o histórico.
-- **Passos:** laço `input()` → `agent.run_sync(pergunta, message_history=historico, deps=sessao)`; comando `sair`; imprimir cada ferramenta chamada.
+- **Passos:** `cli.chat()` — laço `input()` → `agent.run_sync(pergunta, message_history=historico, deps=sessao)`; `sair`, Ctrl+D e Ctrl+C encerram; cada ferramenta chamada aparece como `→ find_case(case_number='…')`; falha do modelo vira mensagem e a conversa continua; entrada e saída injetáveis, para testar com roteiro e `TestModel`; o chat esconde o aviso de observabilidade do Pydantic AI mesmo com `.env` antigo. Medido com o modelo local: "quem é o juiz do processo 0000007-79…?" → `find_case`, resposta certa com o aviso de juiz aposentado; "e qual é o valor da causa?" → R$ 3.796,73 pelo histórico, sem nova ferramenta — mas sem citar a fonte (tratado na T7.7).
 - **Pronto quando:** `uv run case-assistant` abre o chat e mantém duas perguntas seguidas.
 - **Depende de:** T5.4.
 - **Para explicar à banca:** "O terminal mostra cada consulta que o agente faz — dá para ver ele decidindo."
