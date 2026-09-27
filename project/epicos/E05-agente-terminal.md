@@ -2,15 +2,15 @@
 
 [← Roadmap](../ROADMAP.md)
 
-**Resultado do épico:** um chat no terminal (`uv run case-assistant`) em que o modelo usa as ferramentas para responder, funcionando tanto com o modelo local quanto com o Claude.
+**Resultado do épico:** um chat no terminal (`uv run case-assistant`) em que o modelo usa as ferramentas para responder, funcionando tanto com o modelo local quanto com o modelo em nuvem (Gemini, D30; Claude opcional).
 **Por que antes da interface web:** separa o "cérebro" da "tela" e vira o plano B da demonstração se o navegador der problema.
 
 ---
 
-### T5.1 — Estado da sessão `[ ]`
-- **Objetivo:** um objeto `Sessao` que guarda a conexão com o banco e o `processo_em_foco`.
-- **Passos:** `dataclass` em `agent.py` com `conexao` e `processo_em_foco: str | None`.
-- **Pronto quando:** as ferramentas recebem a sessão como parâmetro.
+### T5.1 — Estado da sessão `[x]`
+- **Objetivo:** um objeto `Session` que guarda a conexão com o banco e o processo em foco.
+- **Passos:** `dataclass` em `src/case_assistant/session.py` (módulo próprio, sem depender do Pydantic AI) com `connection` e `focused_case_number: str | None`; `open_session()` abre o banco somente leitura, monta o índice de busca uma vez para a conversa inteira (D32) e fecha a conexão ao final.
+- **Pronto quando:** a sessão abre com conexão somente leitura, índice pronto e sem foco, e fecha a conexão ao terminar. As ferramentas continuam recebendo a conexão (não a abrem, `AGENTS.md`); o agente passa `session.connection` a elas na T5.4.
 - **Depende de:** E03.
 - **Para explicar à banca:** "A sessão é a memória de trabalho do agente: sabe com qual banco fala e de qual processo estamos tratando."
 
@@ -26,12 +26,12 @@
 - **Passos:** carregar `.env`; `Agent(model=os.environ["LLM_MODEL"], deps_type=Sessao, system_prompt=...)`; sem nenhum `if` por fornecedor.
 - **Pronto quando:** o agente responde "olá" com o modelo local.
 - **Depende de:** T5.1, T5.2.
-- **Para explicar à banca:** "O mesmo código fala com o modelo local ou com o Claude; não existe caminho especial para nenhum."
+- **Para explicar à banca:** "O mesmo código fala com o modelo local ou com o Gemini; não existe caminho especial para nenhum."
 
 ### T5.4 — Registrar as ferramentas no agente `[ ]`
-- **Objetivo:** tornar as 7 ferramentas visíveis para o modelo.
+- **Objetivo:** tornar as ferramentas visíveis para o modelo (8 do E03 + `run_sql` do E04).
 - **Passos:** registrar cada função com `@agent.tool`; revisar a descrição (docstring) de cada uma, que é o que o modelo lê para decidir.
-- **Pronto quando:** perguntar "quais ferramentas você tem?" lista as 7.
+- **Pronto quando:** perguntar "quais ferramentas você tem?" lista as 9.
 - **Depende de:** T5.3, E04.
 - **Para explicar à banca:** "O modelo decide pela descrição de cada ferramenta — por isso elas são curtas e específicas."
 
@@ -49,9 +49,9 @@
 - **Depende de:** T5.5.
 - **Para explicar à banca:** "O primeiro teste de ponta a ponta foi com o modelo local, porque é o cenário mais difícil."
 
-### T5.7 — Mesma pergunta com o Claude `[ ]`
+### T5.7 — Mesma pergunta com o modelo em nuvem (Gemini) `[ ]`
 - **Objetivo:** provar que a troca de modelo é só configuração.
-- **Passos:** mudar `LLM_MODEL` no `.env`; repetir a pergunta da T5.6; comparar.
+- **Passos:** mudar `LLM_MODEL` para `google:gemini-3.8-flash` no `.env` (D30); repetir a pergunta da T5.6; comparar. Lembrar que no Gemini o limite de saída inclui o raciocínio (T1.9).
 - **Pronto quando:** funciona sem mudar nenhuma linha de código; a comparação está anotada.
 - **Depende de:** T5.6.
 - **Para explicar à banca:** "Troquei o modelo mudando uma linha de configuração, ao vivo."
