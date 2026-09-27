@@ -65,9 +65,10 @@
 - **Depende de:** T5.7.
 - **Para explicar à banca:** "O resumo segue o caminho: dados básicos → índice dos documentos → leitura só dos relevantes → texto com citações."
 
-### T5.9 — Repetir automaticamente pedidos recusados pelo serviço do modelo `[ ]`
+### T5.9 — Repetir automaticamente pedidos recusados pelo serviço do modelo `[x]`
 - **Objetivo:** quando o serviço do modelo recusar um pedido por indisponibilidade temporária, tentar de novo sozinho em vez de mostrar a falha na primeira recusa — e **avisar o usuário** de que está tentando de novo e por quê (D41).
 - **Passos:** no chat (`cli._ask`), tratar as recusas temporárias — erro 503 ("serviço indisponível / alta demanda"), 429 ("limite de pedidos") e falhas de conexão com o modelo; esperar alguns segundos, com espera crescente, e repetir até 3 vezes; **a cada nova tentativa, mostrar ao usuário uma mensagem como "O serviço do modelo está indisponível no momento (erro 503). Tentando de novo em 5 s… (tentativa 2 de 3)"**, para a espera nunca parecer travamento; só depois da última tentativa mostrar a falha. Erros que não são temporários (chave inválida, pedido malformado) não são repetidos. Vale para qualquer provedor, sem `if` por fornecedor.
 - **Pronto quando:** testes sem IA simulam uma recusa 503 seguida de sucesso (resposta chega, com o aviso de nova tentativa exibido), três recusas seguidas (aviso a cada tentativa e falha final) e um erro não temporário (falha imediata, sem repetir).
+- **Implementado:** `run_with_retries` em `agent.py` (reaproveitável pela interface web do E10), usado por `cli._ask`; temporários = HTTP 429, 500, 502, 503, 504 e falha de conexão (`ModelAPIError` sem código, ex.: Ollama fechado); esperas de 5 s e 10 s; aviso ao usuário a cada nova tentativa; erros como 400/401/403/404 falham na hora.
 - **Depende de:** T5.5.
 - **Para explicar à banca:** "O serviço gratuito às vezes fica ocupado; o chat avisa que está tentando de novo e, na maior parte das vezes, a resposta chega sem ninguém precisar repetir a pergunta."

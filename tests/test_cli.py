@@ -92,3 +92,26 @@ def test_main_hides_the_library_banner(monkeypatch) -> None:
     import os
 
     assert os.environ["PYDANTIC_AI_NO_BANNER"] == "1"
+
+
+def test_chat_shows_retry_notice_and_then_the_answer(monkeypatch) -> None:
+    from pydantic_ai.exceptions import ModelHTTPError
+
+    from case_assistant import agent as agent_module
+
+    monkeypatch.delenv("LLM_THINKING", raising=False)
+    monkeypatch.setattr(agent_module.time, "sleep", lambda _seconds: None)
+    real_run_sync = agent_module.Agent.run_sync
+    failures = iter([ModelHTTPError(status_code=503, model_name="x", body="alta demanda")])
+
+    def flaky_run_sync(self, *args, **kwargs):
+        for failure in failures:
+            raise failure
+        return real_run_sync(self, *args, **kwargs)
+
+    monkeypatch.setattr(agent_module.Agent, "run_sync", flaky_run_sync)
+    printed = run_chat(TestModel(call_tools=[], custom_output_text="Resposta depois da recusa."), "olá", "sair")
+
+    joined = "\n".join(printed)
+    assert "indisponível no momento (erro 503). Tentando de novo em 5 s… (tentativa 2 de 3)" in joined
+    assert "Resposta depois da recusa." in joined
