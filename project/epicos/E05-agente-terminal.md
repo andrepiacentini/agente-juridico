@@ -14,9 +14,9 @@
 - **Depende de:** E03.
 - **Para explicar à banca:** "A sessão é a memória de trabalho do agente: sabe com qual banco fala e de qual processo estamos tratando."
 
-### T5.2 — Instruções do agente, versão 1 `[ ]`
+### T5.2 — Instruções do agente, versão 1 `[x]`
 - **Objetivo:** o texto de instruções fixas (system prompt) em `prompts.py`.
-- **Passos:** papel ("assistente de consulta a processos do TJSC"), idioma português, "só afirme o que veio de uma ferramenta", formato de citação `[doc 7878 — Sentença, 18/02/2026]`, descrição do banco (T4.5).
+- **Passos:** `SYSTEM_PROMPT` em `prompts.py`: papel ("assistente de consulta a processos do TJSC"), idioma português, 8 regras (só afirmar o que veio de ferramenta; citação `[doc 7878 — Sentença, 18/02/2026]` e `[mov. 9219 — …]`; "Não consta no banco"; repassar os `warnings`; julgamento só pelo campo `judgment`; homônimos; minuta rotulada; datas e valores no formato brasileiro), guia de qual das 9 ferramentas usar e a descrição do banco (T4.5). Testes garantem que toda ferramenta citada existe no código. Medido: 4.348 caracteres, ~1.240 tokens. As regras de limite são testadas contra o modelo e refinadas no E07.
 - **Pronto quando:** o texto está revisado e cabe em ~1.500 tokens.
 - **Depende de:** T4.5.
 - **Para explicar à banca:** "As regras de comportamento estão num único arquivo, legível por qualquer pessoa."
