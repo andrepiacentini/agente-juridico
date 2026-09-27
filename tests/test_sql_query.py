@@ -1,5 +1,6 @@
 """Consulta livre (`run_sql`): só leitura, em três camadas — validação, autorizador do SQLite e conexão somente leitura."""
 
+import json
 import sqlite3
 from contextlib import closing
 
@@ -95,3 +96,44 @@ def test_blocked_by_sqlite_becomes_refusal_not_exception(connection) -> None:
 
     assert result["found"] is False
     assert result["message"].startswith("Consulta recusada:")
+
+
+def test_result_is_cut_at_fifty_rows_with_notice(connection) -> None:
+    result = run_sql(connection, "SELECT * FROM movimentacao")
+
+    assert result["row_count"] == 50
+    assert result["truncated"] is True
+    assert result["notice"] == (
+        "Resultado cortado em 50 linhas. Refine a consulta (WHERE, GROUP BY, COUNT) se precisar do restante."
+    )
+
+
+def test_small_result_is_not_marked_as_truncated(connection) -> None:
+    result = run_sql(connection, "SELECT id FROM processo WHERE id IN (1, 2, 3)")
+
+    assert result["row_count"] == 3
+    assert result["truncated"] is False
+    assert "notice" not in result
+
+
+def test_order_of_the_query_is_kept_when_cut(connection) -> None:
+    result = run_sql(connection, "SELECT id, valor_causa FROM processo ORDER BY valor_causa DESC")
+
+    assert result["rows"][0] == [6348, 9_999_999_999.0]
+
+
+def test_long_text_values_are_shortened(connection) -> None:
+    result = run_sql(connection, "SELECT id, texto FROM documento WHERE id = 7878")
+    shortened = result["rows"][0][1]
+
+    assert shortened.endswith("… [texto cortado em 300 de 2443 caracteres; use read_document para ler inteiro]")
+    assert len(shortened) < 400
+
+
+def test_result_is_cut_by_total_size_before_overloading_the_model(connection) -> None:
+    result = run_sql(connection, "SELECT id, texto FROM documento")
+
+    assert result["truncated"] is True
+    assert result["row_count"] < 50
+    assert len(json.dumps(result["rows"], ensure_ascii=False)) <= 6_000
+    assert result["notice"].startswith(f"Resultado cortado em {result['row_count']} linhas para não passar de 6000 caracteres.")
