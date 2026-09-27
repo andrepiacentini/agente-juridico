@@ -17,13 +17,20 @@ from case_assistant import sql_query, tools
 from case_assistant.session import Session
 
 
+def _remember_focus(ctx: RunContext[Session], result: dict[str, Any]) -> dict[str, Any]:
+    """O processo encontrado vira o processo em foco da conversa (E06); buscas de vários processos não mudam o foco."""
+    if result.get("found"):
+        ctx.deps.focused_case_number = result["case_number"]
+    return result
+
+
 async def find_case(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
     """Cartão do processo: classe, assunto, vara, juiz, datas, valor, situação, julgamento e avisos. Comece por ela.
 
     Args:
         case_number: número do processo no padrão CNJ, como 0000007-79.2023.8.99.9014.
     """
-    return tools.find_case(ctx.deps.connection, case_number)
+    return _remember_focus(ctx, tools.find_case(ctx.deps.connection, case_number))
 
 
 async def list_parties(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
@@ -32,7 +39,7 @@ async def list_parties(ctx: RunContext[Session], case_number: str) -> dict[str, 
     Args:
         case_number: número do processo no padrão CNJ.
     """
-    return tools.list_parties(ctx.deps.connection, case_number)
+    return _remember_focus(ctx, tools.list_parties(ctx.deps.connection, case_number))
 
 
 async def list_movements(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
@@ -41,7 +48,7 @@ async def list_movements(ctx: RunContext[Session], case_number: str) -> dict[str
     Args:
         case_number: número do processo no padrão CNJ.
     """
-    return tools.list_movements(ctx.deps.connection, case_number)
+    return _remember_focus(ctx, tools.list_movements(ctx.deps.connection, case_number))
 
 
 async def list_documents(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
@@ -50,7 +57,7 @@ async def list_documents(ctx: RunContext[Session], case_number: str) -> dict[str
     Args:
         case_number: número do processo no padrão CNJ.
     """
-    return tools.list_documents(ctx.deps.connection, case_number)
+    return _remember_focus(ctx, tools.list_documents(ctx.deps.connection, case_number))
 
 
 async def read_document(ctx: RunContext[Session], document_id: int) -> dict[str, Any]:
