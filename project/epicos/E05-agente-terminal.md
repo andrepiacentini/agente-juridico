@@ -50,10 +50,11 @@
 - **Depende de:** T5.5.
 - **Para explicar à banca:** "O primeiro teste de ponta a ponta foi com o modelo local, porque é o cenário mais difícil."
 
-### T5.7 — Mesma pergunta com o modelo em nuvem (Gemini) `[ ]`
+### T5.7 — Mesma pergunta com o modelo em nuvem (Gemini) `[x]`
 - **Objetivo:** provar que a troca de modelo é só configuração.
 - **Passos:** mudar `LLM_MODEL` para `google:gemini-3.8-flash` no `.env` (D30); repetir a pergunta da T5.6; comparar. Lembrar que no Gemini o limite de saída inclui o raciocínio (T1.9).
 - **Pronto quando:** funciona sem mudar nenhuma linha de código; a comparação está anotada.
+- **Resultado (D41):** nenhuma linha de código alterada; 3/3 com a ferramenta e as partes corretas, em 6–11 s (local: 35 s na 1ª, 13–14 s depois); citou a fonte em 2/3, em formato próprio; **2 recusas 503** do plano gratuito na 1ª rodada (resposta na 3ª tentativa, ~27 s).
 - **Depende de:** T5.6.
 - **Para explicar à banca:** "Troquei o modelo mudando uma linha de configuração, ao vivo."
 
@@ -63,3 +64,10 @@
 - **Pronto quando:** o resumo está correto, cita documentos e o que deu errado (se algo) está anotado.
 - **Depende de:** T5.7.
 - **Para explicar à banca:** "O resumo segue o caminho: dados básicos → índice dos documentos → leitura só dos relevantes → texto com citações."
+
+### T5.9 — Repetir automaticamente pedidos recusados pelo serviço do modelo `[ ]`
+- **Objetivo:** quando o serviço do modelo recusar um pedido por indisponibilidade temporária, tentar de novo sozinho em vez de mostrar a falha na primeira recusa — e **avisar o usuário** de que está tentando de novo e por quê (D41).
+- **Passos:** no chat (`cli._ask`), tratar as recusas temporárias — erro 503 ("serviço indisponível / alta demanda"), 429 ("limite de pedidos") e falhas de conexão com o modelo; esperar alguns segundos, com espera crescente, e repetir até 3 vezes; **a cada nova tentativa, mostrar ao usuário uma mensagem como "O serviço do modelo está indisponível no momento (erro 503). Tentando de novo em 5 s… (tentativa 2 de 3)"**, para a espera nunca parecer travamento; só depois da última tentativa mostrar a falha. Erros que não são temporários (chave inválida, pedido malformado) não são repetidos. Vale para qualquer provedor, sem `if` por fornecedor.
+- **Pronto quando:** testes sem IA simulam uma recusa 503 seguida de sucesso (resposta chega, com o aviso de nova tentativa exibido), três recusas seguidas (aviso a cada tentativa e falha final) e um erro não temporário (falha imediata, sem repetir).
+- **Depende de:** T5.5.
+- **Para explicar à banca:** "O serviço gratuito às vezes fica ocupado; o chat avisa que está tentando de novo e, na maior parte das vezes, a resposta chega sem ninguém precisar repetir a pergunta."

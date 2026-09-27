@@ -238,11 +238,25 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Por quê registrar os problemas, e não corrigir agora:** (1) nenhuma das respostas citou a fonte. As instruções só ensinam a citar documento e movimentação, e as partes vêm do cadastro do processo — o modelo não tinha formato para usar; é uma lacuna da regra, tratada na T7.7 (citação obrigatória), com um formato para dados do cadastro. (2) O Ollama estava usando uma [janela de contexto](docs/glossario.md#contexto) de 4.096 tokens, e só as instruções e as descrições das ferramentas ocupam ~2.900. Nesta pergunta coube; num resumo, com documentos lidos, o excesso seria cortado sem aviso. A T11.1 já prevê subir o contexto para 16 mil tokens.
 - **Uso de IA:** o Claude Code rodou o teste 3 vezes em vez de uma, porque o modelo não responde sempre igual, e notou o limite de contexto na saída do Ollama.
 
+### D41 — Mesma pergunta no Gemini: igual no acerto, duas vezes mais rápido, instável no plano gratuito
+- **Decisão:** registrar a comparação da T5.7 como base para a escolha do modelo da demonstração (pendência já listada) e tratar as recusas temporárias do plano gratuito antes da apresentação.
+- **Resultado:** a pergunta da D40 foi repetida 3 vezes com o Gemini 3.8 Flash, trocando apenas o `.env` (`LLM_MODEL=google:gemini-3.8-flash`, `LLM_THINKING=low`) — **nenhuma linha de código mudou**. O Gemini acertou a ferramenta e as partes nas 3 vezes, como o modelo local, em 6 a 11 segundos por pergunta (o local levou 35 s na primeira e 13–14 s nas seguintes), e em 2 das 3 respostas citou a fonte por conta própria, num formato improvisado. Em compensação, na primeira rodada o serviço recusou o pedido duas vezes com erro 503 ("alta demanda") e a resposta só veio na terceira tentativa, cerca de 27 segundos depois.
+
+  | | Modelo local | Gemini 3.8 Flash |
+  |---|---|---|
+  | Ferramenta e dados corretos | 3/3 | 3/3 |
+  | Tempo por pergunta | 35 s (1ª) · 13–14 s | 6–11 s |
+  | Cita a fonte | 0/3 | 2/3, formato próprio |
+  | Recusas do serviço | 0 | 2 (503) |
+
+- **Por quê:** a troca só por configuração é a portabilidade prometida na D08 funcionando de ponta a ponta. A velocidade favorece o Gemini numa apresentação; a instabilidade do plano gratuito favorece o local. Sem tratamento, uma recusa aparece para a banca como falha. Repetir automaticamente os pedidos recusados temporariamente, com uma espera curta, resolve a maior parte dos casos e vale para qualquer provedor.
+- **Uso de IA:** o autor observou que o modelo local estava lento e pediu para seguir com o teste no Gemini; o Claude Code contou as recusas do serviço em vez de apenas repetir até funcionar, porque a taxa de falhas também é dado para a decisão.
+
 ---
 
 ## Pendências de decisão
 
 Decisões já identificadas, ainda não tomadas (viram entradas datadas quando forem resolvidas):
 
-- Qual modelo usar como principal na demonstração — depende do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
+- Qual modelo usar como principal na demonstração — depende da comparação da D41 (Gemini duas vezes mais rápido, mas com recusas no plano gratuito), do placar da bateria de avaliação (T9.5), das medições de tempo (T11.3) e, se a apresentação passar a ser remota, do teste de memória com o Google Meet aberto (T11.6).
 - Levar ou não o modelo reserva `qwen3:1.7b` para a apresentação (T11.5).
