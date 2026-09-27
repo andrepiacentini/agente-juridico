@@ -173,3 +173,30 @@ def test_time_limit_is_removed_after_the_query(connection) -> None:
     time.sleep(0.3)
 
     assert connection.execute("SELECT COUNT(*) FROM movimentacao").fetchone()[0] == 134_046
+
+
+@pytest.mark.parametrize(
+    ("sql", "sqlite_message"),
+    [
+        ("SELECT nome_do_juiz FROM processo", "no such column: nome_do_juiz"),
+        ("SELECT * FROM juiz", "no such table: juiz"),
+        ("SELECT COUNT(* FROM processo", "syntax error"),  # "SELEC …" nem chega ao banco: a validação recusa
+        ("SELECT id FROM processo p JOIN parte pa ON p.id = pa.id", "ambiguous column name: id"),
+    ],
+    ids=["unknown_column", "unknown_table", "syntax", "ambiguous_column"],
+)
+def test_sql_errors_come_back_as_readable_information(connection, sql: str, sqlite_message: str) -> None:
+    result = run_sql(connection, sql)
+
+    assert result["found"] is False
+    assert result["message"].startswith("Erro na consulta: ")
+    assert sqlite_message in result["message"]
+
+
+def test_sql_error_brings_the_tables_and_columns_to_correct_itself(connection) -> None:
+    schema_hint = run_sql(connection, "SELECT nome_do_juiz FROM processo")["schema_hint"]
+
+    assert schema_hint.startswith("Tabelas e colunas: documento(id, processo_id, tipo, autor, dt_juntada, num_paginas, texto);")
+    assert "magistrado(id, nome, unidade_id, data_inicio, situacao)" in schema_hint
+    assert "sqlite_stat" not in schema_hint
+    assert len(schema_hint) < 600
