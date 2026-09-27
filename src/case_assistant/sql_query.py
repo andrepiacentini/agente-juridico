@@ -59,9 +59,10 @@ def run_sql(
                 "message": f"Consulta interrompida: passou de {timeout_seconds} segundos. "
                 "Simplifique a consulta ou use uma ferramenta pronta.",
             }
-        if not any(fragment in str(error) for fragment in AUTHORIZATION_ERROR_FRAGMENTS):
-            raise
-        return {"found": False, "message": "Consulta recusada: o banco negou uma operação que não é leitura."}
+        if any(fragment in str(error) for fragment in AUTHORIZATION_ERROR_FRAGMENTS):
+            return {"found": False, "message": "Consulta recusada: o banco negou uma operação que não é leitura."}
+        # Coluna ou tabela errada, sintaxe: o modelo lê o erro e o mapa do banco e pode corrigir a consulta (T4.4).
+        return {"found": False, "message": f"Erro na consulta: {error}.", "schema_hint": _schema_hint(connection)}
     rows, cut_by_size = _rows_within_size([[_shortened(value) for value in row] for row in fetched[:MAX_ROWS]])
     result: dict[str, Any] = {
         "found": True,
@@ -100,6 +101,21 @@ def execute_read_only(connection: sqlite3.Connection, sql: str) -> sqlite3.Curso
         return connection.execute(sql)
     finally:
         connection.set_authorizer(None)
+
+
+def _schema_hint(connection: sqlite3.Connection) -> str:
+    """Todas as tabelas do banco com suas colunas, em uma linha (~450 caracteres)."""
+    tables = [
+        row[0]
+        for row in connection.execute(
+            "SELECT name FROM main.sqlite_master WHERE type = 'table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
+        )
+    ]
+    described = [
+        f"{table}({', '.join(column[1] for column in connection.execute(f'PRAGMA main.table_info({table})'))})"
+        for table in tables
+    ]
+    return "Tabelas e colunas: " + "; ".join(described) + "."
 
 
 @contextmanager

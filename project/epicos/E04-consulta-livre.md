@@ -28,9 +28,9 @@
 - **Depende de:** T4.1.
 - **Para explicar à banca:** "Mesmo uma consulta válida pode ser pesada demais; há um cronômetro que a corta."
 
-### T4.4 — Erro vira informação para o modelo `[ ]`
+### T4.4 — Erro vira informação para o modelo `[x]`
 - **Objetivo:** quando a consulta falha (coluna errada, sintaxe), devolver a mensagem de erro como texto, não quebrar o programa.
-- **Passos:** capturar a exceção; devolver "erro: <mensagem do SQLite>" com uma dica do nome das tabelas.
+- **Passos:** capturar a exceção; devolver "Erro na consulta: <mensagem do SQLite>" e, em `schema_hint`, todas as tabelas com suas colunas (~450 caracteres) para o modelo corrigir sozinho. Recusa (T4.1) e interrupção por tempo (T4.3) mantêm mensagens próprias. O teto de tentativas é do agente (T7.6).
 - **Pronto quando:** consulta com coluna inexistente devolve texto de erro legível.
 - **Depende de:** T4.1.
 - **Para explicar à banca:** "Quando o agente erra, ele lê o erro e pode corrigir — é assim que ele aprende dentro da própria conversa."
