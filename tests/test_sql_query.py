@@ -2,6 +2,7 @@
 
 import json
 import sqlite3
+import time
 from contextlib import closing
 
 import pytest
@@ -137,3 +138,38 @@ def test_result_is_cut_by_total_size_before_overloading_the_model(connection) ->
     assert result["row_count"] < 50
     assert len(json.dumps(result["rows"], ensure_ascii=False)) <= 6_000
     assert result["notice"].startswith(f"Resultado cortado em {result['row_count']} linhas para não passar de 6000 caracteres.")
+
+
+CARTESIAN_PRODUCT = "SELECT COUNT(*) FROM movimentacao a, movimentacao b"  # ~18 bilhões de combinações
+
+
+def test_slow_query_is_interrupted_by_time_limit(connection) -> None:
+    start = time.perf_counter()
+    result = run_sql(connection, CARTESIAN_PRODUCT, timeout_seconds=0.5)
+    elapsed = time.perf_counter() - start
+
+    assert result == {
+        "found": False,
+        "message": "Consulta interrompida: passou de 0.5 segundos. Simplifique a consulta ou use uma ferramenta pronta.",
+    }
+    assert elapsed < 2
+
+
+def test_time_limit_covers_reading_the_rows_not_only_starting_the_query(connection) -> None:
+    # o execute devolve em ~2 ms (a primeira linha é o 1); o produto cartesiano só roda ao ler as linhas seguintes
+    slow_to_read = "SELECT 1 UNION ALL SELECT COUNT(*) FROM movimentacao a, movimentacao b"
+
+    assert run_sql(connection, slow_to_read, timeout_seconds=0.5)["message"].startswith("Consulta interrompida")
+
+
+def test_default_time_limit_is_five_seconds(connection) -> None:
+    from case_assistant.sql_query import QUERY_TIMEOUT_SECONDS
+
+    assert QUERY_TIMEOUT_SECONDS == 5
+
+
+def test_time_limit_is_removed_after_the_query(connection) -> None:
+    run_sql(connection, CARTESIAN_PRODUCT, timeout_seconds=0.2)
+    time.sleep(0.3)
+
+    assert connection.execute("SELECT COUNT(*) FROM movimentacao").fetchone()[0] == 134_046
