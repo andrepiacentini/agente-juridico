@@ -31,7 +31,7 @@
 
 ### T11.4 — Enxugar as respostas das ferramentas `[ ]`
 - **Objetivo:** reduzir o volume de dados que as ferramentas devolvem, se a T11.3 mostrar lentidão.
-- **Passos:** identificar a ferramenta com resposta maior; remover campos não usados; medir de novo.
+- **Passos:** identificar a ferramenta com resposta maior; remover campos não usados; medir de novo. Pista da T5.4: instruções + descrições das 9 ferramentas somam ~2.900 tokens de entrada, e a 1ª pergunta da sessão leva 19–27 s (as seguintes, 1–2 s) — enxugar as descrições e/ou "aquecer" o modelo ao abrir a sessão.
 - **Pronto quando:** o tempo melhorou sem piorar o placar do E09 (ou a tarefa é cancelada por não ser necessária).
 - **Depende de:** T11.3.
 - **Para explicar à banca:** "Menos texto enviado ao modelo significa resposta mais rápida."

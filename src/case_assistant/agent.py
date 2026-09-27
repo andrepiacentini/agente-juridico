@@ -6,6 +6,7 @@ from pydantic_ai import Agent
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
 
+from case_assistant.agent_tools import AGENT_TOOLS
 from case_assistant.prompts import SYSTEM_PROMPT
 from case_assistant.session import Session
 
@@ -24,7 +25,9 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
     model = model or os.environ.get(MODEL_VARIABLE)
     if not model:
         raise ModelNotConfiguredError(f"Defina {MODEL_VARIABLE} no .env (veja .env.example).")
-    return Agent(model, deps_type=Session, system_prompt=SYSTEM_PROMPT, model_settings=_model_settings())
+    return Agent(
+        model, deps_type=Session, system_prompt=SYSTEM_PROMPT, tools=AGENT_TOOLS, model_settings=_model_settings()
+    )
 
 
 def _model_settings() -> ModelSettings | None:

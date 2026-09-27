@@ -28,9 +28,9 @@
 - **Depende de:** T5.1, T5.2.
 - **Para explicar à banca:** "O mesmo código fala com o modelo local ou com o Gemini; não existe caminho especial para nenhum."
 
-### T5.4 — Registrar as ferramentas no agente `[ ]`
+### T5.4 — Registrar as ferramentas no agente `[x]`
 - **Objetivo:** tornar as ferramentas visíveis para o modelo (8 do E03 + `run_sql` do E04).
-- **Passos:** registrar cada função com `@agent.tool`; revisar a descrição (docstring) de cada uma, que é o que o modelo lê para decidir.
+- **Passos:** `agent_tools.py` com 9 adaptadores que pegam `session.connection` e chamam a ferramenta; docstrings escritas para o modelo (primeira linha = quando usar; `Args` = cada parâmetro), que o Pydantic AI transforma na descrição da ferramenta. Os adaptadores são `async`: o Pydantic AI roda ferramentas síncronas em outras threads, e a conexão SQLite só funciona na thread que a criou — assim elas rodam na thread da conversa, uma de cada vez, sem desligar a proteção do SQLite nem arriscar duas ferramentas usando a conexão (e o autorizador da `run_sql`) ao mesmo tempo. Teste sem IA: o `TestModel` chama as 9 ferramentas com argumentos gerados. Medido com o modelo local: listou as 9; entrada de ~2.900 tokens (as descrições somam ~1.550); 1ª pergunta da sessão 19–27 s, seguintes 1–2 s (o Ollama reaproveita o começo do contexto, que não muda).
 - **Pronto quando:** perguntar "quais ferramentas você tem?" lista as 9.
 - **Depende de:** T5.3, E04.
 - **Para explicar à banca:** "O modelo decide pela descrição de cada ferramenta — por isso elas são curtas e específicas."
