@@ -2,10 +2,12 @@
 
 from contextlib import closing
 
+import sqlite3
+
 import pytest
 
 from case_assistant.db import connect
-from case_assistant.tools import find_case, list_documents, list_movements, list_parties
+from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -17,6 +19,7 @@ IMPLAUSIBLE_VALUE_CASE_ID = 6348  # valor da causa 9.999.999.999 — o seguinte 
 CASE_WITHOUT_MOVEMENTS_NUMBER = "0000013-87.2026.8.99.9012"  # processo 3611
 SIGNATURE_MISMATCH_CASE_NUMBER = "0000001-46.2021.8.99.9013"  # processo 180: doc 543 assinado por outra OAB
 LAWYER_ON_BOTH_SIDES_CASE_NUMBER = "0000002-07.2025.8.99.9008"  # processo 884: mesma OAB na inicial e na contestação
+REFERENCE_SENTENCE_ID = 7878  # sentença do processo 3161, 2.443 caracteres
 INACTIVE_UNIT_CASE_ID = 30  # vara "Vara da Fazenda Pública" de Joinville, desativada
 CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER = CASE_WITHOUT_JUDGE_NUMBER  # processo 4: nenhum dos três sinais
 NORMALIZED_STATUSES = {"arquivado", "em andamento", "julgado", "suspenso"}
@@ -329,3 +332,86 @@ def test_list_documents_counts_match_database_profile(connection) -> None:
     assert sum(not result["documents"] for result in results) == 6_309
     assert sum("difere da assinatura no texto" in warning for warning in warnings) == 309
     assert sum("assina peças dos dois lados" in warning for warning in warnings) == 8
+    assert not any("O texto cita o processo" in warning for warning in warnings)
+
+
+def test_read_document_returns_full_text_with_citation_data(connection) -> None:
+    document = read_document(connection, REFERENCE_SENTENCE_ID)
+    stored_text = connection.execute("SELECT texto FROM documento WHERE id = ?", (REFERENCE_SENTENCE_ID,)).fetchone()["texto"]
+
+    assert {field: value for field, value in document.items() if field not in {"text", "warnings"}} == {
+        "found": True,
+        "id": REFERENCE_SENTENCE_ID,
+        "case_number": REFERENCE_CASE_NUMBER,
+        "type": "Sentença",
+        "author": "Luiz Bonetti Vasconcelos",
+        "date": "2026-02-18",
+        "pages": 2,
+    }
+    assert document["text"] == stored_text
+    assert len(document["text"]) == 2_443
+
+
+def test_read_document_reports_missing_document(connection) -> None:
+    assert read_document(connection, 999_999) == {
+        "found": False,
+        "message": "Documento 999999 não encontrado no banco.",
+    }
+
+
+@pytest.fixture
+def in_memory_copy(connection):
+    """Cópia do banco na memória, para simular dados que o banco real não tem; o arquivo nunca é alterado."""
+    copy = sqlite3.connect(":memory:")
+    connection.backup(copy)
+    copy.row_factory = sqlite3.Row
+    yield copy
+    copy.close()
+
+
+def test_read_document_has_no_warning_when_cited_number_matches(connection) -> None:
+    assert read_document(connection, REFERENCE_SENTENCE_ID)["warnings"] == []
+
+
+def test_read_document_warns_when_text_cites_another_case_number(in_memory_copy) -> None:
+    in_memory_copy.execute(
+        "UPDATE documento SET texto = replace(texto, ?, ?) WHERE id = ?",
+        (REFERENCE_CASE_NUMBER, CASE_WITHOUT_JUDGE_NUMBER, REFERENCE_SENTENCE_ID),
+    )
+
+    warnings = read_document(in_memory_copy, REFERENCE_SENTENCE_ID)["warnings"]
+
+    assert warnings == [
+        f"O texto cita o processo {CASE_WITHOUT_JUDGE_NUMBER}, mas o documento pertence ao processo "
+        f"{REFERENCE_CASE_NUMBER}. Merece conferência: pode ser documento juntado no processo errado."
+    ]
+
+
+def test_no_document_in_database_cites_another_case_number(connection) -> None:
+    document_ids = [row["id"] for row in connection.execute("SELECT id FROM documento")]
+
+    assert not any(read_document(connection, document_id)["warnings"] for document_id in document_ids)
+
+
+def test_list_documents_warns_when_a_text_cites_another_case_number(in_memory_copy) -> None:
+    in_memory_copy.execute(
+        "UPDATE documento SET texto = replace(texto, ?, ?) WHERE id = ?",
+        (REFERENCE_CASE_NUMBER, CASE_WITHOUT_JUDGE_NUMBER, REFERENCE_SENTENCE_ID),
+    )
+
+    warnings = list_documents(in_memory_copy, REFERENCE_CASE_NUMBER)["warnings"]
+
+    assert (
+        f"Documento {REFERENCE_SENTENCE_ID}: o texto cita o processo {CASE_WITHOUT_JUDGE_NUMBER}, mas o documento "
+        f"pertence ao processo {REFERENCE_CASE_NUMBER}. Merece conferência: pode ser documento juntado no processo errado."
+    ) in warnings
+
+
+def test_reference_case_has_two_signature_divergences(connection) -> None:
+    # manifestações cadastradas como do advogado do autor, mas assinadas com a OAB da advogada do réu
+    assert list_documents(connection, REFERENCE_CASE_NUMBER)["warnings"] == [
+        "Documento 7872: o autor cadastrado (Dr. Carlos Gava Reis — OAB/SC 99.170) "
+        "difere da assinatura no texto (OAB/SC 99.854).",
+        "Documento 7877: o autor cadastrado (Dr. Carlos Gava Reis — OAB/SC 99.170) "
+        "difere da assinatura no texto (OAB/SC 99.854).",
+    ]
