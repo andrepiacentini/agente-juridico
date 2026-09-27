@@ -9,6 +9,9 @@
 import json
 import re
 import sqlite3
+import time
+from collections.abc import Iterator
+from contextlib import contextmanager
 from typing import Any
 
 # Textos entre aspas simples são removidos antes da validação: "LIKE '%delete%'" não é um comando.
@@ -26,25 +29,39 @@ AUTHORIZATION_ERROR_FRAGMENTS = ("not authorized", "authorization denied")
 MAX_ROWS = 50
 MAX_TEXT_LENGTH = 300
 MAX_RESULT_CHARACTERS = 6_000  # ~2 mil tokens, cabe folgado no contexto do modelo local
+QUERY_TIMEOUT_SECONDS = 5
+# O cronômetro é conferido a cada tantas instruções da máquina virtual do SQLite: barato e frequente.
+PROGRESS_CHECK_INSTRUCTIONS = 10_000
+INTERRUPTED_ERROR_FRAGMENT = "interrupted"
 
 
 class QueryRefusedError(Exception):
     """A consulta não é uma leitura simples e não será executada."""
 
 
-def run_sql(connection: sqlite3.Connection, sql: str) -> dict[str, Any]:
+def run_sql(
+    connection: sqlite3.Connection, sql: str, *, timeout_seconds: float = QUERY_TIMEOUT_SECONDS
+) -> dict[str, Any]:
     """Executa uma consulta SQL de leitura (SELECT ou WITH) e devolve colunas e linhas; qualquer outro comando é recusado."""
     try:
-        cursor = execute_read_only(connection, _validated(sql))
+        # O SQLite só trabalha à medida que as linhas são lidas: o cronômetro cobre execução e leitura.
+        with _time_limit(connection, timeout_seconds):
+            cursor = execute_read_only(connection, _validated(sql))
+            columns = [description[0] for description in cursor.description]
+            # Uma linha além do limite só para saber se houve corte; o banco para de ler ali.
+            fetched = cursor.fetchmany(MAX_ROWS + 1)
     except QueryRefusedError as refusal:
         return {"found": False, "message": f"Consulta recusada: {refusal}"}
     except sqlite3.DatabaseError as error:
+        if INTERRUPTED_ERROR_FRAGMENT in str(error):
+            return {
+                "found": False,
+                "message": f"Consulta interrompida: passou de {timeout_seconds} segundos. "
+                "Simplifique a consulta ou use uma ferramenta pronta.",
+            }
         if not any(fragment in str(error) for fragment in AUTHORIZATION_ERROR_FRAGMENTS):
             raise
         return {"found": False, "message": "Consulta recusada: o banco negou uma operação que não é leitura."}
-    columns = [description[0] for description in cursor.description]
-    # Uma linha além do limite só para saber se houve corte; o banco para de ler ali.
-    fetched = cursor.fetchmany(MAX_ROWS + 1)
     rows, cut_by_size = _rows_within_size([[_shortened(value) for value in row] for row in fetched[:MAX_ROWS]])
     result: dict[str, Any] = {
         "found": True,
@@ -83,6 +100,17 @@ def execute_read_only(connection: sqlite3.Connection, sql: str) -> sqlite3.Curso
         return connection.execute(sql)
     finally:
         connection.set_authorizer(None)
+
+
+@contextmanager
+def _time_limit(connection: sqlite3.Connection, seconds: float) -> Iterator[None]:
+    """Interrompe a consulta quando o tempo acaba: o SQLite para ao receber um valor diferente de zero."""
+    deadline = time.monotonic() + seconds
+    connection.set_progress_handler(lambda: int(time.monotonic() > deadline), PROGRESS_CHECK_INSTRUCTIONS)
+    try:
+        yield
+    finally:
+        connection.set_progress_handler(None, 0)
 
 
 def _validated(sql: str) -> str:

@@ -21,9 +21,9 @@
 - **Depende de:** T4.1.
 - **Para explicar à banca:** "Uma consulta mal feita não pode despejar 134 mil linhas no modelo e travar a máquina."
 
-### T4.3 — Tempo máximo de execução `[ ]`
+### T4.3 — Tempo máximo de execução `[x]`
 - **Objetivo:** interromper consultas que demorem mais de 5 segundos.
-- **Passos:** usar `set_progress_handler` do `sqlite3` para cancelar após o tempo; devolver aviso.
+- **Passos:** usar `set_progress_handler` do `sqlite3` (conferido a cada 10 mil instruções) para cancelar após o tempo; devolver aviso. O cronômetro cobre a execução **e** a leitura das linhas: o SQLite só trabalha à medida que as linhas são lidas — em `SELECT 1 UNION ALL <produto cartesiano>`, o `execute` volta em ~2 ms e todo o peso fica na leitura. Limite de 5 s, parâmetro só de código (o modelo não o controla).
 - **Pronto quando:** uma consulta propositalmente lenta (produto cartesiano) é interrompida e o teste passa.
 - **Depende de:** T4.1.
 - **Para explicar à banca:** "Mesmo uma consulta válida pode ser pesada demais; há um cronômetro que a corta."
