@@ -8,6 +8,7 @@ from collections.abc import Callable
 from typing import Any
 
 from case_assistant.case_number import CASE_NUMBER_PATTERN, extract_case_number
+from case_assistant.db import ensure_search_index
 
 # LEFT JOIN: 1.044 processos não têm magistrado e não podem sumir da consulta.
 # LOWER(TRIM()): a situação vem como "Julgado", "JULGADO" ou "julgado" e é devolvida sempre em minúsculas.
@@ -77,6 +78,28 @@ READ_DOCUMENT_QUERY = """
     FROM documento d JOIN processo p ON p.id = d.processo_id
     WHERE d.id = ?
 """
+SEARCH_DEFAULT_LIMIT, SEARCH_MAX_LIMIT = 10, 20
+SEARCH_TEXT_QUERY = """
+    SELECT d.id, d.tipo, d.dt_juntada, p.numero,
+           snippet(document_search, 0, '[', ']', '…', 12) AS trecho
+    FROM temp.document_search
+    JOIN documento d ON d.id = document_search.rowid
+    JOIN processo p ON p.id = d.processo_id
+    WHERE document_search MATCH :query
+      AND (:case_id IS NULL OR d.processo_id = :case_id)
+      AND (:document_type IS NULL OR d.tipo = :document_type)
+    ORDER BY rank
+    LIMIT :limit
+"""
+SEARCH_TEXT_COUNT_QUERY = """
+    SELECT COUNT(*) AS total
+    FROM temp.document_search
+    JOIN documento d ON d.id = document_search.rowid
+    WHERE document_search MATCH :query
+      AND (:case_id IS NULL OR d.processo_id = :case_id)
+      AND (:document_type IS NULL OR d.tipo = :document_type)
+"""
+WORD_PATTERN = re.compile(r"\w+")
 CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
@@ -189,11 +212,15 @@ def _brazilian_currency(value: float) -> str:
     return "R$ " + f"{value:,.2f}".replace(",", "\u00a0").replace(".", ",").replace("\u00a0", ".")
 
 
+def _comparable_text(text: str) -> str:
+    """Só para comparar: sem acento, sem diferença de caixa e de espaços."""
+    without_accents = unicodedata.normalize("NFKD", text).encode("ascii", "ignore").decode()
+    return " ".join(without_accents.lower().split())
+
+
 def _comparable_district(district: str) -> str:
-    """Só para comparar: sem acento, sem diferença de caixa e de espaços, com as abreviações do banco por extenso."""
-    without_accents = unicodedata.normalize("NFKD", district).encode("ascii", "ignore").decode()
-    words = without_accents.lower().split()
-    return " ".join(DISTRICT_ABBREVIATIONS.get(word, word) for word in words)
+    """Como `_comparable_text`, com as abreviações de comarca do banco por extenso."""
+    return " ".join(DISTRICT_ABBREVIATIONS.get(word, word) for word in _comparable_text(district).split())
 
 
 def _judgment(connection: sqlite3.Connection, case_id: int, sentence_date: str | None) -> dict[str, Any]:
@@ -343,6 +370,65 @@ def _cited_case_number_warnings(text: str, own_case_number: str) -> list[str]:
         for number in cited
         if number != own_case_number
     ]
+
+
+@_reports_not_found
+def search_text(
+    connection: sqlite3.Connection,
+    term: str,
+    case_number: str | None = None,
+    document_type: str | None = None,
+    limit: int = SEARCH_DEFAULT_LIMIT,
+) -> dict[str, Any]:
+    """Documentos que mencionam um termo, com um trecho em volta; filtros opcionais por processo e tipo de documento."""
+    words = WORD_PATTERN.findall(term)
+    if not words:
+        return {"found": False, "message": f"O termo '{term}' não tem palavras para buscar."}
+    ensure_search_index(connection)
+    canonical_type = _canonical_document_type(connection, document_type) if document_type else None
+    if document_type and canonical_type is None:
+        valid_types = [row["tipo"] for row in connection.execute("SELECT DISTINCT tipo FROM documento ORDER BY tipo")]
+        return {"found": False, "message": f"Tipo de documento '{document_type}' não existe. Tipos: {', '.join(valid_types)}."}
+    filters = {
+        "case_id": _resolve_case_id(connection, case_number) if case_number else None,
+        "document_type": canonical_type,
+        "limit": max(1, min(limit, SEARCH_MAX_LIMIT)),
+    }
+    for match_mode, query in _search_queries(words):
+        total = connection.execute(SEARCH_TEXT_COUNT_QUERY, {**filters, "query": query}).fetchone()["total"]
+        if total:
+            rows = connection.execute(SEARCH_TEXT_QUERY, {**filters, "query": query}).fetchall()
+            return {
+                "found": True,
+                "term": term,
+                "match": match_mode,
+                "total": total,
+                "results": [
+                    {"document_id": row["id"], "case_number": row["numero"], "type": row["tipo"],
+                     "date": row["dt_juntada"], "snippet": row["trecho"]}
+                    for row in rows
+                ],
+            }
+    return {"found": False, "message": f"Nenhum documento menciona '{term}'."}
+
+
+def _search_queries(words: list[str]) -> list[tuple[str, str]]:
+    """Primeiro a frase exata; se houver mais de uma palavra, depois todas elas em qualquer ordem.
+
+    Cada palavra vai entre aspas: o termo do usuário nunca é interpretado como sintaxe do FTS5.
+    """
+    queries = [("frase exata", '"' + " ".join(words) + '"')]
+    if len(words) > 1:
+        queries.append(("todas as palavras", " ".join(f'"{word}"' for word in words)))
+    return queries
+
+
+def _canonical_document_type(connection: sqlite3.Connection, document_type: str) -> str | None:
+    wanted = _comparable_text(document_type)
+    for row in connection.execute("SELECT DISTINCT tipo FROM documento"):
+        if _comparable_text(row["tipo"]) == wanted:
+            return row["tipo"]
+    return None
 
 
 def _oab(text: str) -> str | None:

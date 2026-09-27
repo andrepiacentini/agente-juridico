@@ -6,8 +6,8 @@ import sqlite3
 
 import pytest
 
-from case_assistant.db import connect
-from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document
+from case_assistant.db import connect, create_search_index
+from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document, search_text
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -415,3 +415,65 @@ def test_reference_case_has_two_signature_divergences(connection) -> None:
         "Documento 7877: o autor cadastrado (Dr. Carlos Gava Reis — OAB/SC 99.170) "
         "difere da assinatura no texto (OAB/SC 99.854).",
     ]
+
+
+@pytest.fixture(scope="module")
+def indexed_connection():
+    with closing(connect()) as database_connection:
+        create_search_index(database_connection)
+        yield database_connection
+
+
+def test_search_text_finds_documents_with_snippet(indexed_connection) -> None:
+    result = search_text(indexed_connection, "inversão do ônus")
+
+    assert result["found"] is True
+    assert result["match"] == "frase exata"
+    assert result["total"] == 2_786
+    assert len(result["results"]) == 10
+    first = result["results"][0]
+    assert set(first) == {"document_id", "case_number", "type", "date", "snippet"}
+    assert "[inversão do ônus]" in first["snippet"].lower()
+
+
+def test_search_text_ignores_accents(indexed_connection) -> None:
+    assert search_text(indexed_connection, "inversao do onus")["total"] == 2_786
+
+
+def test_search_text_filters_by_case_and_type(indexed_connection) -> None:
+    in_case = search_text(indexed_connection, "trânsito", case_number=REFERENCE_CASE_NUMBER)
+    sentences = search_text(indexed_connection, "dano moral", document_type="sentença")
+
+    # ordenados por relevância; aqui importa o conjunto
+    assert {result["document_id"] for result in in_case["results"]} == {7865, 7878, 7881}
+    assert sentences["total"] == 128
+    assert {result["type"] for result in sentences["results"]} == {"Sentença"}
+
+
+def test_search_text_falls_back_to_all_words_when_phrase_is_absent(indexed_connection) -> None:
+    result = search_text(indexed_connection, "prova ônus")
+
+    assert result["match"] == "todas as palavras"
+    assert result["total"] == 3_778
+
+
+@pytest.mark.parametrize("term", ["boa-fé", "art. 373", 'ônus "da', "AND", "NEAR(x)"])
+def test_search_text_is_safe_with_special_characters(indexed_connection, term: str) -> None:
+    assert search_text(indexed_connection, term)["found"] in {True, False}
+
+
+def test_search_text_without_matches_says_so(indexed_connection) -> None:
+    result = search_text(indexed_connection, "xyzabc inexistente")
+
+    assert result == {"found": False, "message": "Nenhum documento menciona 'xyzabc inexistente'."}
+
+
+def test_search_text_respects_limit(indexed_connection) -> None:
+    result = search_text(indexed_connection, "ônus da prova", limit=100)
+
+    assert len(result["results"]) == 20
+    assert result["total"] == 1_871
+
+
+def test_search_text_reports_missing_case_filter(indexed_connection) -> None:
+    assert search_text(indexed_connection, "ônus", case_number=MISSING_CASE_NUMBER)["found"] is False
