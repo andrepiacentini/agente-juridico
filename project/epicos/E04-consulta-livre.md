@@ -14,10 +14,10 @@
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "São três camadas: a validação recusa o comando; se algo escapar, o próprio SQLite nega qualquer operação que não seja leitura; e, por baixo de tudo, a conexão é somente leitura."
 
-### T4.2 — Limite de linhas `[ ]`
+### T4.2 — Limite de linhas `[x]`
 - **Objetivo:** nunca devolver mais de 50 linhas ao modelo.
-- **Passos:** envolver a consulta em `SELECT * FROM (...) LIMIT 50`; avisar quando o resultado foi cortado.
-- **Pronto quando:** `SELECT * FROM movimentacao` devolve 50 linhas e o aviso de corte.
+- **Passos:** ler do cursor no máximo 51 linhas (`fetchmany`) — a 51ª só indica que houve corte; o SQL do modelo não é reescrito (`WITH` e `ORDER BY` continuam valendo) e o banco para de ler ali; avisar quando o resultado foi cortado. Dois limites a mais, porque 50 linhas não bastam para proteger o modelo: textos com mais de 300 caracteres são encurtados (com indicação de usar `read_document`), e o resultado inteiro não passa de ~6.000 caracteres (~2 mil tokens) — `SELECT texto FROM documento` cairia de ~19 mil para ~5.900 caracteres.
+- **Pronto quando:** `SELECT * FROM movimentacao` devolve 50 linhas e o aviso de corte; consultas de texto longo respeitam o limite de tamanho, com aviso próprio.
 - **Depende de:** T4.1.
 - **Para explicar à banca:** "Uma consulta mal feita não pode despejar 134 mil linhas no modelo e travar a máquina."
 
