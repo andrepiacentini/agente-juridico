@@ -7,10 +7,10 @@
 
 ---
 
-### T6.1 — Guardar o processo em foco `[ ]`
-- **Objetivo:** `buscar_processo` grava o número consultado em `sessao.processo_em_foco`.
-- **Passos:** atualizar o campo sempre que um processo for encontrado.
-- **Pronto quando:** teste sem IA: após `buscar_processo("0000007-...")`, a sessão contém esse número.
+### T6.1 — Guardar o processo em foco `[x]`
+- **Objetivo:** as ferramentas que recebem um número de processo gravam o número encontrado em `session.focused_case_number`.
+- **Passos:** nos adaptadores de `agent_tools.py`, `find_case`, `list_parties`, `list_movements` e `list_documents` atualizam o foco sempre que o processo é encontrado (não só `find_case`: na T5.6 o modelo foi direto a `list_parties`); processo não encontrado não muda o foco; buscas que devolvem vários processos (`search_cases`, `search_parties`, `search_text`) também não. As ferramentas de `tools.py` continuam sem conhecer a sessão.
+- **Pronto quando:** teste sem IA: após `find_case("0000007-...")`, a sessão contém esse número — e o mesmo para as outras três ferramentas.
 - **Depende de:** T5.1.
 - **Para explicar à banca:** "O processo em discussão fica anotado num campo, como um marcador de página."
 
