@@ -55,14 +55,14 @@ Nomes em inglês (D19), com o nome conceitual do `plan.md` entre parênteses: `f
 
 ### T3.7 — `list_documents` (sem texto) `[x]`
 - **Objetivo:** devolver a lista de documentos com id, tipo, autor, data e número de páginas — **sem o texto**.
-- **Passos:** consulta em `documento`, devolvendo id, tipo, autor, data e páginas — nunca o texto; marcar como advogado quem tem "OAB" no campo `autor`; deduzir o lado de cada advogado pelas peças que só um lado apresenta (inicial, réplica, emenda → autor; contestação, exceção, embargos à execução → réu) e estender às demais peças pela OAB (D37); resumo `lawyers` com nome, OAB, lado e documentos; avisos: OAB cadastrada ausente das assinaturas do texto (309 documentos) e advogado com peças dos dois lados (8 processos).
+- **Passos:** consulta em `documento`, devolvendo id, tipo, autor, data e páginas — nunca o texto; marcar como advogado quem tem "OAB" no campo `autor`; deduzir o lado de cada advogado pelas peças que só um lado apresenta (inicial, réplica, emenda → autor; contestação, exceção, embargos à execução → réu) e estender às demais peças pela OAB (D37); resumo `lawyers` com nome, OAB, lado e documentos; avisos: OAB cadastrada ausente das assinaturas do texto (309 documentos — inclusive 2 no próprio 3161, docs 7872 e 7877), advogado com peças dos dois lados (8 processos) e texto que cita outro número de processo (nenhum hoje; mesma conferência da T3.8, custo medido de ~115 µs por chamada).
 - **Pronto quando:** teste com o 3161 devolve 19 itens sem texto; teste com o processo 1 devolve lista vazia.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "O modelo primeiro vê o índice dos documentos e escolhe quais ler. É isso que faz caber num computador de 8 GB."
 
-### T3.8 — `read_document` `[ ]`
+### T3.8 — `read_document` `[x]`
 - **Objetivo:** devolver o texto completo de um documento pelo id, com tipo e data para citação.
-- **Passos:** consulta por `id`; id inexistente devolve aviso claro.
+- **Passos:** consulta por `id`, devolvendo texto completo mais número do processo, tipo, autor, data e páginas; id inexistente devolve aviso claro (erro `DocumentNotFoundError` convertido na mesma fronteira das outras ferramentas). Campo `warnings` (acrescentado a pedido do autor, para integridade futura): avisa quando o texto cita um número de processo ("Autos n.", "Processo n.") diferente do processo dono do documento. Hoje nenhum dos 25.582 documentos tem esse problema; o teste simula o caso numa cópia do banco em memória. Custo medido: +16 µs por chamada (de 8 para 24 µs; pior caso 43 µs), desprezível frente aos segundos de uma resposta do modelo.
 - **Pronto quando:** teste lê a sentença do 3161 e confere que o texto veio inteiro.
 - **Depende de:** T2.1.
 - **Para explicar à banca:** "Texto só é carregado quando o agente pede, e sempre com o id para ele citar a fonte."

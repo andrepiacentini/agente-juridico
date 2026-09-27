@@ -7,7 +7,7 @@ import unicodedata
 from collections.abc import Callable
 from typing import Any
 
-from case_assistant.case_number import extract_case_number
+from case_assistant.case_number import CASE_NUMBER_PATTERN, extract_case_number
 
 # LEFT JOIN: 1.044 processos não têm magistrado e não podem sumir da consulta.
 # LOWER(TRIM()): a situação vem como "Julgado", "JULGADO" ou "julgado" e é devolvida sempre em minúsculas.
@@ -72,6 +72,11 @@ SIDE_BY_ANCHOR_DOCUMENT_TYPE = {
     "Exceção de Pré-Executividade": "réu",
     "Embargos à Execução Fiscal": "réu",
 }
+READ_DOCUMENT_QUERY = """
+    SELECT d.id, d.tipo, d.autor, d.dt_juntada, d.num_paginas, d.texto, p.numero
+    FROM documento d JOIN processo p ON p.id = d.processo_id
+    WHERE d.id = ?
+"""
 CPF_LENGTH, CNPJ_LENGTH = 14, 18  # "999.539.988-87" e "99.193.997/0001-35"
 INACTIVE_JUDGE_STATUSES = ("aposentado", "removido")
 ACTIVE_UNIT_STATUS = "ativa"
@@ -82,21 +87,29 @@ STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
 DISTRICT_ABBREVIATIONS = {"s.": "sao", "sto.": "santo", "bal.": "balneario"}
 
 
-class CaseNotFoundError(Exception):
+class NotFoundError(Exception):
+    """O que a ferramenta procurou não existe no banco."""
+
+
+class CaseNotFoundError(NotFoundError):
     """O texto não traz um número de processo no padrão CNJ, ou o processo não está no banco."""
 
 
-def _reports_missing_case(tool: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
-    """Fronteira da ferramenta: "processo não encontrado" vira resposta para o agente, não erro."""
+class DocumentNotFoundError(NotFoundError):
+    """Não há documento com o id pedido."""
+
+
+def _reports_not_found(tool: Callable[..., dict[str, Any]]) -> Callable[..., dict[str, Any]]:
+    """Fronteira da ferramenta: "não encontrado" vira resposta para o agente, não erro."""
 
     @functools.wraps(tool)
-    def tool_with_missing_case_answer(*args: Any, **kwargs: Any) -> dict[str, Any]:
+    def tool_with_not_found_answer(*args: Any, **kwargs: Any) -> dict[str, Any]:
         try:
             return tool(*args, **kwargs)
-        except CaseNotFoundError as error:
+        except NotFoundError as error:
             return {"found": False, "message": str(error)}
 
-    return tool_with_missing_case_answer
+    return tool_with_not_found_answer
 
 
 def _resolve_case_id(connection: sqlite3.Connection, case_number: str) -> int:
@@ -109,7 +122,7 @@ def _resolve_case_id(connection: sqlite3.Connection, case_number: str) -> int:
     return row["id"]
 
 
-@_reports_missing_case
+@_reports_not_found
 def find_case(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
     """Cartão de identificação do processo: classe, assunto, vara, magistrado, datas, valor e totais."""
     row = connection.execute(FIND_CASE_QUERY, (_resolve_case_id(connection, case_number),)).fetchone()
@@ -231,7 +244,7 @@ def _judge(row: sqlite3.Row) -> dict[str, str] | None:
     return {"name": row["magistrado_nome"], "status": row["magistrado_situacao"]}
 
 
-@_reports_missing_case
+@_reports_not_found
 def list_parties(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
     """Partes do processo por polo (ativo = autores, passivo = réus), com pessoa física/jurídica e CPF/CNPJ."""
     rows = connection.execute(LIST_PARTIES_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
@@ -246,7 +259,7 @@ def list_parties(connection: sqlite3.Connection, case_number: str) -> dict[str, 
     }
 
 
-@_reports_missing_case
+@_reports_not_found
 def list_movements(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
     """Andamento do processo em ordem de data: só data, código e descrição de cada movimentação."""
     rows = connection.execute(LIST_MOVEMENTS_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
@@ -278,23 +291,58 @@ def _timeline_warnings(rows: list[sqlite3.Row]) -> list[str]:
     return warnings
 
 
-@_reports_missing_case
+@_reports_not_found
 def list_documents(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
     """Índice dos documentos (id, tipo, autor, data, páginas) sem o texto, com os advogados e o lado de cada um."""
     rows = connection.execute(LIST_DOCUMENTS_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
+    own_case_number = extract_case_number(case_number)
     sides = _lawyer_sides(rows)
     lawyers = _lawyers(rows, sides)
     return {
         "found": True,
-        "case_number": extract_case_number(case_number),
+        "case_number": own_case_number,
         "documents": [_document_metadata(row, sides) for row in rows],
         "lawyers": lawyers,
         "warnings": _signature_warnings(rows) + [
+            f"Documento {row['id']}: {warning[0].lower()}{warning[1:]}"
+            for row in rows
+            for warning in _cited_case_number_warnings(row["texto"], own_case_number)
+        ] + [
             f"{lawyer['name']} ({lawyer['oab']}) assina peças dos dois lados (autor e réu) neste processo; merece conferência."
             for lawyer in lawyers
             if lawyer["side"] == "ambos os lados"
         ],
     }
+
+
+@_reports_not_found
+def read_document(connection: sqlite3.Connection, document_id: int) -> dict[str, Any]:
+    """Texto completo de um documento, com processo, tipo, autor e data para citar a fonte. Único que devolve texto."""
+    row = connection.execute(READ_DOCUMENT_QUERY, (document_id,)).fetchone()
+    if row is None:
+        raise DocumentNotFoundError(f"Documento {document_id} não encontrado no banco.")
+    return {
+        "found": True,
+        "id": row["id"],
+        "case_number": row["numero"],
+        "type": row["tipo"],
+        "author": row["autor"],
+        "date": row["dt_juntada"],
+        "pages": row["num_paginas"],
+        "text": row["texto"],
+        "warnings": _cited_case_number_warnings(row["texto"], row["numero"]),
+    }
+
+
+def _cited_case_number_warnings(text: str, own_case_number: str) -> list[str]:
+    """Números de processo citados no texto ("Autos n.", "Processo n.") que não são o do processo dono do documento."""
+    cited = dict.fromkeys(extract_case_number(match.group()) for match in CASE_NUMBER_PATTERN.finditer(text))
+    return [
+        f"O texto cita o processo {number}, mas o documento pertence ao processo {own_case_number}. "
+        "Merece conferência: pode ser documento juntado no processo errado."
+        for number in cited
+        if number != own_case_number
+    ]
 
 
 def _oab(text: str) -> str | None:
