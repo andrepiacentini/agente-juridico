@@ -42,10 +42,11 @@
 - **Depende de:** T5.4.
 - **Para explicar à banca:** "O terminal mostra cada consulta que o agente faz — dá para ver ele decidindo."
 
-### T5.6 — Primeira pergunta real com o modelo local `[ ]`
+### T5.6 — Primeira pergunta real com o modelo local `[x]`
 - **Objetivo:** validar o caminho completo com o modelo local (`qwen3:4b-instruct-2507-q4_K_M`).
 - **Passos:** perguntar "quem são as partes do processo 0000007-79.2023.8.99.9014?"; anotar ferramentas chamadas, tempo e qualidade.
 - **Pronto quando:** a resposta traz as partes corretas e cita a fonte; o resultado está anotado no `DECISOES.md`.
+- **Resultado (D40):** 3 de 3 com a ferramenta certa (`list_parties`) e as partes corretas; 35 s na primeira, 13–14 s nas seguintes. **Não citou a fonte** — as instruções não têm formato para dados do cadastro; levado para a T7.7. Contexto do Ollama em 4.096 tokens (instruções + ferramentas já ocupam ~2.900) — levado para a T11.1.
 - **Depende de:** T5.5.
 - **Para explicar à banca:** "O primeiro teste de ponta a ponta foi com o modelo local, porque é o cenário mais difícil."
 
