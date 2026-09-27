@@ -1,11 +1,15 @@
-"""Processo em foco: gravado na sessão sempre que uma ferramenta encontra o processo pelo número (E06). Sem IA."""
+"""Processo em foco: gravado na sessão pelas ferramentas (T6.1) e lembrado ao modelo a cada pedido (T6.2). Sem IA."""
 
 import asyncio
 from dataclasses import dataclass
 
 import pytest
+from pydantic_ai.messages import ModelRequest
+from pydantic_ai.models.test import TestModel
 
 from case_assistant import agent_tools
+from case_assistant.agent import build_agent
+from case_assistant.prompts import FOCUS_LABEL
 from case_assistant.session import Session, open_session
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"
@@ -67,3 +71,34 @@ def test_searches_that_return_many_cases_do_not_change_the_focus() -> None:
         call(agent_tools.search_text, session, "dano moral")
 
         assert session.focused_case_number == REFERENCE_CASE_NUMBER
+
+
+def request_instructions(result) -> list[str | None]:
+    return [message.instructions for message in result.all_messages() if isinstance(message, ModelRequest)]
+
+
+def test_every_turn_reminds_the_model_of_the_focused_case(monkeypatch) -> None:
+    monkeypatch.delenv("LLM_THINKING", raising=False)
+    agent = build_agent(TestModel(custom_output_text="ok"))
+
+    with open_session() as session:
+        first = agent.run_sync("fale do processo", deps=session)
+        session.focused_case_number = REFERENCE_CASE_NUMBER
+        second = agent.run_sync("qual o valor da causa?", message_history=first.all_messages(), deps=session)
+
+    assert all(FOCUS_LABEL not in (text or "") for text in request_instructions(first))
+    assert f"{FOCUS_LABEL} {REFERENCE_CASE_NUMBER}" in request_instructions(second)[-1]
+
+
+def test_the_reminder_follows_the_focus_when_it_changes(monkeypatch) -> None:
+    monkeypatch.delenv("LLM_THINKING", raising=False)
+    agent = build_agent(TestModel(custom_output_text="ok"))
+
+    with open_session() as session:
+        session.focused_case_number = REFERENCE_CASE_NUMBER
+        first = agent.run_sync("fale do processo", deps=session)
+        session.focused_case_number = OTHER_CASE_NUMBER
+        second = agent.run_sync("e as partes?", message_history=first.all_messages(), deps=session)
+
+    assert OTHER_CASE_NUMBER in request_instructions(second)[-1]
+    assert REFERENCE_CASE_NUMBER not in request_instructions(second)[-1]
