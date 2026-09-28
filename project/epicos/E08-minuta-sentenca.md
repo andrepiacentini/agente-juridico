@@ -7,7 +7,7 @@
 
 ---
 
-### T8.1 — Verificar se há base para a minuta `[ ]`
+### T8.1 — Verificar se há base para a minuta `[x]`
 - **Objetivo:** função que diz se o processo tem petição inicial **e** contestação.
 - **Passos:** consulta nos tipos de documento; devolver "apto" ou "faltam: <lista>".
 - **Pronto quando:** teste sem IA: 3161 → apto; processo 1 → faltam ambas.
