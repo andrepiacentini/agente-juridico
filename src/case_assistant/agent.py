@@ -5,13 +5,14 @@ import time
 from collections.abc import Callable
 from typing import Any
 
-from pydantic_ai import Agent, RunContext
+from pydantic_ai import Agent, ModelRetry, RunContext
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
-from pydantic_ai.messages import ModelMessage
+from pydantic_ai.messages import ModelMessage, ToolCallPart
 from pydantic_ai.models import Model
 from pydantic_ai.settings import ModelSettings
 
 from case_assistant.agent_tools import AGENT_TOOLS
+from case_assistant.case_number import extract_case_numbers
 from case_assistant.prompts import SYSTEM_PROMPT, focus_reminder
 from case_assistant.session import Session
 
@@ -23,6 +24,10 @@ BOOLEAN_SETTINGS = {"true": True, "false": False}
 MAX_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = 5  # 5 s antes da 2ª tentativa, 10 s antes da 3ª
 TEMPORARY_HTTP_STATUSES = {429: "limite de pedidos", 500: "", 502: "", 503: "", 504: ""}
+UNQUERIED_CASE_MESSAGE = (
+    "Você ainda não consultou o processo {case_number} nesta conversa. "
+    "Chame find_case(case_number='{case_number}') antes de responder."
+)
 
 
 class ModelNotConfiguredError(RuntimeError):
@@ -34,7 +39,7 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
     model = model or os.environ.get(MODEL_VARIABLE)
     if not model:
         raise ModelNotConfiguredError(f"Defina {MODEL_VARIABLE} no .env (veja .env.example).")
-    return Agent(
+    agent = Agent(
         model,
         deps_type=Session,
         system_prompt=SYSTEM_PROMPT,
@@ -42,12 +47,36 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
         tools=AGENT_TOOLS,
         model_settings=_model_settings(),
     )
+    agent.output_validator(_require_cited_cases_queried)
+    return agent
 
 
 def _focused_case_instructions(ctx: RunContext[Session]) -> str:
     # Instruções (não system prompt) porque o Pydantic AI as recalcula a cada pedido e não as guarda no histórico:
     # o modelo vê sempre o foco atual, nunca um foco antigo esquecido numa mensagem anterior.
     return focus_reminder(ctx.deps.focused_case_number)
+
+
+def _require_cited_cases_queried(ctx: RunContext[Session], output: str) -> str:
+    # Regra nas instruções não bastou (D51): depois de um processo em foco, o modelo local disse "não consta"
+    # de um processo existente sem consultar. Por código, a resposta volta ao modelo até ele consultar.
+    question = ctx.prompt if isinstance(ctx.prompt, str) else ""
+    queried = _queried_case_numbers(ctx.messages)
+    unqueried = [number for number in extract_case_numbers(question) if number not in queried]
+    if unqueried:
+        raise ModelRetry(UNQUERIED_CASE_MESSAGE.format(case_number=unqueried[0]))
+    return output
+
+
+def _queried_case_numbers(messages: list[ModelMessage]) -> set[str]:
+    """Números de processo passados a alguma ferramenta na conversa, histórico incluído."""
+    return {
+        number
+        for message in messages
+        for part in message.parts
+        if isinstance(part, ToolCallPart)
+        for number in extract_case_numbers(str(part.args_as_dict().get("case_number") or ""))
+    }
 
 
 def _model_settings() -> ModelSettings | None:
