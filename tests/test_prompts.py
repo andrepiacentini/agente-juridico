@@ -149,3 +149,11 @@ def test_draft_instructions_stay_out_of_the_fixed_prompt() -> None:
     # Só chegam ao modelo quando ele pede uma minuta (D57): o prompt fixo vai em todo pedido.
     assert DRAFT_INSTRUCTIONS not in SYSTEM_PROMPT
     assert "prepare_draft()" in SYSTEM_PROMPT
+
+
+def test_draft_rule_tells_writing_a_sentence_apart_from_reading_the_existing_one() -> None:
+    # T8.4 (D59): "elabore uma minuta" e "redija a sentença" viraram busca pela sentença existente.
+    rule = next(line for line in SYSTEM_PROMPT.splitlines() if line.startswith("7."))
+
+    assert "elaborar, redigir ou escrever" in rule
+    assert "antes de qualquer outra ferramenta" in rule

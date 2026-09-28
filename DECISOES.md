@@ -389,6 +389,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** detectar a minuta pelo texto da resposta (títulos RELATÓRIO/DISPOSITIVO), pelos falsos positivos e negativos; devolver a resposta ao modelo para ele mesmo pôr o aviso, que custaria uma ida a mais ao modelo para um conserto que o código faz sem erro.
 - **Uso de IA:** o Claude Code escreveu os testes antes do código, com um modelo simulado que esquece o aviso, e conferiu num contra-teste que, sem o validador, o teste principal falha.
 
+### D59 — Recusa da minuta: a regra das instruções nomeia os verbos e manda chamar prepare_draft primeiro
+- **Decisão:** a regra 7 das [instruções](docs/glossario.md#system-prompt) passou a ser "Pedido para elaborar, redigir ou escrever minuta ou sentença: chame prepare_draft() antes de qualquer outra ferramenta e siga o que ela devolver; se recusar, repasse o motivo." A recusa em si continua vindo pronta da [ferramenta](docs/glossario.md#ferramenta) (D57). A T8.4 fica concluída; o roteiro está em [`docs/roteiros/minuta-recusada.md`](docs/roteiros/minuta-recusada.md).
+- **Por quê:** com a regra antiga ("Minuta de sentença: chame prepare_draft()…"), o [modelo local](docs/glossario.md#modelo-local) recusou certo o processo 1, mas só depois de três outras ferramentas. Em "elabore uma minuta" para um processo com só a petição inicial e em "redija a sentença do processo 1", ele nem chamou `prepare_draft`: leu peças e respondeu sobre a sentença existente, confundindo escrever uma sentença com mostrar a que existe. Com a regra nova, os dois pedidos de "minuta" chamaram `prepare_draft` direto e repassaram a recusa, e ficaram mais rápidos (63 → 45 s e 64 → 11 s).
+- **Em aberto:** "redija a sentença do processo 1" ainda foi lida como pedido da sentença existente. A frase tem duas leituras: o processo já foi julgado, e "a sentença" puxa para a que existe. Em nenhum caso saiu texto de sentença. Fica como caso da [bateria](docs/glossario.md#golden-set) (T9.3); as instruções estão a 31 caracteres do teto, sem espaço para mais regra.
+- **Descartado:** detectar o pedido de minuta por palavras na pergunta e chamar `prepare_draft` por código. Seria uma heurística frágil, como a descartada na D57, para um caso que hoje não gera risco (nenhum texto de sentença sai).
+- **Uso de IA:** o Claude Code incluiu na rodada dois pedidos além do exigido pela tarefa (um processo com só a petição inicial e um pedido sem a palavra "minuta"); foi assim que a falha apareceu.
+
 ---
 
 ## Pendências de decisão
