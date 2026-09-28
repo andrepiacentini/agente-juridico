@@ -30,7 +30,7 @@ def test_chat_shows_each_tool_call_and_the_answer(monkeypatch) -> None:
     monkeypatch.delenv("LLM_THINKING", raising=False)
     printed = run_chat(TestModel(call_tools=["find_case"], custom_output_text="Resposta pronta."), "quem é o juiz?", "sair")
 
-    assert any(line.startswith("  → find_case(case_number=") for line in printed)
+    assert any(line.startswith("  → find_case(") for line in printed)  # o número é opcional (T6.3)
     assert "Resposta pronta." in "\n".join(printed)
 
 
