@@ -417,6 +417,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Limite da bateria:** critérios de texto conferem fatos e forma, não raciocínio. A minuta contraditória do [modelo local](docs/glossario.md#modelo-local) na D60 passaria nos critérios da minuta do 3161. A qualidade jurídica continua sendo avaliada lendo a minuta, como na D60.
 - **Uso de IA:** o Claude Code leu a sentença do 3161 e os dados do processo 1 antes de escrever os critérios, e conferiu os critérios contra as respostas já guardadas dos roteiros; foi assim que achou as duas falhas falsas e o limite da minuta.
 
+### D63 — Armadilhas na bateria: 10 casos dos roteiros, incluindo as falhas que ficaram em aberto
+- **Decisão:** `tests/golden.yaml` ganhou 10 casos de armadilha, cada um ligado ao roteiro de origem (`source`): troca de processo em 6 perguntas (E06), processo inexistente, processo existente pedido depois de outro em foco, dígito verificador errado, magistrado aposentado, magistrado ausente (com o servidor que assina as peças), homônimo em 2 perguntas, pergunta impossível (idade), filtro de busca sem valor e "redija a sentença do processo 1". Com os 9 anteriores, a [bateria](docs/glossario.md#golden-set) tem 19 casos. A T9.3 fica concluída.
+- **Por quê incluir as falhas em aberto:** as que ficaram registradas sem conserto (D51, D53, D55, D59) entram como critério, com o comentário "em aberto" no arquivo. Exemplos: o resumo depois da nova tentativa do validador sem `list_movements`; o cartão do processo e o resumo curto sem citação; o rótulo "[warning: …]"; o pedido "redija a sentença" lido como pedido da sentença existente. A bateria existe para medir se elas continuam acontecendo, e com qual modelo; tirá-las esconderia os pontos fracos que a banca pode encontrar.
+- **Por que não repetir o que as perguntas do edital cobrem:** o processo sem documentos e a sentença sem texto já estão nos casos do processo 1 da D62.
+- **Critério retirado por reprovar resposta certa:** "não foi encontrado" como proibido no resumo do processo 1 depois de outro em foco, porque casa com "nenhum documento foi encontrado"; ficou só "não consta no banco o processo", que é o erro real.
+- **Uso de IA:** o Claude Code montou os critérios a partir dos roteiros e das respostas guardadas, e revisou cada critério proibido procurando frases certas que casariam com ele.
+
 ---
 
 ## Pendências de decisão
