@@ -231,3 +231,7 @@ Ferramenta que prepara o ambiente do projeto com um único comando (`uv sync`): 
 <a id="variavel-de-ambiente"></a>
 ### Variável de ambiente (`.env`)
 Configuração guardada fora do código, num arquivo `.env`. Permite trocar o modelo (ou guardar uma chave de acesso) sem mexer no programa.
+
+<a id="validador-de-resposta"></a>
+### Validador da resposta
+Conferência feita por código depois que o modelo responde e antes de a resposta chegar ao usuário. Se a regra não for cumprida, a resposta volta ao modelo com o motivo, e ele tenta de novo. Aqui, garante que todo número de processo citado na pergunta tenha sido consultado no banco antes de o agente afirmar qualquer coisa sobre ele. Serve para regras que o modelo pequeno não segue só com as [instruções](#system-prompt).

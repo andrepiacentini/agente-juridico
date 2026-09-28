@@ -19,6 +19,11 @@ from case_assistant.session import Session
 
 
 MISSING_CASE_NUMBER_MESSAGE = "Informe o número do processo: nenhum processo foi consultado nesta conversa."
+MAX_FAILED_SQL_ATTEMPTS = 2
+SQL_ATTEMPT_LIMIT_MESSAGE = (
+    f"Limite de tentativas atingido: as {MAX_FAILED_SQL_ATTEMPTS} últimas consultas SQL falharam. "
+    "Não tente de novo; informe ao usuário que não foi possível obter a resposta com uma consulta ao banco."
+)
 
 
 def _run_case_tool(
@@ -157,7 +162,21 @@ async def run_sql(ctx: RunContext[Session], sql: str) -> dict[str, Any]:
     Args:
         sql: um único comando SELECT ou WITH, seguindo a descrição do banco nas instruções.
     """
-    return sql_query.run_sql(ctx.deps.connection, sql)
+    session = ctx.deps
+    _restart_sql_attempts_on_new_question(session, ctx.run_id)
+    if session.failed_sql_attempts >= MAX_FAILED_SQL_ATTEMPTS:
+        return {"found": False, "message": SQL_ATTEMPT_LIMIT_MESSAGE}
+    result = sql_query.run_sql(session.connection, sql)
+    session.failed_sql_attempts = 0 if result["found"] else session.failed_sql_attempts + 1
+    return result
+
+
+def _restart_sql_attempts_on_new_question(session: Session, run_id: str) -> None:
+    # Cada pergunta é uma execução do agente (run_id próprio). Contar na conversa inteira travaria o run_sql
+    # para sempre depois de dois erros: bloqueado, ele nunca mais acertaria para zerar a contagem.
+    if session.sql_attempts_run_id != run_id:
+        session.sql_attempts_run_id = run_id
+        session.failed_sql_attempts = 0
 
 
 AGENT_TOOLS = (

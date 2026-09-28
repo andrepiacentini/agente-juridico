@@ -1,5 +1,6 @@
 """Ferramentas de consulta do agente, testadas sem IA sobre o banco real (somente leitura)."""
 
+import re
 from contextlib import closing
 
 import sqlite3
@@ -11,7 +12,7 @@ from case_assistant.tools import find_case, list_documents, list_movements, list
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
-MISSING_CASE_NUMBER = "9999999-99.2099.8.99.9999"
+MISSING_CASE_NUMBER = "0000999-40.2023.8.99.9014"  # dígito verificador certo, mas fora do banco
 LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situacao "julgado"
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
 DUPLICATED_PARTY_CASE_ID = 642  # "Anderson Cunha" vinculado duas vezes ao polo ativo
@@ -44,12 +45,13 @@ def test_find_case_returns_identification_card(connection) -> None:
         "court_unit_district": "São Bento do Sul",
         "court_unit_status": "ativa",
         "judge": {"name": "Luiz Bonetti Vasconcelos", "status": "aposentado"},
-        "filing_date": "2023-12-13",
-        "sentence_date": "2026-02-18",
+        "filing_date": "13/12/2023",
+        "sentence_date": "18/02/2026",
         "claim_value": 3796.73,
         "status": "julgado",
         "document_count": 19,
         "movement_count": 21,
+        "source": "[cadastro do processo]",
     }
 
 
@@ -69,6 +71,17 @@ def test_find_case_reports_missing_case_without_raising(connection) -> None:
     case = find_case(connection, MISSING_CASE_NUMBER)
 
     assert case == {"found": False, "message": f"Processo {MISSING_CASE_NUMBER} não encontrado no banco."}
+
+
+def test_find_case_warns_about_a_likely_typo_when_the_check_digits_fail(connection) -> None:
+    # O 3161 com o dígito verificador trocado (79 → 78): em vez de só "não existe", o provável erro de digitação.
+    case = find_case(connection, "0000007-78.2023.8.99.9014")
+
+    assert case == {
+        "found": False,
+        "message": "Processo 0000007-78.2023.8.99.9014 não encontrado no banco. O dígito verificador (78) não confere "
+        "com o restante do número: provavelmente houve erro de digitação. Confira o número do processo.",
+    }
 
 
 def test_find_case_reports_text_without_case_number(connection) -> None:
@@ -98,8 +111,13 @@ def test_judgment_when_all_three_signals_agree(connection) -> None:
 
     assert judgment == {
         "summary": "Julgado: data de sentença, movimentação de sentença e documento de sentença conferem.",
-        "sentence_movement": {"code": 9219, "description": "Sentença com Resolução do Mérito", "date": "2026-02-18"},
-        "sentence_document": {"id": 7878, "type": "Sentença", "date": "2026-02-18"},
+        "sentence_movement": {
+            "code": 9219, "description": "Sentença com Resolução do Mérito", "date": "18/02/2026",
+            "source": "[mov. 9219 — Sentença com Resolução do Mérito, 18/02/2026]",
+        },
+        "sentence_document": {
+            "id": 7878, "type": "Sentença", "date": "18/02/2026", "source": "[doc 7878 — Sentença, 18/02/2026]",
+        },
     }
 
 
@@ -150,7 +168,7 @@ def test_warnings_report_retired_judge(connection) -> None:
         (11, "A comarca está grafada de forma diferente no processo ('CRICIÚMA') e na vara ('Criciúma')."),
         (134, "grafada de forma diferente no processo ('S. José') e na vara ('São José')"),
         (2, "Valor da causa não informado."),
-        (6, "Valor da causa inválido"),
+        (6, "Valor da causa inválido (R$ 0,00)."),
         (IMPLAUSIBLE_VALUE_CASE_ID, "Valor da causa implausível (R$ 9.999.999.999,00)"),
         (17, "Situação 'julgado' sem data de sentença."),
         (INACTIVE_UNIT_CASE_ID, "está desativada."),
@@ -191,6 +209,7 @@ def test_list_parties_groups_by_pole(connection) -> None:
             {"name": "Operadora de Saúde Cambirela Ltda", "person_type": "pessoa jurídica", "document": "99.193.997/0001-35"}
         ],
         "warnings": [],
+        "source": "[cadastro do processo]",
     }
 
 
@@ -223,9 +242,11 @@ def test_list_movements_returns_timeline_in_date_order(connection) -> None:
 
     assert result["found"] is True
     assert len(movements) == 16
-    assert movements[0] == {"date": "2021-01-11", "code": 9926, "description": "Distribuição por Sorteio"}
-    assert movements[10] == {"date": "2022-02-02", "code": 9219, "description": "Sentença com Resolução do Mérito"}
-    assert [movement["date"] for movement in movements] == sorted(movement["date"] for movement in movements)
+    # Cada movimentação é só a citação pronta: ela já traz código, descrição e data, e custa menos contexto (D53).
+    assert movements[0] == "[mov. 9926 — Distribuição por Sorteio, 11/01/2021]"
+    assert movements[10] == "[mov. 9219 — Sentença com Resolução do Mérito, 02/02/2022]"
+    as_iso = ["-".join(reversed(re.search(r"(\d{2}/\d{2}/\d{4})\]$", movement).group(1).split("/"))) for movement in movements]
+    assert as_iso == sorted(as_iso)
 
 
 def test_list_movements_of_case_without_movements_is_empty(connection) -> None:
@@ -251,7 +272,7 @@ def test_list_movements_warns_about_appeal_after_final_judgment(connection) -> N
     warnings = list_movements(connection, LOWERCASE_STATUS_CASE_NUMBER)["warnings"]
 
     assert warnings == [
-        "Recurso de apelação registrado em 2022-03-04, depois do trânsito em julgado (2022-02-21). "
+        "Recurso de apelação registrado em 04/03/2022, depois do trânsito em julgado (21/02/2022). "
         "Sequência incomum, que merece conferência: pode ser recurso interposto fora do prazo ou erro de cadastro."
     ]
 
@@ -278,9 +299,10 @@ def test_list_documents_returns_metadata_without_text(connection) -> None:
         "id": 7865,
         "type": "Petição Inicial",
         "author": "Dr. Carlos Gava Reis — OAB/SC 99.170",
-        "date": "2024-01-08",
+        "date": "08/01/2024",
         "pages": 2,
         "lawyer_side": "autor",
+        "source": "[doc 7865 — Petição Inicial, 08/01/2024]",
     }
     assert documents[1]["lawyer_side"] is None  # despacho do juiz
     assert all("text" not in document and "texto" not in document for document in documents)
@@ -345,8 +367,9 @@ def test_read_document_returns_full_text_with_citation_data(connection) -> None:
         "case_number": REFERENCE_CASE_NUMBER,
         "type": "Sentença",
         "author": "Luiz Bonetti Vasconcelos",
-        "date": "2026-02-18",
+        "date": "18/02/2026",
         "pages": 2,
+        "source": "[doc 7878 — Sentença, 18/02/2026]",
     }
     assert document["text"] == stored_text
     assert len(document["text"]) == 2_443
@@ -432,7 +455,8 @@ def test_search_text_finds_documents_with_snippet(indexed_connection) -> None:
     assert result["total"] == 2_786
     assert len(result["results"]) == 10
     first = result["results"][0]
-    assert set(first) == {"document_id", "case_number", "type", "date", "snippet"}
+    assert set(first) == {"document_id", "case_number", "type", "date", "snippet", "source"}
+    assert first["source"] == f"[doc {first['document_id']} — {first['type']}, {first['date']}]"
     assert "[inversão do ônus]" in first["snippet"].lower()
 
 
@@ -489,7 +513,8 @@ def test_search_parties_finds_person_with_cases_and_pole(indexed_connection) -> 
     assert person["document"] == "999.539.988-87"
     assert person["person_type"] == "pessoa física"
     assert person["names"] == ["João Ziegler Rocha"]
-    assert {"case_number": REFERENCE_CASE_NUMBER, "pole": "ativo"} in person["cases"]
+    # O papel no processo sai como autor/réu: "polo ativo" virou "processo ativo" na resposta do modelo (D50).
+    assert {"case_number": REFERENCE_CASE_NUMBER, "role": "autor"} in person["cases"]
 
 
 def test_search_parties_ignores_accents_and_word_order(indexed_connection) -> None:
@@ -503,8 +528,9 @@ def test_search_parties_separates_homonyms_and_asks_which_one(indexed_connection
 
     assert result["total_people"] == 2
     assert [person["case_count"] for person in result["people"]] == [2, 1]  # quem tem mais processos primeiro
+    # O modelo pequeno repassa o aviso ao pé da letra (D50): o texto tem que servir ao usuário e terminar na pergunta.
     assert result["homonym_notice"] == (
-        "Há 2 pessoas diferentes (CPF/CNPJ distintos) com esse nome. Pergunte de qual se trata antes de responder."
+        "Encontrei 2 pessoas diferentes com esse nome (CPF/CNPJ distintos). De qual delas se trata?"
     )
 
 
@@ -559,6 +585,7 @@ def test_search_cases_by_subject_ignores_accents_and_case(connection) -> None:
     assert set(result["cases"][0]) == {
         "case_number", "case_class", "subject", "district", "status", "filing_date", "claim_value"
     }
+    assert re.fullmatch(r"\d{2}/\d{2}/\d{4}", result["cases"][0]["filing_date"])
 
 
 def test_search_cases_combines_class_and_district(connection) -> None:
@@ -605,7 +632,45 @@ def test_search_cases_rejects_invalid_date_and_order(connection) -> None:
 
 
 def test_search_cases_without_matches_says_so(connection) -> None:
-    assert search_cases(connection, subject="assunto inexistente xyz") == {
+    # Cada filtro sozinho encontra processos; só a combinação não (nenhum divórcio corre em vara da Fazenda).
+    assert search_cases(connection, case_class="divórcio", court_unit="fazenda") == {
         "found": False,
-        "message": "Nenhum processo atende aos filtros.",
+        "message": "Nenhum processo atende a todos os filtros juntos; cada um, sozinho, encontra processos.",
     }
+
+
+def test_search_cases_names_a_class_that_does_not_exist_and_lists_the_real_ones(connection) -> None:
+    # D52: com "Nenhum processo atende aos filtros", o modelo concluiu, falsamente, que não havia processo com valor.
+    result = search_cases(connection, case_class="any", claim_value_max=9_999_999_999)
+    classes = [row["classe"] for row in connection.execute("SELECT DISTINCT classe FROM processo ORDER BY classe")]
+
+    assert result == {
+        "found": False,
+        "message": f"Não há classe com 'any' no banco. Classes que existem: {', '.join(classes)}.",
+    }
+
+
+@pytest.mark.parametrize(
+    ("filters", "expected_start"),
+    [
+        ({"subject": "assunto inexistente xyz"}, "Não há assunto com 'assunto inexistente xyz' no banco. Assuntos que existem: "),
+        ({"court_unit": "vara espacial"}, "Não há vara com 'vara espacial' no banco. Varas que existem: "),
+        ({"status": "pendente"}, "Não há situação com 'pendente' no banco. Situações que existem: arquivado, em andamento, julgado, suspenso."),
+    ],
+    ids=["subject", "court_unit", "status"],
+)
+def test_search_cases_lists_the_real_values_of_short_lists(connection, filters, expected_start: str) -> None:
+    assert search_cases(connection, **filters)["message"].startswith(expected_start)
+
+
+@pytest.mark.parametrize(
+    ("filters", "expected"),
+    [
+        ({"district": "Atlântida"}, "Não há comarca com 'Atlântida' no banco."),
+        ({"judge": "Fulano Inexistente"}, "Não há magistrado com 'Fulano Inexistente' no banco."),
+    ],
+    ids=["district", "judge"],
+)
+def test_search_cases_does_not_list_long_lists(connection, filters, expected: str) -> None:
+    # 230 comarcas e 200 magistrados: a lista custaria contexto demais para o modelo local.
+    assert search_cases(connection, **filters)["message"] == expected
