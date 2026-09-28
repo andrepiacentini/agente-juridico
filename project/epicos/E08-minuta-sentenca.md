@@ -35,7 +35,7 @@
 - **Depende de:** T8.1, E05.
 - **Para explicar à banca:** "Recusar com motivo é uma resposta correta, não uma falha."
 
-### T8.5 — Minuta do processo 3161 `[ ]`
+### T8.5 — Minuta do processo 3161 `[x]`
 - **Objetivo:** gerar a minuta completa do 3161 nos dois modelos.
 - **Passos:** rodar; conferir aviso, estrutura, citações e ausência de fatos inventados; anotar tempo e qualidade.
 - **Pronto quando:** a minuta está aceitável em pelo menos um modelo e a comparação está no `DECISOES.md`.
