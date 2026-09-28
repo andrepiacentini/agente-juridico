@@ -34,7 +34,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E04 | [Consulta livre protegida](epicos/E04-consulta-livre.md) | "Válvula de escape" SQL que não consegue estragar nada | 5 | `[x]` |
 | E05 | [Agente no terminal](epicos/E05-agente-terminal.md) | Conversa no terminal usando as ferramentas | 9 | `[x]` |
 | E06 | [Memória da conversa](epicos/E06-memoria-conversa.md) | "E quem é o juiz?" funciona sem repetir o número | 4 | `[x]` |
-| E07 | [Reconhecer limites](epicos/E07-reconhecer-limites.md) | O agente diz "não consta" em vez de inventar | 8 | `[~]` |
+| E07 | [Reconhecer limites](epicos/E07-reconhecer-limites.md) | O agente diz "não consta" em vez de inventar | 9 | `[x]` |
 | E08 | [Minuta de sentença](epicos/E08-minuta-sentenca.md) | Minuta rotulada como proposta, ou recusa explicada | 5 | `[ ]` |
 | E09 | [Bateria de perguntas de avaliação](epicos/E09-avaliacao.md) | Placar de acertos por modelo | 5 | `[ ]` |
 | E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[ ]` |

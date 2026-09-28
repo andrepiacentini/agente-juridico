@@ -111,6 +111,16 @@ SEARCH_CASES_FROM = """
     LEFT JOIN unidade u ON u.id = p.unidade_id
     LEFT JOIN magistrado m ON m.id = p.magistrado_id
 """
+# Busca vazia não quer dizer que o dado não existe (D52, T7.9): cada filtro de texto é conferido sozinho.
+# Listas curtas vão na mensagem para o modelo escolher um valor que existe; comarca (230) e magistrado (200), não.
+SEARCH_CASES_FILTER_VALUES_QUERIES = {
+    "classe": ("Classes", "SELECT DISTINCT classe FROM processo ORDER BY classe"),
+    "assunto": ("Assuntos", "SELECT DISTINCT assunto FROM processo ORDER BY assunto"),
+    "vara": ("Varas", "SELECT DISTINCT vara FROM unidade ORDER BY vara"),
+    "situação": ("Situações", "SELECT DISTINCT LOWER(TRIM(situacao)) FROM processo ORDER BY 1"),
+    "comarca": None,
+    "magistrado": None,
+}
 MATCHING_PARTY_DOCUMENTS_QUERY = """
     SELECT DISTINCT pa.documento FROM temp.party_search
     JOIN parte pa ON pa.id = party_search.rowid
@@ -519,17 +529,22 @@ def search_cases(
     if order_by not in SEARCH_CASES_ORDER_COLUMNS:
         return {"found": False, "message": f"Ordenação '{order_by}' inválida. Use: {', '.join(SEARCH_CASES_ORDER_COLUMNS)}."}
 
-    text_filters = [
-        ("comparable_text(p.assunto)", subject, comparable_text),
-        ("comparable_text(p.classe)", case_class, comparable_text),
-        ("comparable_district(p.comarca)", district, comparable_district),
-        ("comparable_text(u.vara)", court_unit, comparable_text),
-        ("comparable_text(m.nome)", judge, comparable_text),
+    # (nome do filtro para o usuário, condição SQL, valor como veio, valor normalizado para comparar)
+    value_filters = [
+        (label, condition, value, normalize(value))
+        for label, condition, value, normalize in [
+            ("assunto", "comparable_text(p.assunto) LIKE ?", subject, _contains),
+            ("classe", "comparable_text(p.classe) LIKE ?", case_class, _contains),
+            ("comarca", "comparable_district(p.comarca) LIKE ?", district, _contains_district),
+            ("vara", "comparable_text(u.vara) LIKE ?", court_unit, _contains),
+            ("magistrado", "comparable_text(m.nome) LIKE ?", judge, _contains),
+            ("situação", "LOWER(TRIM(p.situacao)) = ?", status, comparable_text),
+        ]
+        if value
     ]
-    conditions = [f"{column} LIKE ?" for column, value, _ in text_filters if value]
-    parameters: list[Any] = [f"%{normalize(value)}%" for _, value, normalize in text_filters if value]
+    conditions = [condition for _, condition, _, _ in value_filters]
+    parameters: list[Any] = [normalized for _, _, _, normalized in value_filters]
     range_filters = [
-        ("LOWER(TRIM(p.situacao)) =", comparable_text(status)),
         ("p.dt_aut >=", filing_date_from), ("p.dt_aut <=", filing_date_to),
         ("p.data_sentenca >=", sentence_date_from), ("p.data_sentenca <=", sentence_date_to),
         ("p.valor_causa >=", claim_value_min), ("p.valor_causa <=", claim_value_max),
@@ -542,7 +557,7 @@ def search_cases(
     where = " WHERE " + " AND ".join(conditions)
     total = connection.execute(f"SELECT COUNT(*) AS total {SEARCH_CASES_FROM}{where}", parameters).fetchone()["total"]
     if not total:
-        return {"found": False, "message": "Nenhum processo atende aos filtros."}
+        return {"found": False, "message": _no_case_found_message(connection, value_filters)}
     order_column = SEARCH_CASES_ORDER_COLUMNS[order_by]
     rows = connection.execute(
         f"SELECT p.numero, p.classe, p.assunto, p.comarca, LOWER(TRIM(p.situacao)) AS situacao, p.dt_aut, p.valor_causa"
@@ -559,6 +574,35 @@ def search_cases(
             for row in rows
         ],
     }
+
+
+def _contains(value: str) -> str:
+    return f"%{comparable_text(value)}%"
+
+
+def _contains_district(value: str) -> str:
+    return f"%{comparable_district(value)}%"
+
+
+def _no_case_found_message(connection: sqlite3.Connection, value_filters: list[tuple[str, str, str, str]]) -> str:
+    """Diz qual filtro não corresponde a nada no banco; se todos existem, o vazio vem da combinação."""
+    for label, condition, value, normalized in value_filters:
+        alone = connection.execute(f"SELECT 1 {SEARCH_CASES_FROM} WHERE {condition} LIMIT 1", (normalized,)).fetchone()
+        if alone is None:
+            return _unknown_filter_value_message(connection, label, value)
+    if len(value_filters) > 1:
+        return "Nenhum processo atende a todos os filtros juntos; cada um, sozinho, encontra processos."
+    return "Nenhum processo atende aos filtros."
+
+
+def _unknown_filter_value_message(connection: sqlite3.Connection, label: str, value: str) -> str:
+    message = f"Não há {label} com '{value}' no banco."
+    values_query = SEARCH_CASES_FILTER_VALUES_QUERIES[label]
+    if values_query is None:
+        return message
+    plural_label, query = values_query
+    values = [row[0] for row in connection.execute(query)]
+    return f"{message} {plural_label} que existem: {', '.join(values)}."
 
 
 def _people_by_document(connection: sqlite3.Connection, documents: list[str]) -> list[dict[str, Any]]:

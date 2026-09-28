@@ -65,3 +65,11 @@ Cada tarefa = uma regra nas instruções do agente + uma verificação com pergu
 - **Pronto quando:** "resuma o 0000007-78.2023.8.99.9014" (dígito errado) gera o aviso de digitação, e um número válido que não está no banco continua gerando "não encontrado".
 - **Depende de:** T2.4, T7.5.
 - **Para explicar à banca:** "O número do processo tem um dígito de conferência; uso ele para distinguir 'você digitou errado' de 'esse processo não existe'."
+
+### T7.9 — Filtro de busca sem nenhum valor correspondente `[x]`
+- **Objetivo:** quando `search_cases` não acha nada porque um filtro não corresponde a nenhum valor do banco (ex.: `case_class='any'`), a ferramenta diz qual filtro e, quando são poucos, quais valores existem, em vez de só "Nenhum processo atende aos filtros".
+- **Origem:** achado da T7.6 (D52): com a resposta genérica, o modelo concluiu "Não consta processo com valor da causa", o que é falso.
+- **Passos:** conferir cada filtro sozinho quando o resultado vem vazio; listar os valores de classe, assunto, vara e situação; testar com "qual o percentil 90 do valor da causa por classe processual?".
+- **Pronto quando:** teste sem IA confirma a mensagem; a pergunta real não termina mais em "não consta" falso.
+- **Depende de:** T3.11.
+- **Para explicar à banca:** "Busca vazia não quer dizer que o dado não existe; a ferramenta diz quando o problema é o filtro."

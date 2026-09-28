@@ -632,7 +632,45 @@ def test_search_cases_rejects_invalid_date_and_order(connection) -> None:
 
 
 def test_search_cases_without_matches_says_so(connection) -> None:
-    assert search_cases(connection, subject="assunto inexistente xyz") == {
+    # Cada filtro sozinho encontra processos; só a combinação não (nenhum divórcio corre em vara da Fazenda).
+    assert search_cases(connection, case_class="divórcio", court_unit="fazenda") == {
         "found": False,
-        "message": "Nenhum processo atende aos filtros.",
+        "message": "Nenhum processo atende a todos os filtros juntos; cada um, sozinho, encontra processos.",
     }
+
+
+def test_search_cases_names_a_class_that_does_not_exist_and_lists_the_real_ones(connection) -> None:
+    # D52: com "Nenhum processo atende aos filtros", o modelo concluiu, falsamente, que não havia processo com valor.
+    result = search_cases(connection, case_class="any", claim_value_max=9_999_999_999)
+    classes = [row["classe"] for row in connection.execute("SELECT DISTINCT classe FROM processo ORDER BY classe")]
+
+    assert result == {
+        "found": False,
+        "message": f"Não há classe com 'any' no banco. Classes que existem: {', '.join(classes)}.",
+    }
+
+
+@pytest.mark.parametrize(
+    ("filters", "expected_start"),
+    [
+        ({"subject": "assunto inexistente xyz"}, "Não há assunto com 'assunto inexistente xyz' no banco. Assuntos que existem: "),
+        ({"court_unit": "vara espacial"}, "Não há vara com 'vara espacial' no banco. Varas que existem: "),
+        ({"status": "pendente"}, "Não há situação com 'pendente' no banco. Situações que existem: arquivado, em andamento, julgado, suspenso."),
+    ],
+    ids=["subject", "court_unit", "status"],
+)
+def test_search_cases_lists_the_real_values_of_short_lists(connection, filters, expected_start: str) -> None:
+    assert search_cases(connection, **filters)["message"].startswith(expected_start)
+
+
+@pytest.mark.parametrize(
+    ("filters", "expected"),
+    [
+        ({"district": "Atlântida"}, "Não há comarca com 'Atlântida' no banco."),
+        ({"judge": "Fulano Inexistente"}, "Não há magistrado com 'Fulano Inexistente' no banco."),
+    ],
+    ids=["district", "judge"],
+)
+def test_search_cases_does_not_list_long_lists(connection, filters, expected: str) -> None:
+    # 230 comarcas e 200 magistrados: a lista custaria contexto demais para o modelo local.
+    assert search_cases(connection, **filters)["message"] == expected
