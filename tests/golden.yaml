@@ -38,3 +38,110 @@ cases:
           - Acidente de Trânsito      # assunto do 3161
           - João Ziegler Rocha        # autor do 3161
           - "3.796,73"                # valor da causa do 3161
+
+  # --- As 4 perguntas do edital (T9.2), no melhor caso do banco (3161: 19 documentos, sentença parcialmente
+  # procedente, juiz aposentado) e no pior (processo 1: nenhum documento, "julgado" em minúsculas).
+
+  - id: edital-1-resumo-3161
+    description: pergunta 1 do edital no processo com documentos
+    turns:
+      - ask: Resuma o processo 0000007-79.2023.8.99.9014, destacando os principais fatos e o andamento processual.
+        must_call: [find_case, list_movements, read_document]
+        must_contain:
+          - ["colisão", "acidente"]              # fato central da petição inicial
+          - ["18/02/2026"]                       # data da sentença
+          - "[doc"                               # cita documento
+        must_not_contain:
+          - "2026-02-18"                         # data no formato do banco (D53)
+
+  - id: edital-1-resumo-processo-1
+    description: pergunta 1 do edital no processo sem documentos
+    source: docs/roteiros/processo-sem-documentos.md
+    turns:
+      - ask: Resuma o processo 0000001-43.2021.8.99.9014, destacando os principais fatos e o andamento processual.
+        must_call: [find_case, list_movements]
+        must_contain:
+          - ["não há documento", "nenhum documento", "sem documentos", "não consta", "não há peças"]
+          - "02/02/2022"                         # movimentação de sentença
+        must_not_contain:
+          - "[doc"                               # não há documento para citar
+
+  - id: edital-2-partes-3161
+    description: pergunta 2 do edital no processo com documentos
+    turns:
+      - ask: Quem são as partes, o magistrado e os advogados do processo 0000007-79.2023.8.99.9014? Quais são os pedidos apresentados?
+        must_call: [list_parties]
+        must_contain:
+          - João Ziegler Rocha
+          - Operadora de Saúde Cambirela
+          - Luiz Bonetti Vasconcelos
+          - aposentado
+          - Carlos Gava Reis                     # advogado do autor (OAB/SC 99.170)
+          - Sônia Weber Azevedo                  # advogada da ré (OAB/SC 99.854)
+          - indenização                          # pedido da petição inicial
+
+  - id: edital-2-partes-processo-1
+    description: pergunta 2 do edital no processo sem documentos (sem advogados nem pedidos no banco)
+    turns:
+      - ask: Quem são as partes, o magistrado e os advogados do processo 0000001-43.2021.8.99.9014? Quais são os pedidos apresentados?
+        must_call: [list_parties]
+        must_contain:
+          - Carlos Bertoldi Boeing
+          - Pedro Vieceli
+          - Banco Meridional
+          - Pedro Cunha Nichele
+          - ["não consta", "não há", "não foi possível", "não estão disponíveis", "não é possível"]
+        must_not_contain:
+          - OAB                                  # advogados só existem nos documentos, e não há documentos
+
+  - id: edital-3-julgamento-3161
+    description: pergunta 3 do edital no processo com o texto da sentença
+    turns:
+      - ask: O processo 0000007-79.2023.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?
+        must_call: [read_document]
+        must_contain:
+          - parcialmente procedente
+          - "1.523,18"                           # valor da condenação na sentença
+          - ["excessivo", "razoabilidade", "proporcionalidade"]   # fundamento do acolhimento parcial
+          - "[doc 7878"
+
+  - id: edital-3-julgamento-processo-1
+    description: pergunta 3 do edital no processo com data de sentença e sem o texto
+    source: docs/roteiros/sentenca-sem-texto.md
+    turns:
+      - ask: O processo 0000001-43.2021.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?
+        must_call: [find_case]
+        must_contain:
+          - "02/02/2022"
+          - ["não está no banco", "não consta", "não há", "não está disponível", "não é possível"]
+        # Sem must_not_contain de resultado: "não é possível saber se foi procedente ou improcedente" é resposta
+        # certa e casaria com qualquer palavra de decisão.
+
+  - id: edital-4-minuta-3161
+    description: pergunta 4 do edital no processo com petição inicial e contestação
+    source: docs/roteiros/minuta-3161.md
+    turns:
+      - ask: Elabore uma minuta de sentença para o processo 0000007-79.2023.8.99.9014, com base nos fatos e documentos disponíveis.
+        must_call: [prepare_draft, read_document]
+        must_contain:
+          - PROPOSTA DE MINUTA — texto não proferido
+          - RELATÓRIO
+          - FUNDAMENTAÇÃO
+          - DISPOSITIVO
+          - "[doc 7865"                          # cita a petição inicial
+        must_not_contain:
+          - "1.523,18"                           # valor da sentença real: sinal de que a copiou (D57)
+          - Juiz(a) de Direito                   # assinatura: a minuta não é atribuída a um juiz
+
+  - id: edital-4-minuta-processo-1
+    description: pergunta 4 do edital no processo sem petição inicial nem contestação
+    source: docs/roteiros/minuta-recusada.md
+    turns:
+      - ask: Elabore uma minuta de sentença para o processo 0000001-43.2021.8.99.9014, com base nos fatos e documentos disponíveis.
+        must_call: [prepare_draft]
+        must_contain:
+          - petição inicial
+          - contestação
+        must_not_contain:
+          - PROPOSTA DE MINUTA
+          - DISPOSITIVO                          # "julgo" ficou de fora: está dentro de "julgou"

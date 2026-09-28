@@ -410,6 +410,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** um avaliador por [LLM](docs/glossario.md#llm) (outro modelo julgando a resposta), que seria mais flexível, mas custaria créditos, tempo e daria notas que mudam de uma rodada para outra; expressões regulares nos critérios, difíceis de ler para a banca.
 - **Uso de IA:** o Claude Code propôs os três campos a mais a partir das falhas registradas nos roteiros, e escreveu o teste do formato antes do arquivo.
 
+### D62 — As 4 perguntas do edital viram 8 casos, com critérios que não reprovam resposta certa
+- **Decisão:** `tests/golden.yaml` ganhou 8 casos: as 4 perguntas do edital, com o texto do edital, no 3161 (melhor caso) e no processo 1 (pior caso). Os critérios saíram do gabarito conferido no banco: partes, juiz aposentado, advogados e pedido do 3161; a sentença do 3161 (parcialmente procedente, R$ 1.523,18, montante excessivo); a data da sentença do processo 1 sem o texto; e a recusa da minuta do processo 1. A T9.2 fica concluída.
+- **Por quê desses critérios:** cada um verifica um fato ou uma regra que já falhou antes. Exemplos: datas em DD/MM/AAAA (D53), advogados que só existem nos documentos (e o processo 1 não tem nenhum), `must_call` onde a resposta depende de consulta (D51). Na minuta do 3161, o valor da sentença real (R$ 1.523,18) é proibido: se ele aparecer, a minuta copiou a sentença existente em vez de propor a partir das peças (D57).
+- **Critérios retirados por reprovarem resposta certa:** "julgo" na recusa da minuta, porque está dentro de "julgou"; e qualquer palavra de resultado ("improcedente") na pergunta 3 do processo 1, porque "não é possível saber se foi procedente ou improcedente" é a resposta certa.
+- **Limite da bateria:** critérios de texto conferem fatos e forma, não raciocínio. A minuta contraditória do [modelo local](docs/glossario.md#modelo-local) na D60 passaria nos critérios da minuta do 3161. A qualidade jurídica continua sendo avaliada lendo a minuta, como na D60.
+- **Uso de IA:** o Claude Code leu a sentença do 3161 e os dados do processo 1 antes de escrever os critérios, e conferiu os critérios contra as respostas já guardadas dos roteiros; foi assim que achou as duas falhas falsas e o limite da minuta.
+
 ---
 
 ## Pendências de decisão
