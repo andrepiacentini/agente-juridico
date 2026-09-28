@@ -26,6 +26,8 @@ uv run case-assistant              # chat no terminal (cli.py) — plano B da de
 uv run chainlit run app.py -w      # UI web; implementada no E10
 uv run pytest                      # testes (não precisam de LLM); também rodam na CI em todo PR
 uv run pytest tests/test_tools.py -k "without_documents"   # um teste (nomes em inglês, D19)
+uv run case-assistant-eval         # bateria de avaliação (tests/golden.yaml) com o modelo real; E09
+LLM_THINKING=low uv run case-assistant-eval --model google:gemini-3.8-flash --case troca-de-processo --output respostas.json
 ```
 
 Troca de LLM só por variável de ambiente (`LLM_MODEL` em `.env`): `ollama:qwen3:4b-instruct-2507-q4_K_M` local, `google:gemini-3.8-flash` na nuvem (gratuito) ou `anthropic:...` na nuvem (com crédito). O código não pode ter branch por provedor.

@@ -28,7 +28,7 @@
 - **Depende de:** T9.1, E07.
 - **Para explicar à banca:** "Cada armadilha do banco tem um caso que prova que o agente não cai nela."
 
-### T9.4 — Comando que roda a bateria `[ ]`
+### T9.4 — Comando que roda a bateria `[x]`
 - **Objetivo:** script que executa todas as perguntas e imprime acerto/erro por caso e o total.
 - **Passos:** ler o YAML; rodar o agente; checar os critérios; opção para escolher o modelo.
 - **Pronto quando:** o comando roda e mostra o placar.
