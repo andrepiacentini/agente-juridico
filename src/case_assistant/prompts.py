@@ -82,6 +82,18 @@ DRAFT_INSTRUCTIONS = f"""Como redigir a minuta de sentença:
 6. Não assine a minuta, não a atribua a um juiz e não ponha data nem local de assinatura.
 """
 
+# Negrito ou título Markdown em volta do aviso não o descaracterizam.
+DRAFT_NOTICE_DECORATION = "*# "
+
+
+def with_draft_notice(draft: str) -> str:
+    """Garante o aviso na primeira linha da minuta (T8.3); se o modelo já o pôs, o texto fica como está."""
+    first_line = next((line for line in draft.splitlines() if line.strip()), "")
+    if first_line.strip(DRAFT_NOTICE_DECORATION + "\t") == DRAFT_NOTICE:
+        return draft
+    return f"{DRAFT_NOTICE}\n\n{draft}"
+
+
 FOCUS_LABEL = "Processo em foco:"
 
 

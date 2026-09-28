@@ -21,7 +21,7 @@
 - **Depende de:** T5.2.
 - **Para explicar à banca:** "A minuta segue a estrutura clássica de sentença e só usa o que está nos autos."
 
-### T8.3 — Aviso obrigatório no topo `[ ]`
+### T8.3 — Aviso obrigatório no topo `[x]`
 - **Objetivo:** garantir, por código, que toda minuta comece com "PROPOSTA DE MINUTA — texto não proferido".
 - **Passos:** ao detectar uma minuta na resposta, inserir o aviso se o modelo não tiver colocado; teste sem IA para a função.
 - **Pronto quando:** o teste passa com e sem o aviso vindo do modelo.

@@ -189,6 +189,7 @@ async def prepare_draft(ctx: RunContext[Session], case_number: str | None = None
     result = _run_case_tool(ctx, tools.prepare_draft, case_number)
     if result.get("ready"):
         result["instructions"] = DRAFT_INSTRUCTIONS
+        ctx.deps.draft_run_id = ctx.run_id  # a resposta desta pergunta é uma minuta: leva o aviso (T8.3)
     return result
 
 

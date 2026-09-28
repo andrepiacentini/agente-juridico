@@ -19,9 +19,10 @@ MISSING_CASE_NUMBER = "0000999-40.2023.8.99.9014"  # dígito verificador certo, 
 
 @dataclass
 class FakeContext:
-    """Os adaptadores só usam ctx.deps; não é preciso um modelo para testá-los."""
+    """Os adaptadores usam ctx.deps e ctx.run_id (uma execução do agente por pergunta); não é preciso um modelo."""
 
     deps: Session
+    run_id: str = "run-1"
 
 
 def call(tool, session: Session, *args):
