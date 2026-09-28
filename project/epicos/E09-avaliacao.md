@@ -7,7 +7,7 @@
 
 ---
 
-### T9.1 — Formato do arquivo de perguntas `[ ]`
+### T9.1 — Formato do arquivo de perguntas `[x]`
 - **Objetivo:** definir `tests/golden.yaml`: pergunta, processo, "deve conter", "não deve conter".
 - **Passos:** escrever o formato com 1 exemplo comentado.
 - **Pronto quando:** o formato está documentado no próprio arquivo.
