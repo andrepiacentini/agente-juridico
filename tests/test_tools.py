@@ -12,7 +12,7 @@ from case_assistant.tools import find_case, list_documents, list_movements, list
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
-MISSING_CASE_NUMBER = "9999999-99.2099.8.99.9999"
+MISSING_CASE_NUMBER = "0000999-40.2023.8.99.9014"  # dígito verificador certo, mas fora do banco
 LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situacao "julgado"
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
 DUPLICATED_PARTY_CASE_ID = 642  # "Anderson Cunha" vinculado duas vezes ao polo ativo
@@ -71,6 +71,17 @@ def test_find_case_reports_missing_case_without_raising(connection) -> None:
     case = find_case(connection, MISSING_CASE_NUMBER)
 
     assert case == {"found": False, "message": f"Processo {MISSING_CASE_NUMBER} não encontrado no banco."}
+
+
+def test_find_case_warns_about_a_likely_typo_when_the_check_digits_fail(connection) -> None:
+    # O 3161 com o dígito verificador trocado (79 → 78): em vez de só "não existe", o provável erro de digitação.
+    case = find_case(connection, "0000007-78.2023.8.99.9014")
+
+    assert case == {
+        "found": False,
+        "message": "Processo 0000007-78.2023.8.99.9014 não encontrado no banco. O dígito verificador (78) não confere "
+        "com o restante do número: provavelmente houve erro de digitação. Confira o número do processo.",
+    }
 
 
 def test_find_case_reports_text_without_case_number(connection) -> None:

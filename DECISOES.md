@@ -355,6 +355,14 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** um [validador da resposta](docs/glossario.md#validador-de-resposta) que exigisse citação quando uma ferramenta devolveu dados: dispararia em 1 de 7 respostas, com 10 a 40 s a mais nelas, e não pegaria a citação parcial. Mais uma regra nas instruções: a D51 mostrou que regra pode não mudar nada neste modelo, e o prompt está a 97 caracteres do teto. Manter os campos antigos das movimentações ao lado do `source`, pelo custo de contexto.
 - **Uso de IA:** o Claude Code escreveu os testes antes do código. Mediu o tamanho da saída antes de decidir o formato das movimentações e reviu a decisão quando viu o custo. Na rodada dos roteiros, conferiu as datas das respostas contra o banco antes de declarar o erro da T7.4 corrigido.
 
+### D54 — Número com dígito verificador errado ganha aviso de provável erro de digitação
+- **Decisão:** `case_number.py` passou a conferir os dígitos verificadores do [número CNJ](docs/glossario.md#numero-cnj) pelo cálculo do módulo 97 (`has_valid_check_digits`). Quando o processo não está no banco e os dígitos não conferem, a mensagem de "não encontrado" acrescenta: "O dígito verificador (78) não confere com o restante do número: provavelmente houve erro de digitação. Confira o número do processo." Com o dígito certo, a mensagem continua só "não encontrado". A T7.8 (opcional) fica concluída; o roteiro está em [`docs/roteiros/digito-verificador.md`](docs/roteiros/digito-verificador.md).
+- **Por quê:** "esse processo não existe" e "você digitou errado" pedem ações diferentes de quem pergunta. O dígito verificador distingue os dois sem palpite: os 10.000 números do banco passam na conferência, e um dígito trocado no sequencial, no ano ou no próprio verificador quebra a conta.
+- **Resultado com o [modelo local](docs/glossario.md#modelo-local):** "resuma o 0000007-78.2023.8.99.9014" (o 3161 com um dígito trocado) gerou o aviso de digitação (32 s); "resuma o processo 0000999-40.2023.8.99.9014" (dígito certo, fora do banco) continuou "não consta" (7 s).
+- **Mesmo erro da D50:** na primeira versão, a mensagem terminava com "Confirme o número com o usuário", e o modelo repassou a frase ao usuário. Ela foi reescrita para servir a quem lê a resposta.
+- **Descartado:** sugerir o número "corrigido" (recalcular o dígito). O erro pode estar em outro dígito, e a sugestão apontaria para um processo que o usuário não pediu.
+- **Uso de IA:** o Claude Code escreveu os testes antes do código. Percebeu que o número "inexistente" usado nos testes antigos (`9999999-99.2099.8.99.9999`) tinha o dígito errado e passaria a gerar o aviso; trocou pelo número válido fora do banco da T7.5, para os testes continuarem testando o "não encontrado" puro. Repetiu o erro da D50 ao escrever a primeira mensagem, que só apareceu na rodada com o modelo.
+
 ---
 
 ## Pendências de decisão

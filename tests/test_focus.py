@@ -14,7 +14,7 @@ from case_assistant.session import Session, open_session
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"
 OTHER_CASE_NUMBER = "0000001-43.2021.8.99.9014"
-MISSING_CASE_NUMBER = "9999999-99.2099.8.99.9999"
+MISSING_CASE_NUMBER = "0000999-40.2023.8.99.9014"  # dígito verificador certo, mas fora do banco
 
 
 @dataclass

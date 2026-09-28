@@ -58,7 +58,7 @@ Cada tarefa = uma regra nas instruções do agente + uma verificação com pergu
 - **Depende de:** T7.1 a T7.5.
 - **Para explicar à banca:** "Cada afirmação aponta de onde veio, para que a pessoa possa conferir no processo."
 
-### T7.8 — Avisar número de processo com dígito errado (opcional) `[ ]`
+### T7.8 — Avisar número de processo com dígito errado (opcional) `[x]`
 - **Opcional:** a tarefa não é exigida pelo edital; sem ela, um número digitado errado já resulta em "processo não encontrado" (T7.5).
 - **Objetivo:** quando o número tem formato CNJ mas o dígito verificador não confere, o agente avisa que provavelmente houve erro de digitação, em vez de só dizer que o processo não existe.
 - **Passos:** em `case_number.py`, função que confere o dígito verificador pelo cálculo módulo 97 do padrão CNJ (os 10.000 números do banco passam nessa conferência — verificado na T2.4); usar na resposta de processo inexistente; testar com o 3161 com um dígito trocado.
