@@ -1,0 +1,40 @@
+# Bateria de avaliação do agente (E09).
+#
+# Cada caso é uma conversa: uma ou mais perguntas, na ordem, na mesma sessão. Os critérios valem para a resposta
+# da pergunta onde estão escritos; uma pergunta sem critérios só prepara a conversa (por exemplo, põe um processo
+# em foco). Quem roda a bateria é o comando da T9.4; os testes da suíte (pytest) só conferem este formato.
+#
+# Campos de um caso:
+#   id:           nome curto e único, em minúsculas, com hífens (aparece no placar).
+#   description:  (opcional) o que o caso testa, em uma frase.
+#   source:       (opcional) roteiro de onde o caso veio, em docs/roteiros/.
+#   turns:        a lista de perguntas.
+#
+# Campos de cada pergunta (turn):
+#   ask:               o texto da pergunta, exatamente como o usuário digitaria.
+#   must_call:         (opcional) ferramentas que o agente tem que chamar ao responder esta pergunta,
+#                      ex.: [find_case]. Pega a resposta certa por acaso, sem consulta ao banco (D51).
+#   must_contain:      (opcional) trechos que a resposta tem que ter. Um item pode ser uma lista de
+#                      alternativas, e basta uma delas: ["não consta", "não encontrado"].
+#   must_not_contain:  (opcional) trechos que a resposta não pode ter; um item-lista falha se qualquer
+#                      alternativa aparecer.
+#
+# A comparação ignora maiúsculas, minúsculas e acentos ("Não Consta" casa com "nao consta").
+# O caso passa só se todas as perguntas com critérios passarem.
+
+cases:
+  # Exemplo: o número novo, depois de um processo em foco, tem que ser consultado antes de o agente dizer que
+  # não consta (T7.5). Sem o validador da resposta, o modelo local dizia "não consta" sem consultar.
+  - id: inexistente-depois-de-foco
+    description: número inexistente pedido depois de outro processo em foco
+    source: docs/roteiros/processo-inexistente.md
+    turns:
+      - ask: qual o assunto do processo 0000007-79.2023.8.99.9014?   # só põe o 3161 em foco
+      - ask: resuma o processo 0000999-40.2023.8.99.9014
+        must_call: [find_case]
+        must_contain:
+          - ["não consta", "não encontrado", "não foi encontrado"]
+        must_not_contain:
+          - Acidente de Trânsito      # assunto do 3161
+          - João Ziegler Rocha        # autor do 3161
+          - "3.796,73"                # valor da causa do 3161
