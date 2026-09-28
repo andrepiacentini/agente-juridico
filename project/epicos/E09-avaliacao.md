@@ -14,7 +14,7 @@
 - **Depende de:** nada.
 - **Para explicar à banca:** "Cada pergunta tem critérios simples de verificação, legíveis por quem não programa."
 
-### T9.2 — As 4 perguntas do edital nos 2 processos de referência `[ ]`
+### T9.2 — As 4 perguntas do edital nos 2 processos de referência `[x]`
 - **Objetivo:** 8 casos: perguntas 1 a 4 para o 3161 e para o processo 1.
 - **Passos:** escrever os critérios (ex.: processo 1 + minuta → deve conter "petição inicial" e não deve conter "JULGO").
 - **Pronto quando:** 8 casos no arquivo.
