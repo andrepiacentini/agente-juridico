@@ -12,5 +12,14 @@ def extract_case_number(text: str) -> str | None:
     match = CASE_NUMBER_PATTERN.search(text)
     if match is None:
         return None
+    return _formatted(match)
+
+
+def extract_case_numbers(text: str) -> list[str]:
+    """Todos os números de processo do texto, formatados, sem repetição e na ordem em que aparecem."""
+    return list(dict.fromkeys(_formatted(match) for match in CASE_NUMBER_PATTERN.finditer(text)))
+
+
+def _formatted(match: re.Match[str]) -> str:
     sequence, check_digits, year, justice, court, origin = match.groups()
     return f"{sequence}-{check_digits}.{year}.{justice}.{court}.{origin}"

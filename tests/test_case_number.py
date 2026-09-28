@@ -2,7 +2,7 @@
 
 import pytest
 
-from case_assistant.case_number import extract_case_number
+from case_assistant.case_number import extract_case_number, extract_case_numbers
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"
 
@@ -38,3 +38,13 @@ def test_returns_first_number_when_text_has_several() -> None:
     text = "compare 0000007-79.2023.8.99.9014 com 0000001-43.2021.8.99.9014"
 
     assert extract_case_number(text) == REFERENCE_CASE_NUMBER
+
+
+def test_extracts_every_case_number_of_the_text_in_order() -> None:
+    text = "compare o 0000007-79.2023.8.99.9014 com o 00000014320218999014 e de novo o 0000007-79.2023.8.99.9014"
+
+    assert extract_case_numbers(text) == [REFERENCE_CASE_NUMBER, "0000001-43.2021.8.99.9014"]
+
+
+def test_extracts_no_case_number_from_text_without_one() -> None:
+    assert extract_case_numbers("resuma o processo") == []

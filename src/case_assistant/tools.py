@@ -6,7 +6,7 @@ import sqlite3
 from collections.abc import Callable
 from typing import Any
 
-from case_assistant.case_number import CASE_NUMBER_PATTERN, extract_case_number
+from case_assistant.case_number import extract_case_number, extract_case_numbers
 from case_assistant.db import ensure_search_index
 from case_assistant.text_normalization import comparable_district, comparable_text
 
@@ -378,11 +378,10 @@ def read_document(connection: sqlite3.Connection, document_id: int) -> dict[str,
 
 def _cited_case_number_warnings(text: str, own_case_number: str) -> list[str]:
     """Números de processo citados no texto ("Autos n.", "Processo n.") que não são o do processo dono do documento."""
-    cited = dict.fromkeys(extract_case_number(match.group()) for match in CASE_NUMBER_PATTERN.finditer(text))
     return [
         f"O texto cita o processo {number}, mas o documento pertence ao processo {own_case_number}. "
         "Merece conferência: pode ser documento juntado no processo errado."
-        for number in cited
+        for number in extract_case_numbers(text)
         if number != own_case_number
     ]
 
