@@ -305,6 +305,14 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** repetir a regra na lista geral de regras "por garantia", sem uma falha observada que a justifique (YAGNI); pôr um aviso de texto em `list_documents` quando a lista vem vazia, pelo mesmo motivo. Se a bateria (E09) mostrar uma pergunta em que o modelo inventa, a regra entra com essa pergunta como teste.
 - **Uso de IA:** o Claude Code rodou as duas perguntas no modelo local e conferiu no banco cada movimentação e cada aviso da resposta. Antes de classificar "pode ser recurso fora do prazo" como especulação do modelo, confirmou que a frase vinha do próprio aviso de `list_movements`. Erro do assistente: a primeira tentativa rodava o resumo duas vezes seguidas, em primeiro plano e sem mostrar nada até o fim; ficou minutos sem retorno até o autor interromper e perguntar o que estava acontecendo. Refeita com uma rodada só, em segundo plano e com o tempo medido.
 
+### D48 — Sentença sem texto: o campo de julgamento já separa "houve sentença" de "o que decidiu"
+- **Decisão:** a T7.2 fica concluída sem mudar as instruções do agente. A verificação virou roteiro em [`docs/roteiros/sentenca-sem-texto.md`](docs/roteiros/sentenca-sem-texto.md), para a [bateria de avaliação](docs/glossario.md#golden-set) (T9.3). Os defeitos de forma vistos na rodada vão para a T7.7.
+- **Resultado com o [modelo local](docs/glossario.md#modelo-local):** conversa de 2 perguntas sobre o processo 1 (69 s no total). "Já foi julgado?" → "sim", pela data e pela movimentação de sentença, com o aviso de que o texto da sentença não está no banco. "Qual foi o resultado da sentença e os fundamentos?" → "não é possível informar", sem deduzir procedência do assunto nem do nome da movimentação ("Sentença com Resolução do Mérito").
+- **Por quê:** o resumo do campo `judgment` de `find_case` (T3.3) já diz, em português, "Ausente: documento de sentença (o texto da sentença não está no banco)". O modelo repetiu essa frase nas duas respostas. A regra 5 das instruções manda usar esse campo, então nada precisou ser acrescentado (mesmo motivo da D47).
+- **Para a T7.7:** as datas saíram no formato AAAA-MM-DD, apesar da regra 8; o aviso da [ferramenta](docs/glossario.md#ferramenta) veio rotulado "Warning:", em inglês; e nenhuma resposta cita a movimentação no formato combinado.
+- **Descartado:** reforçar agora a regra de datas nas instruções. É um problema de forma que aparece em todas as respostas, e a T7.7 já vai revisar a forma das respostas das T7.1 a T7.5 de uma vez.
+- **Uso de IA:** o Claude Code montou a segunda pergunta de propósito para tentar o modelo a inventar o resultado, e conferiu no banco a data de sentença, a movimentação e o aviso antes de dar a tarefa como concluída.
+
 ---
 
 ## Pendências de decisão
