@@ -503,8 +503,9 @@ def test_search_parties_separates_homonyms_and_asks_which_one(indexed_connection
 
     assert result["total_people"] == 2
     assert [person["case_count"] for person in result["people"]] == [2, 1]  # quem tem mais processos primeiro
+    # O modelo pequeno repassa o aviso ao pé da letra (D50): o texto tem que servir ao usuário e terminar na pergunta.
     assert result["homonym_notice"] == (
-        "Há 2 pessoas diferentes (CPF/CNPJ distintos) com esse nome. Pergunte de qual se trata antes de responder."
+        "Encontrei 2 pessoas diferentes com esse nome (CPF/CNPJ distintos). De qual delas se trata?"
     )
 
 
