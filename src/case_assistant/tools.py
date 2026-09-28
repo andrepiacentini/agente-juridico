@@ -6,7 +6,7 @@ import sqlite3
 from collections.abc import Callable
 from typing import Any
 
-from case_assistant.case_number import extract_case_number, extract_case_numbers
+from case_assistant.case_number import check_digits, extract_case_number, extract_case_numbers, has_valid_check_digits
 from case_assistant.citations import REGISTRY_SOURCE, brazilian_date, document_source, movement_source
 from case_assistant.db import ensure_search_index
 from case_assistant.text_normalization import comparable_district, comparable_text
@@ -166,8 +166,19 @@ def _resolve_case_id(connection: sqlite3.Connection, case_number: str) -> int:
         raise CaseNotFoundError(f"Não reconheci um número de processo no padrão CNJ em '{case_number}'.")
     row = connection.execute("SELECT id FROM processo WHERE numero = ?", (normalized_number,)).fetchone()
     if row is None:
-        raise CaseNotFoundError(f"Processo {normalized_number} não encontrado no banco.")
+        raise CaseNotFoundError(_case_not_found_message(normalized_number))
     return row["id"]
+
+
+def _case_not_found_message(case_number: str) -> str:
+    """Separa "você digitou errado" de "esse processo não existe" pelo dígito verificador (T7.8)."""
+    message = f"Processo {case_number} não encontrado no banco."
+    if has_valid_check_digits(case_number):
+        return message
+    return (
+        f"{message} O dígito verificador ({check_digits(case_number)}) não confere com o restante do número: "
+        "provavelmente houve erro de digitação. Confira o número do processo."
+    )
 
 
 @_reports_not_found
