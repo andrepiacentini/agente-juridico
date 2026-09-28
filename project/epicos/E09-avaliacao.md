@@ -21,7 +21,7 @@
 - **Depende de:** T9.1.
 - **Para explicar à banca:** "Testo as perguntas do edital no melhor e no pior caso do banco."
 
-### T9.3 — Casos das armadilhas `[ ]`
+### T9.3 — Casos das armadilhas `[x]`
 - **Objetivo:** ~5 casos: processo inexistente, sem magistrado, homônimo, troca de processo na conversa, pergunta impossível.
 - **Passos:** reaproveitar os roteiros do E06 e do E07 (`docs/roteiros/`). Incluir as falhas que ficaram em aberto na D53: cartão do processo sem `[cadastro do processo]` (T7.4), resumo curto sem citação (T7.5) e rótulo "[warning: …]" (T7.1); o resumo raso depois da nova tentativa do validador (D51); e, da D55, a busca com filtro errado que o modelo não refaz; da D59, "redija a sentença do processo 1" lida como pedido da sentença existente.
 - **Pronto quando:** os casos estão no arquivo.
