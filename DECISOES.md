@@ -370,6 +370,12 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** listar as 230 comarcas e os 200 magistrados, pelo custo de contexto; mandar o modelo refazer a busca na própria mensagem, porque o modelo repassa ao usuário as frases dirigidas a ele (D50, D54).
 - **Uso de IA:** o Claude Code escreveu os testes antes do código. Errou a combinação do teste de "filtros que só juntos dão vazio" (supôs, sem conferir, que não havia execução fiscal em vara de família; o banco sintético tem 94) e trocou por divórcio em vara da Fazenda, que dá zero. Depois do verde, simplificou o código, que repetia os nomes dos filtros num dicionário à parte.
 
+### D56 — A base da minuta é conferida por código: petição inicial e contestação, sem substitutos
+- **Decisão:** `check_draft_basis` diz se o processo tem as duas peças que uma [minuta](docs/glossario.md#minuta) de sentença exige, a petição inicial e a contestação, e lista as que faltam ("apto" ou "faltam: …"). A regra fica num lugar só, na constante `DRAFT_REQUIRED_DOCUMENT_TYPES`. A T8.1 fica concluída; a [ferramenta](docs/glossario.md#ferramenta) passa a ser oferecida ao agente na T8.4, quando a recusa for escrita.
+- **Por quê:** sem o pedido do autor e a defesa do réu não há como propor uma decisão; é a regra do edital. Conferir por código, antes de o modelo escrever, não depende de ele lembrar da regra. No banco, 1.586 processos têm as duas peças, 2.105 só a petição inicial e nenhum só a contestação; os testes conferem esses números, o 3161 (apto), o processo 1 (faltam as duas) e um processo só com a petição inicial.
+- **Descartado:** aceitar outras defesas no lugar da contestação (embargos à execução fiscal, exceção de pré-executividade), que também são peças do réu. O edital fala em contestação, e aceitar substitutos seria uma interpretação do assistente; se a banca pedir, é uma troca na constante.
+- **Uso de IA:** o Claude Code mediu no banco quantos processos têm cada combinação de peças antes de escrever os testes.
+
 ---
 
 ## Pendências de decisão

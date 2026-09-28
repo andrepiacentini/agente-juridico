@@ -143,6 +143,13 @@ ACTIVE_UNIT_STATUS = "ativa"
 IMPLAUSIBLE_CLAIM_VALUE = 100_000_000
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
 ROLE_BY_POLE = {"ativo": "autor", "passivo": "réu"}
+# Sem o pedido do autor e a defesa do réu não há base para propor uma decisão (edital; plan.md §7).
+# 1.586 processos têm as duas peças; 2.105 só a petição inicial; nenhum só a contestação.
+DRAFT_REQUIRED_DOCUMENT_TYPES = ("Petição Inicial", "Contestação")
+DRAFT_BASIS_QUERY = f"""
+    SELECT DISTINCT tipo FROM documento
+    WHERE processo_id = ? AND tipo IN ({", ".join("?" * len(DRAFT_REQUIRED_DOCUMENT_TYPES))})
+"""
 
 
 class NotFoundError(Exception):
@@ -415,6 +422,15 @@ def read_document(connection: sqlite3.Connection, document_id: int) -> dict[str,
         "warnings": _cited_case_number_warnings(row["texto"], row["numero"]),
         "source": document_source(row["id"], row["tipo"], row["dt_juntada"]),
     }
+
+
+@_reports_not_found
+def check_draft_basis(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Diz se o processo tem as peças que uma minuta de sentença exige (petição inicial e contestação) e quais faltam."""
+    case_id = _resolve_case_id(connection, case_number)
+    present = {row["tipo"] for row in connection.execute(DRAFT_BASIS_QUERY, (case_id, *DRAFT_REQUIRED_DOCUMENT_TYPES))}
+    missing = [document_type for document_type in DRAFT_REQUIRED_DOCUMENT_TYPES if document_type not in present]
+    return {"found": True, "case_number": extract_case_number(case_number), "ready": not missing, "missing": missing}
 
 
 def _cited_case_number_warnings(text: str, own_case_number: str) -> list[str]:
