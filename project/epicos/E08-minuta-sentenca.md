@@ -14,7 +14,7 @@
 - **Depende de:** T3.7.
 - **Para explicar à banca:** "Sem o pedido do autor e a defesa do réu não há como propor uma decisão — o código verifica isso antes do modelo escrever."
 
-### T8.2 — Estrutura da minuta `[ ]`
+### T8.2 — Estrutura da minuta `[x]`
 - **Objetivo:** modelo de texto com Relatório, Fundamentação e Dispositivo, e as regras de redação.
 - **Passos:** escrever em `prompts.py`: usar só os documentos lidos, citar ids, não inventar jurisprudência.
 - **Pronto quando:** o modelo de texto está revisado.
