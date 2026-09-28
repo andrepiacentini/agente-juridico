@@ -143,6 +143,30 @@ ACTIVE_UNIT_STATUS = "ativa"
 IMPLAUSIBLE_CLAIM_VALUE = 100_000_000
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
 ROLE_BY_POLE = {"ativo": "autor", "passivo": "réu"}
+# Sem o pedido do autor e a defesa do réu não há base para propor uma decisão (edital; plan.md §7).
+# 1.586 processos têm as duas peças; 2.105 só a petição inicial; nenhum só a contestação.
+DRAFT_REQUIRED_DOCUMENT_TYPES = ("Petição Inicial", "Contestação")
+DRAFT_REQUIRED_DOCUMENT_CONTENT = {"Petição Inicial": "o pedido do autor", "Contestação": "a defesa do réu"}
+DRAFT_BASIS_QUERY = f"""
+    SELECT DISTINCT tipo FROM documento
+    WHERE processo_id = ? AND tipo IN ({", ".join("?" * len(DRAFT_REQUIRED_DOCUMENT_TYPES))})
+"""
+# Peças que dão base à decisão: pedido, defesa, réplica, pontos controvertidos, prova oral e parecer do MP.
+# Embargos, apelação e contrarrazões ficam de fora: discutem uma sentença que a minuta não deve copiar.
+DRAFT_DOCUMENT_TYPES = (
+    "Petição Inicial", "Emenda à Inicial", "Contestação", "Réplica",
+    "Decisão de Saneamento", "Ata de Audiência", "Parecer do Ministério Público",
+)
+DRAFT_DOCUMENTS_QUERY = f"""
+    SELECT id, tipo, dt_juntada FROM documento
+    WHERE processo_id = ? AND tipo IN ({", ".join("?" * len(DRAFT_DOCUMENT_TYPES))})
+    ORDER BY dt_juntada, id
+"""
+EXISTING_SENTENCES_QUERY = f"""
+    SELECT id, tipo, dt_juntada FROM documento
+    WHERE processo_id = ? AND tipo IN ({", ".join("?" * len(SENTENCE_DOCUMENT_TYPES))})
+    ORDER BY dt_juntada, id
+"""
 
 
 class NotFoundError(Exception):
@@ -415,6 +439,50 @@ def read_document(connection: sqlite3.Connection, document_id: int) -> dict[str,
         "warnings": _cited_case_number_warnings(row["texto"], row["numero"]),
         "source": document_source(row["id"], row["tipo"], row["dt_juntada"]),
     }
+
+
+@_reports_not_found
+def check_draft_basis(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Diz se o processo tem as peças que uma minuta de sentença exige (petição inicial e contestação) e quais faltam."""
+    missing = _missing_draft_documents(connection, _resolve_case_id(connection, case_number))
+    return {"found": True, "case_number": extract_case_number(case_number), "ready": not missing, "missing": missing}
+
+
+def _missing_draft_documents(connection: sqlite3.Connection, case_id: int) -> list[str]:
+    present = {row["tipo"] for row in connection.execute(DRAFT_BASIS_QUERY, (case_id, *DRAFT_REQUIRED_DOCUMENT_TYPES))}
+    return [document_type for document_type in DRAFT_REQUIRED_DOCUMENT_TYPES if document_type not in present]
+
+
+@_reports_not_found
+def prepare_draft(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
+    """Base da minuta: as peças a ler e as sentenças já existentes; sem petição inicial e contestação, a recusa."""
+    case_id = _resolve_case_id(connection, case_number)
+    basis = {"found": True, "case_number": extract_case_number(case_number)}
+    missing = _missing_draft_documents(connection, case_id)
+    if missing:
+        return {**basis, "ready": False, "missing": missing, "message": _draft_refusal_message(basis["case_number"], missing)}
+    return {
+        **basis,
+        "ready": True,
+        "missing": [],
+        "documents_to_read": [
+            {"id": row["id"], "type": row["tipo"], "source": document_source(row["id"], row["tipo"], row["dt_juntada"])}
+            for row in connection.execute(DRAFT_DOCUMENTS_QUERY, (case_id, *DRAFT_DOCUMENT_TYPES))
+        ],
+        "existing_sentences": [
+            document_source(row["id"], row["tipo"], row["dt_juntada"])
+            for row in connection.execute(EXISTING_SENTENCES_QUERY, (case_id, *SENTENCE_DOCUMENT_TYPES))
+        ],
+    }
+
+
+def _draft_refusal_message(case_number: str, missing: list[str]) -> str:
+    # Escrita para o usuário: o modelo repassa ao pé da letra o texto das ferramentas (D50).
+    names = " e ".join(f"a {document_type.lower()}" for document_type in missing)
+    contents = " nem ".join(DRAFT_REQUIRED_DOCUMENT_CONTENT[document_type] for document_type in missing)
+    if len(missing) > 1:
+        return f"Não é possível propor uma minuta de sentença para o processo {case_number}: faltam no banco {names}. Sem elas, não há {contents}."
+    return f"Não é possível propor uma minuta de sentença para o processo {case_number}: falta no banco {names}. Sem ela, não há {contents}."
 
 
 def _cited_case_number_warnings(text: str, own_case_number: str) -> list[str]:

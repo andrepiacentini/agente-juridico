@@ -35,7 +35,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E05 | [Agente no terminal](epicos/E05-agente-terminal.md) | Conversa no terminal usando as ferramentas | 9 | `[x]` |
 | E06 | [Memória da conversa](epicos/E06-memoria-conversa.md) | "E quem é o juiz?" funciona sem repetir o número | 4 | `[x]` |
 | E07 | [Reconhecer limites](epicos/E07-reconhecer-limites.md) | O agente diz "não consta" em vez de inventar | 9 | `[x]` |
-| E08 | [Minuta de sentença](epicos/E08-minuta-sentenca.md) | Minuta rotulada como proposta, ou recusa explicada | 5 | `[ ]` |
+| E08 | [Minuta de sentença](epicos/E08-minuta-sentenca.md) | Minuta rotulada como proposta, ou recusa explicada | 5 | `[x]` |
 | E09 | [Bateria de perguntas de avaliação](epicos/E09-avaliacao.md) | Placar de acertos por modelo | 5 | `[ ]` |
 | E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[ ]` |
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Resposta em menos de 30 s no MacBook de 8 GB | 6 | `[ ]` |

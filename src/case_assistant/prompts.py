@@ -42,7 +42,7 @@ Regras:
 4. Repasse ao usuário os avisos (warnings) das ferramentas: são inconsistências do cadastro. Reporte-os; não escolha um lado, não corrija e não crie avisos.
 5. "Já foi julgado?": use o campo judgment de find_case(); nunca deduza pela situação ou pelo juiz.
 6. Se search_parties() trouxer homonym_notice, liste as pessoas encontradas e pergunte de qual se trata antes de responder.
-7. Minuta de sentença: comece com "PROPOSTA DE MINUTA — texto não proferido", baseie-se só nos documentos lidos e recuse se não houver petição inicial e contestação.
+7. Pedido para elaborar, redigir ou escrever minuta ou sentença: chame prepare_draft() antes de qualquer outra ferramenta e siga o que ela devolver; se recusar, repasse o motivo.
 8. Copie as datas como vieram (DD/MM/AAAA); valores em reais (R$ 3.796,73). Partes: autor ou réu. Não mostre nomes de campos nem rótulos em inglês.
 
 Ferramentas (use a mais específica):
@@ -55,6 +55,7 @@ Ferramentas (use a mais específica):
 - search_parties(): pessoas pelo nome, separadas por CPF/CNPJ.
 - search_cases(): processos por assunto, classe, comarca, vara, juiz, situação, datas ou valor.
 - run_sql(): consulta SQL de leitura, só quando nenhuma outra ferramenta serve.
+- prepare_draft(): para escrever minuta de sentença.
 
 Para resumir um processo, siga estes passos, nesta ordem:
 1. find_case(): dados básicos, julgamento e avisos.
@@ -64,6 +65,34 @@ Para resumir um processo, siga estes passos, nesta ordem:
 5. Escreva: fatos e pedidos (da petição inicial), defesa (da contestação), andamento e resultado (da sentença), citando a fonte de cada parte.
 
 {DATABASE_DESCRIPTION}"""
+
+DRAFT_NOTICE = "PROPOSTA DE MINUTA — texto não proferido"
+
+# Vai para o modelo só pela resposta de prepare_draft(), quando há base para a minuta (D57): no prompt fixo,
+# custaria contexto em todo pedido. A estrutura é a do art. 489 do CPC (relatório, fundamentos, dispositivo).
+DRAFT_INSTRUCTIONS = f"""Como redigir a minuta de sentença:
+1. Antes de escrever, leia com read_document() cada documento de documents_to_read. Não leia as sentenças de existing_sentences: a minuta é uma proposta independente, feita a partir das peças.
+2. A primeira linha da resposta é exatamente: {DRAFT_NOTICE}
+3. Use três seções, com estes títulos:
+   RELATÓRIO — partes, o que o autor pede (petição inicial), o que o réu alega (contestação) e o que ocorreu depois (réplica, saneamento, audiência).
+   FUNDAMENTAÇÃO — as questões em disputa, uma a uma, decididas só com o que está nas peças lidas.
+   DISPOSITIVO — a proposta de decisão sobre cada pedido (procedente, improcedente ou parcialmente procedente) e as custas.
+4. Cite a fonte de cada fato no formato [doc 7865 — Petição Inicial, 08/01/2024].
+5. Não invente fatos, provas, valores, leis, artigos nem jurisprudência que não estejam nas peças lidas. Se as peças não bastam para decidir um ponto, diga isso na fundamentação.
+6. Não assine a minuta, não a atribua a um juiz e não ponha data nem local de assinatura.
+"""
+
+# Negrito ou título Markdown em volta do aviso não o descaracterizam.
+DRAFT_NOTICE_DECORATION = "*# "
+
+
+def with_draft_notice(draft: str) -> str:
+    """Garante o aviso na primeira linha da minuta (T8.3); se o modelo já o pôs, o texto fica como está."""
+    first_line = next((line for line in draft.splitlines() if line.strip()), "")
+    if first_line.strip(DRAFT_NOTICE_DECORATION + "\t") == DRAFT_NOTICE:
+        return draft
+    return f"{DRAFT_NOTICE}\n\n{draft}"
+
 
 FOCUS_LABEL = "Processo em foco:"
 

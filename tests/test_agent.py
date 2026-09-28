@@ -49,11 +49,11 @@ def test_without_llm_thinking_the_model_keeps_its_default(monkeypatch) -> None:
 
 EXPECTED_TOOLS = {
     "find_case", "list_parties", "list_movements", "list_documents", "read_document",
-    "search_text", "search_parties", "search_cases", "run_sql",
+    "search_text", "search_parties", "search_cases", "run_sql", "prepare_draft",
 }
 
 
-def test_agent_registers_the_nine_tools_and_each_one_runs(monkeypatch) -> None:
+def test_agent_registers_every_tool_and_each_one_runs(monkeypatch) -> None:
     monkeypatch.delenv("LLM_THINKING", raising=False)
     agent = build_agent(TestModel(call_tools="all"))  # chama toda ferramenta com argumentos gerados
 

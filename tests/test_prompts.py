@@ -8,7 +8,7 @@ import pytest
 from case_assistant.db import connect
 from case_assistant import sql_query, tools
 from case_assistant.citations import REGISTRY_SOURCE, document_source, movement_source
-from case_assistant.prompts import DATABASE_DESCRIPTION, SYSTEM_PROMPT
+from case_assistant.prompts import DATABASE_DESCRIPTION, DRAFT_INSTRUCTIONS, DRAFT_NOTICE, SYSTEM_PROMPT
 from case_assistant.sql_query import run_sql
 
 # Estimativa conservadora para português: ~3,5 caracteres por token.
@@ -16,7 +16,7 @@ MAX_CHARACTERS_FOR_800_TOKENS = 2_800
 MAX_CHARACTERS_FOR_1500_TOKENS = 5_250
 AGENT_TOOLS = (
     "find_case", "list_parties", "list_movements", "list_documents", "read_document",
-    "search_text", "search_parties", "search_cases", "run_sql",
+    "search_text", "search_parties", "search_cases", "run_sql", "prepare_draft",
 )
 
 
@@ -90,7 +90,6 @@ def test_every_tool_mentioned_exists_in_the_code() -> None:
         "[doc 7878 — Sentença, 18/02/2026]",
         "[mov. 9219 — Sentença com Resolução do Mérito, 18/02/2026]",
         "Não consta",
-        "PROPOSTA DE MINUTA — texto não proferido",
         "homonym_notice",
         "warnings",
     ],
@@ -132,3 +131,29 @@ def test_citation_examples_in_the_prompt_are_the_ones_the_tools_produce() -> Non
 )
 def test_system_prompt_has_the_citation_and_form_rules(rule: str) -> None:
     assert rule in SYSTEM_PROMPT
+
+
+def test_draft_notice_is_the_one_the_edital_requires() -> None:
+    assert DRAFT_NOTICE == "PROPOSTA DE MINUTA — texto não proferido"
+
+
+@pytest.mark.parametrize(
+    "rule",
+    [DRAFT_NOTICE, "RELATÓRIO", "FUNDAMENTAÇÃO", "DISPOSITIVO", "read_document()", "jurisprudência", "[doc"],
+)
+def test_draft_instructions_have_the_structure_and_the_writing_rules(rule: str) -> None:
+    assert rule in DRAFT_INSTRUCTIONS
+
+
+def test_draft_instructions_stay_out_of_the_fixed_prompt() -> None:
+    # Só chegam ao modelo quando ele pede uma minuta (D57): o prompt fixo vai em todo pedido.
+    assert DRAFT_INSTRUCTIONS not in SYSTEM_PROMPT
+    assert "prepare_draft()" in SYSTEM_PROMPT
+
+
+def test_draft_rule_tells_writing_a_sentence_apart_from_reading_the_existing_one() -> None:
+    # T8.4 (D59): "elabore uma minuta" e "redija a sentença" viraram busca pela sentença existente.
+    rule = next(line for line in SYSTEM_PROMPT.splitlines() if line.startswith("7."))
+
+    assert "elaborar, redigir ou escrever" in rule
+    assert "antes de qualquer outra ferramenta" in rule

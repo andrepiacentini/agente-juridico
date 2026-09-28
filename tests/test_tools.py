@@ -8,7 +8,7 @@ import sqlite3
 import pytest
 
 from case_assistant.db import connect, create_search_index
-from case_assistant.tools import find_case, list_documents, list_movements, list_parties, read_document, search_cases, search_parties, search_text
+from case_assistant.tools import check_draft_basis, find_case, prepare_draft, list_documents, list_movements, list_parties, read_document, search_cases, search_parties, search_text
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -674,3 +674,80 @@ def test_search_cases_lists_the_real_values_of_short_lists(connection, filters, 
 def test_search_cases_does_not_list_long_lists(connection, filters, expected: str) -> None:
     # 230 comarcas e 200 magistrados: a lista custaria contexto demais para o modelo local.
     assert search_cases(connection, **filters)["message"] == expected
+
+
+INITIAL_PETITION_ONLY_CASE_NUMBER = "0000001-02.2025.8.99.9047"
+
+
+def test_draft_basis_is_ready_with_initial_petition_and_defense(connection) -> None:
+    assert check_draft_basis(connection, REFERENCE_CASE_NUMBER) == {
+        "found": True,
+        "case_number": REFERENCE_CASE_NUMBER,
+        "ready": True,
+        "missing": [],
+    }
+
+
+def test_draft_basis_lists_both_documents_missing_in_a_case_without_documents(connection) -> None:
+    result = check_draft_basis(connection, LOWERCASE_STATUS_CASE_NUMBER)
+
+    assert result["ready"] is False
+    assert result["missing"] == ["Petição Inicial", "Contestação"]
+
+
+def test_draft_basis_lists_only_the_missing_defense(connection) -> None:
+    assert check_draft_basis(connection, INITIAL_PETITION_ONLY_CASE_NUMBER)["missing"] == ["Contestação"]
+
+
+def test_draft_basis_reports_missing_case(connection) -> None:
+    assert check_draft_basis(connection, MISSING_CASE_NUMBER)["found"] is False
+
+
+def test_draft_basis_counts_match_database_profile(connection) -> None:
+    numbers = [row["numero"] for row in connection.execute("SELECT numero FROM processo")]
+    results = [check_draft_basis(connection, number) for number in numbers]
+
+    # 1.586 com as duas peças; 2.105 só com a petição inicial; nenhum só com a contestação
+    assert sum(result["ready"] for result in results) == 1_586
+    assert sum(result["missing"] == ["Contestação"] for result in results) == 2_105
+    assert sum(result["missing"] == ["Petição Inicial"] for result in results) == 0
+
+
+def test_prepare_draft_lists_the_documents_to_read_and_points_to_the_existing_sentence(connection) -> None:
+    result = prepare_draft(connection, REFERENCE_CASE_NUMBER)
+
+    assert result["ready"] is True
+    assert [(document["id"], document["type"]) for document in result["documents_to_read"]] == [
+        (7865, "Petição Inicial"),
+        (7868, "Contestação"),
+        (7869, "Réplica"),
+        (7870, "Decisão de Saneamento"),
+        (7875, "Ata de Audiência"),
+    ]
+    assert result["documents_to_read"][0]["source"] == "[doc 7865 — Petição Inicial, 08/01/2024]"
+    # A sentença que já existe fica fora da leitura: a minuta é proposta independente, não cópia (D57).
+    assert result["existing_sentences"] == ["[doc 7878 — Sentença, 18/02/2026]"]
+
+
+def test_prepare_draft_without_basis_says_what_is_missing_in_words_for_the_user(connection) -> None:
+    result = prepare_draft(connection, LOWERCASE_STATUS_CASE_NUMBER)
+
+    assert result == {
+        "found": True,
+        "case_number": LOWERCASE_STATUS_CASE_NUMBER,
+        "ready": False,
+        "missing": ["Petição Inicial", "Contestação"],
+        "message": "Não é possível propor uma minuta de sentença para o processo "
+        f"{LOWERCASE_STATUS_CASE_NUMBER}: faltam no banco a petição inicial e a contestação. "
+        "Sem elas, não há o pedido do autor nem a defesa do réu.",
+    }
+
+
+def test_prepare_draft_names_a_single_missing_document(connection) -> None:
+    message = prepare_draft(connection, INITIAL_PETITION_ONLY_CASE_NUMBER)["message"]
+
+    assert message.endswith("falta no banco a contestação. Sem ela, não há a defesa do réu.")
+
+
+def test_prepare_draft_reports_missing_case(connection) -> None:
+    assert prepare_draft(connection, MISSING_CASE_NUMBER)["found"] is False

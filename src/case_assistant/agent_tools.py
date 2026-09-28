@@ -15,6 +15,7 @@ from typing import Any
 from pydantic_ai import RunContext
 
 from case_assistant import sql_query, tools
+from case_assistant.prompts import DRAFT_INSTRUCTIONS
 from case_assistant.session import Session
 
 
@@ -179,7 +180,20 @@ def _restart_sql_attempts_on_new_question(session: Session, run_id: str) -> None
         session.failed_sql_attempts = 0
 
 
+async def prepare_draft(ctx: RunContext[Session], case_number: str | None = None) -> dict[str, Any]:
+    """Para minuta de sentença: confere se há base, lista as peças a ler e diz como redigir. Chame antes de escrever.
+
+    Args:
+        case_number: número do processo no padrão CNJ; se omitido, usa o processo em foco.
+    """
+    result = _run_case_tool(ctx, tools.prepare_draft, case_number)
+    if result.get("ready"):
+        result["instructions"] = DRAFT_INSTRUCTIONS
+        ctx.deps.draft_run_id = ctx.run_id  # a resposta desta pergunta é uma minuta: leva o aviso (T8.3)
+    return result
+
+
 AGENT_TOOLS = (
     find_case, list_parties, list_movements, list_documents, read_document,
-    search_text, search_parties, search_cases, run_sql,
+    search_text, search_parties, search_cases, run_sql, prepare_draft,
 )
