@@ -290,6 +290,14 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** usar o foco também em `search_text`. Lá o número é um filtro opcional, e ficar sem ele quer dizer "procurar em todos os processos". Preencher com o foco restringiria a busca sem ninguém ter pedido.
 - **Uso de IA:** o Claude Code escreveu os testes antes do código (com número, com foco, sem nenhum dos dois, nas quatro ferramentas). Um teste antigo do terminal quebrou porque esperava o `case_number` sempre presente na chamada; ele foi ajustado para conferir só o nome da ferramenta.
 
+### D46 — Troca de processo no meio da conversa: o foco acompanha e os dados não se misturam
+- **Decisão:** a T6.4 fica concluída e, com ela, o E06. O roteiro de teste está em [`docs/roteiros/troca-de-processo.md`](docs/roteiros/troca-de-processo.md) e vai ser reaproveitado pela [bateria de avaliação](docs/glossario.md#golden-set) (T9.3). O formato final da bateria só é definido na T9.1.
+- **Resultado com o [modelo local](docs/glossario.md#modelo-local):** são 6 perguntas numa só conversa. Começa no 3161, troca para o processo 1 ("e as partes?", "qual o valor da causa?") e volta ao 3161. Nas 2 rodadas, as 6 respostas foram sobre o processo certo e bateram com o banco, sem nenhum dado de um processo aparecendo no outro. O modelo chamou as [ferramentas](docs/glossario.md#ferramenta) com o número certo e respondeu pelo histórico quando o dado já estava lá. Tempo de 10 a 43 s por pergunta.
+- **Por quê é o bastante:** a troca de assunto é onde agentes de conversa costumam misturar dados. As três peças do E06 cobrem esse risco: o foco gravado pelas ferramentas (T6.1), o lembrete a cada pedido (T6.2, D44) e o número completado pelo foco (T6.3, D45).
+- **Pontos para depois (E07):** numa rodada, o modelo chamou os autores de "Autores (advogados)", um rótulo inventado, e numa outra repetiu na resposta sobre as partes um aviso do juiz que ninguém pediu. Nenhuma resposta cita a fonte no formato combinado; em vez disso aparece "[warning]" (T7.7).
+- **Descartado:** automatizar agora a conferência das respostas. Isso é o comando da bateria (T9.4), e fazer antes seria adiantar o E09.
+- **Uso de IA:** o Claude Code conferiu no banco o esperado de cada pergunta antes de rodar o roteiro. Na revisão, confirmou que o aviso de juiz aposentado do processo 1 era verdadeiro, antes de classificá-lo como fora de lugar e não como invenção.
+
 ---
 
 ## Pendências de decisão
