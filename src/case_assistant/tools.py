@@ -455,8 +455,7 @@ def search_parties(connection: sqlite3.Connection, name: str) -> dict[str, Any]:
     }
     if len(people) > 1:
         result["homonym_notice"] = (
-            f"Há {len(people)} pessoas diferentes (CPF/CNPJ distintos) com esse nome. "
-            "Pergunte de qual se trata antes de responder."
+            f"Encontrei {len(people)} pessoas diferentes com esse nome (CPF/CNPJ distintos). De qual delas se trata?"
         )
     return result
 
