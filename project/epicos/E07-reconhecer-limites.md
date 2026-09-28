@@ -23,7 +23,7 @@ Cada tarefa = uma regra nas instruções do agente + uma verificação com pergu
 - **Depende de:** T3.3, E05.
 - **Para explicar à banca:** "Saber que houve sentença não é saber o que ela decidiu — o agente separa as duas coisas."
 
-### T7.3 — Magistrado ausente ou aposentado `[ ]`
+### T7.3 — Magistrado ausente ou aposentado `[x]`
 - **Objetivo:** reportar "magistrado não consta no cadastro" ou "magistrado consta como aposentado", sem deduzir outro nome.
 - **Passos:** regra nas instruções usando os avisos da T3.4; testar com o 3161 e com um processo sem magistrado.
 - **Pronto quando:** ambas as respostas reportam o aviso corretamente.
@@ -53,7 +53,7 @@ Cada tarefa = uma regra nas instruções do agente + uma verificação com pergu
 
 ### T7.7 — Citação obrigatória da fonte `[ ]`
 - **Objetivo:** toda resposta com fato do processo traz a fonte no formato combinado.
-- **Passos:** reforçar a regra nas instruções com um exemplo; revisar as respostas das tarefas anteriores. Caso observado na T5.5: resposta vinda do histórico ("E qual é o valor da causa?" → "R$ 3.796,73") saiu sem citação — a regra precisa valer também quando o dado já está na conversa. Caso da T5.6 (D40): dados do cadastro (partes, juiz, valor) não têm formato de citação nas instruções — criar um, como "[cadastro do processo]". Casos da T7.2 (D48): datas saíram como AAAA-MM-DD, apesar da regra 8, e o aviso veio rotulado "Warning:", em inglês.
+- **Passos:** reforçar a regra nas instruções com um exemplo; revisar as respostas das tarefas anteriores. Caso observado na T5.5: resposta vinda do histórico ("E qual é o valor da causa?" → "R$ 3.796,73") saiu sem citação — a regra precisa valer também quando o dado já está na conversa. Caso da T5.6 (D40): dados do cadastro (partes, juiz, valor) não têm formato de citação nas instruções — criar um, como "[cadastro do processo]". Casos da T7.2 (D48): datas saíram como AAAA-MM-DD, apesar da regra 8, e o aviso veio rotulado "Warning:", em inglês. Caso da T7.3 (D49): a resposta expôs o nome interno do campo ("O campo 'judge' está vazio").
 - **Pronto quando:** as respostas das T7.1 a T7.5 citam documento ou movimentação sempre que afirmam algo.
 - **Depende de:** T7.1 a T7.5.
 - **Para explicar à banca:** "Cada afirmação aponta de onde veio, para que a pessoa possa conferir no processo."

@@ -313,6 +313,16 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** reforçar agora a regra de datas nas instruções. É um problema de forma que aparece em todas as respostas, e a T7.7 já vai revisar a forma das respostas das T7.1 a T7.5 de uma vez.
 - **Uso de IA:** o Claude Code montou a segunda pergunta de propósito para tentar o modelo a inventar o resultado, e conferiu no banco a data de sentença, a movimentação e o aviso antes de dar a tarefa como concluída.
 
+## 28/09/2026
+
+### D49 — Magistrado ausente ou aposentado: os avisos do cadastro bastam, e o modelo não tira o juiz das assinaturas
+- **Decisão:** a T7.3 fica concluída sem mudar as instruções do agente. A verificação virou roteiro em [`docs/roteiros/magistrado-ausente-ou-aposentado.md`](docs/roteiros/magistrado-ausente-ou-aposentado.md), para a [bateria de avaliação](docs/glossario.md#golden-set) (T9.3).
+- **Resultado com o [modelo local](docs/glossario.md#modelo-local):** "quem é o juiz do processo 3161?" → "Luiz Bonetti Vasconcelos, mas ele está aposentado" (44 s). "Quem é o juiz do processo 3096?" → "Não consta o juiz… no banco", com o aviso "Processo sem magistrado cadastrado" (14 s). Nas duas, só `find_case` foi chamada.
+- **Por quê:** os avisos de `find_case` (T3.4) já dizem, em português, "Magistrado … está aposentado" e "Processo sem magistrado cadastrado", e a regra 4 das instruções manda repassá-los. O processo 3096 foi escolhido por ser a armadilha mais forte: 13 documentos, despachos assinados só como "Juiz(a) de Direito em exercício" e um único nome próprio nas peças, o do servidor Luiz Ehlke Leal. O modelo não abriu os documentos para procurar um nome.
+- **Para a T7.7:** a resposta sobre o 3096 mostrou ao usuário o nome interno do campo ("O campo 'judge' está vazio"), mesmo tipo de defeito do "Warning:" da D48.
+- **Descartado:** uma regra explícita "não deduza o juiz das assinaturas", sem uma falha observada que a justifique (mesmo motivo da D47).
+- **Uso de IA:** o Claude Code procurou, entre os processos sem magistrado, um com documentos, para que a pergunta tentasse o modelo a inventar. Antes de pôr o nome de Luiz Ehlke Leal em "não deve conter", conferiu no texto das peças que ele assina como servidor judiciário e que não está na tabela de magistrados.
+
 ---
 
 ## Pendências de decisão
