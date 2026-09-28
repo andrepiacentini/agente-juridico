@@ -13,7 +13,7 @@ from pydantic_ai.settings import ModelSettings
 
 from case_assistant.agent_tools import AGENT_TOOLS
 from case_assistant.case_number import extract_case_numbers
-from case_assistant.prompts import SYSTEM_PROMPT, focus_reminder
+from case_assistant.prompts import SYSTEM_PROMPT, focus_reminder, with_draft_notice
 from case_assistant.session import Session
 
 MODEL_VARIABLE = "LLM_MODEL"
@@ -48,6 +48,7 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
         model_settings=_model_settings(),
     )
     agent.output_validator(_require_cited_cases_queried)
+    agent.output_validator(_ensure_draft_notice)
     return agent
 
 
@@ -65,6 +66,13 @@ def _require_cited_cases_queried(ctx: RunContext[Session], output: str) -> str:
     unqueried = [number for number in extract_case_numbers(question) if number not in queried]
     if unqueried:
         raise ModelRetry(UNQUERIED_CASE_MESSAGE.format(case_number=unqueried[0]))
+    return output
+
+
+def _ensure_draft_notice(ctx: RunContext[Session], output: str) -> str:
+    # Não depende do modelo lembrar do aviso: se prepare_draft deu base nesta pergunta, a resposta é uma minuta.
+    if ctx.deps.draft_run_id == ctx.run_id:
+        return with_draft_notice(output)
     return output
 
 

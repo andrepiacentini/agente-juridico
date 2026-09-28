@@ -383,6 +383,12 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** o modelo da minuta nas instruções fixas, como a tarefa previa, pelo custo em todo pedido; acrescentá-lo às instruções só quando a pergunta tiver "minuta" ou "sentença", porque falharia com "redija a decisão"; devolver o texto das peças na própria `prepare_draft`, o que pouparia idas ao modelo, mas quebraria a regra de que só `read_document` devolve texto (fica para a T8.5 medir se a demora justifica rever).
 - **Uso de IA:** o autor escolheu entre as três opções propostas pelo Claude Code. Os testes vieram antes do código. A primeira mensagem de recusa dizia "sem as quais não há o pedido do autor nem a defesa do réu" mesmo quando faltava só a contestação; cada peça passou a dizer o que ela traz.
 
+### D58 — O aviso "PROPOSTA DE MINUTA — texto não proferido" é garantido por código
+- **Decisão:** quando `prepare_draft` confirma a base da [minuta](docs/glossario.md#minuta), ela marca na sessão a pergunta atual (o `run_id`). Um [validador da resposta](docs/glossario.md#validador-de-resposta) confere essa marca e, se a resposta for dessa pergunta, passa o texto por `with_draft_notice`, que põe o aviso na primeira linha se o modelo não o tiver posto. Aviso já presente, mesmo em negrito ou como título, fica como está. A T8.3 fica concluída.
+- **Por quê:** um texto que parece sentença proferida é o maior risco do edital, e o [modelo local](docs/glossario.md#modelo-local) já deixou de seguir regras das instruções (D51). Saber que a resposta é uma minuta pela [ferramenta](docs/glossario.md#ferramenta) que o modelo chamou, e não por palavras do texto, evita falso positivo ("RELATÓRIO" numa recusa) e falso negativo ("redija a decisão"). Marcar a pergunta, e não a conversa, impede que o aviso vá parar nas respostas seguintes a uma minuta.
+- **Descartado:** detectar a minuta pelo texto da resposta (títulos RELATÓRIO/DISPOSITIVO), pelos falsos positivos e negativos; devolver a resposta ao modelo para ele mesmo pôr o aviso, que custaria uma ida a mais ao modelo para um conserto que o código faz sem erro.
+- **Uso de IA:** o Claude Code escreveu os testes antes do código, com um modelo simulado que esquece o aviso, e conferiu num contra-teste que, sem o validador, o teste principal falha.
+
 ---
 
 ## Pendências de decisão
