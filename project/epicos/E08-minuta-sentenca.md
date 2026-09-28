@@ -28,7 +28,7 @@
 - **Depende de:** T8.2.
 - **Para explicar à banca:** "Não dependo do modelo lembrar do aviso: o código garante que ele sempre aparece."
 
-### T8.4 — Recusa explicada `[ ]`
+### T8.4 — Recusa explicada `[x]`
 - **Objetivo:** "elabore uma minuta para o processo 1" é recusado com o motivo.
 - **Passos:** regra nas instruções usando a T8.1; testar com o processo 1.
 - **Pronto quando:** a resposta explica quais peças faltam e não produz texto de sentença.
