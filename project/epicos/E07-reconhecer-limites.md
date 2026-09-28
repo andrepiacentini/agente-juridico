@@ -44,7 +44,7 @@ Cada tarefa = uma regra nas instruções do agente + uma verificação com pergu
 - **Depende de:** T3.1, E05.
 - **Para explicar à banca:** "Quando a consulta volta vazia, a resposta é 'não consta' — essa é a vantagem de consultar dados em vez de buscar textos parecidos."
 
-### T7.6 — Limite de tentativas na consulta livre `[ ]`
+### T7.6 — Limite de tentativas na consulta livre `[x]`
 - **Objetivo:** depois de 2 erros seguidos no `consultar_sql`, o agente para e diz que não conseguiu.
 - **Passos:** contar tentativas na sessão; na terceira, a ferramenta devolve "limite atingido, informe ao usuário".
 - **Pronto quando:** teste sem IA confirma o bloqueio; pergunta real impossível termina com mensagem honesta.
