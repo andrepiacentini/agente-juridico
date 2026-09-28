@@ -9,7 +9,7 @@ from pydantic_ai.models.test import TestModel
 
 from case_assistant import agent_tools
 from case_assistant.agent import build_agent
-from case_assistant.prompts import FOCUS_LABEL
+from case_assistant.prompts import DRAFT_INSTRUCTIONS, FOCUS_LABEL
 from case_assistant.session import Session, open_session
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"
@@ -135,3 +135,20 @@ def test_without_number_and_without_focus_the_tool_asks_for_the_number(tool) -> 
 
     assert result == {"found": False, "message": agent_tools.MISSING_CASE_NUMBER_MESSAGE}
     assert "informe o número do processo" in result["message"].lower()
+
+
+def test_prepare_draft_sends_the_draft_instructions_only_when_there_is_a_basis() -> None:
+    with open_session() as session:
+        ready = call(agent_tools.prepare_draft, session, REFERENCE_CASE_NUMBER)
+        refused = call(agent_tools.prepare_draft, session, OTHER_CASE_NUMBER)
+
+    assert ready["instructions"] == DRAFT_INSTRUCTIONS
+    assert "instructions" not in refused
+
+
+def test_prepare_draft_without_number_uses_the_focused_case() -> None:
+    with open_session() as session:
+        session.focused_case_number = REFERENCE_CASE_NUMBER
+        result = call(agent_tools.prepare_draft, session)
+
+    assert result["case_number"] == REFERENCE_CASE_NUMBER
