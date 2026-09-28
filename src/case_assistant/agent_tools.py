@@ -9,6 +9,7 @@ conexão ao mesmo tempo, o que importa porque `run_sql` liga o autorizador e o c
 As consultas levam milissegundos, então não há ganho em paralelizá-las.
 """
 
+from collections.abc import Callable
 from typing import Any
 
 from pydantic_ai import RunContext
@@ -17,47 +18,59 @@ from case_assistant import sql_query, tools
 from case_assistant.session import Session
 
 
-def _remember_focus(ctx: RunContext[Session], result: dict[str, Any]) -> dict[str, Any]:
-    """O processo encontrado vira o processo em foco da conversa (E06); buscas de vários processos não mudam o foco."""
+MISSING_CASE_NUMBER_MESSAGE = "Informe o número do processo: nenhum processo foi consultado nesta conversa."
+
+
+def _run_case_tool(
+    ctx: RunContext[Session], tool: Callable[..., dict[str, Any]], case_number: str | None
+) -> dict[str, Any]:
+    """Sem número, usa o processo em foco (T6.3); o processo encontrado vira o novo foco (T6.1).
+
+    Buscas de vários processos não passam por aqui e, por isso, não mudam o foco.
+    """
+    case_number = case_number or ctx.deps.focused_case_number
+    if case_number is None:
+        return {"found": False, "message": MISSING_CASE_NUMBER_MESSAGE}
+    result = tool(ctx.deps.connection, case_number)
     if result.get("found"):
         ctx.deps.focused_case_number = result["case_number"]
     return result
 
 
-async def find_case(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
+async def find_case(ctx: RunContext[Session], case_number: str | None = None) -> dict[str, Any]:
     """Cartão do processo: classe, assunto, vara, juiz, datas, valor, situação, julgamento e avisos. Comece por ela.
 
     Args:
-        case_number: número do processo no padrão CNJ, como 0000007-79.2023.8.99.9014.
+        case_number: número do processo no padrão CNJ, como 0000007-79.2023.8.99.9014; se omitido, usa o processo em foco.
     """
-    return _remember_focus(ctx, tools.find_case(ctx.deps.connection, case_number))
+    return _run_case_tool(ctx, tools.find_case, case_number)
 
 
-async def list_parties(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
+async def list_parties(ctx: RunContext[Session], case_number: str | None = None) -> dict[str, Any]:
     """Partes do processo por polo (autores e réus), com pessoa física/jurídica e CPF/CNPJ.
 
     Args:
-        case_number: número do processo no padrão CNJ.
+        case_number: número do processo no padrão CNJ; se omitido, usa o processo em foco.
     """
-    return _remember_focus(ctx, tools.list_parties(ctx.deps.connection, case_number))
+    return _run_case_tool(ctx, tools.list_parties, case_number)
 
 
-async def list_movements(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
+async def list_movements(ctx: RunContext[Session], case_number: str | None = None) -> dict[str, Any]:
     """Andamento do processo em ordem de data. Use para resumir, inclusive processos sem documentos.
 
     Args:
-        case_number: número do processo no padrão CNJ.
+        case_number: número do processo no padrão CNJ; se omitido, usa o processo em foco.
     """
-    return _remember_focus(ctx, tools.list_movements(ctx.deps.connection, case_number))
+    return _run_case_tool(ctx, tools.list_movements, case_number)
 
 
-async def list_documents(ctx: RunContext[Session], case_number: str) -> dict[str, Any]:
+async def list_documents(ctx: RunContext[Session], case_number: str | None = None) -> dict[str, Any]:
     """Índice dos documentos do processo (sem texto), com os advogados e o lado de cada um.
 
     Args:
-        case_number: número do processo no padrão CNJ.
+        case_number: número do processo no padrão CNJ; se omitido, usa o processo em foco.
     """
-    return _remember_focus(ctx, tools.list_documents(ctx.deps.connection, case_number))
+    return _run_case_tool(ctx, tools.list_documents, case_number)
 
 
 async def read_document(ctx: RunContext[Session], document_id: int) -> dict[str, Any]:

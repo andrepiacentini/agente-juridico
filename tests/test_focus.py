@@ -102,3 +102,36 @@ def test_the_reminder_follows_the_focus_when_it_changes(monkeypatch) -> None:
 
     assert OTHER_CASE_NUMBER in request_instructions(second)[-1]
     assert REFERENCE_CASE_NUMBER not in request_instructions(second)[-1]
+
+
+CASE_TOOLS = [agent_tools.find_case, agent_tools.list_parties, agent_tools.list_movements, agent_tools.list_documents]
+
+
+@pytest.mark.parametrize("tool", CASE_TOOLS, ids=lambda tool: tool.__name__)
+def test_case_tools_without_number_use_the_focused_case(tool) -> None:
+    with open_session() as session:
+        session.focused_case_number = REFERENCE_CASE_NUMBER
+
+        result = call(tool, session)
+
+    assert result["found"] is True
+    assert result["case_number"] == REFERENCE_CASE_NUMBER
+
+
+@pytest.mark.parametrize("tool", CASE_TOOLS, ids=lambda tool: tool.__name__)
+def test_an_explicit_number_wins_over_the_focus(tool) -> None:
+    with open_session() as session:
+        session.focused_case_number = REFERENCE_CASE_NUMBER
+
+        result = call(tool, session, OTHER_CASE_NUMBER)
+
+    assert result["case_number"] == OTHER_CASE_NUMBER
+
+
+@pytest.mark.parametrize("tool", CASE_TOOLS, ids=lambda tool: tool.__name__)
+def test_without_number_and_without_focus_the_tool_asks_for_the_number(tool) -> None:
+    with open_session() as session:
+        result = call(tool, session)
+
+    assert result == {"found": False, "message": agent_tools.MISSING_CASE_NUMBER_MESSAGE}
+    assert "informe o número do processo" in result["message"].lower()

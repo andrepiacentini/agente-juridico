@@ -21,9 +21,9 @@
 - **Depende de:** T6.1.
 - **Para explicar à banca:** "Em vez de esperar que o modelo lembre, eu lembro por ele a cada pergunta."
 
-### T6.3 — Ferramentas usam o foco quando falta o número `[ ]`
+### T6.3 — Ferramentas usam o foco quando falta o número `[x]`
 - **Objetivo:** chamar `listar_partes()` sem número usa o processo em foco.
-- **Passos:** parâmetro `numero` opcional em todas as ferramentas de processo; sem número e sem foco → aviso "informe o número do processo".
+- **Passos:** parâmetro `numero` opcional em todas as ferramentas de processo; sem número e sem foco → aviso "informe o número do processo". Feito em `find_case`, `list_parties`, `list_movements` e `list_documents`; `search_text` fica de fora, porque lá o número é filtro (D45).
 - **Pronto quando:** testes sem IA cobrem os três casos (com número, com foco, sem nenhum).
 - **Depende de:** T6.1.
 - **Para explicar à banca:** "Se o modelo esquecer de passar o número, a ferramenta completa sozinha."

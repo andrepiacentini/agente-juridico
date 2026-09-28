@@ -284,6 +284,12 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** `@agent.system_prompt(dynamic=True)`, que também é recalculado, mas mexe no histórico e mistura as regras fixas com o estado da conversa; depender só do histórico, que num modelo pequeno se perde em conversas longas (motivo do E06).
 - **Uso de IA:** o Claude Code trocou o `system_prompt` previsto na tarefa pelo `instructions`, porque o primeiro não é refeito nos turnos seguintes; dois testes sem IA confirmam que o lembrete acompanha o foco de um turno para o outro. Erro do assistente: no primeiro teste com o modelo, deixou no comando um `cat` sem entrada, que ficou parado cerca de 10 minutos até o autor perguntar o que tinha acontecido.
 
+### D45 — Sem número, as ferramentas de processo usam o processo em foco; a busca por termo, não
+- **Decisão:** em `find_case`, `list_parties`, `list_movements` e `list_documents`, o número do processo passou a ser opcional. Se o modelo não informar, vale o processo em foco (T6.1). Se nenhum processo foi consultado ainda, a [ferramenta](docs/glossario.md#ferramenta) responde "Informe o número do processo: nenhum processo foi consultado nesta conversa.", em vez de dar erro. Quando o número vem na chamada, ele prevalece sobre o foco. A regra fica num lugar só (`_run_case_tool`), que também atualiza o foco.
+- **Por quê:** um modelo pequeno às vezes chama a ferramenta certa sem o argumento. Completando pelo foco, a pergunta de seguimento ("e as partes?") funciona mesmo assim. Sem foco, a ferramenta não tem como adivinhar, e a mensagem leva o modelo a pedir o número ao usuário.
+- **Descartado:** usar o foco também em `search_text`. Lá o número é um filtro opcional, e ficar sem ele quer dizer "procurar em todos os processos". Preencher com o foco restringiria a busca sem ninguém ter pedido.
+- **Uso de IA:** o Claude Code escreveu os testes antes do código (com número, com foco, sem nenhum dos dois, nas quatro ferramentas). Um teste antigo do terminal quebrou porque esperava o `case_number` sempre presente na chamada; ele foi ajustado para conferir só o nome da ferramenta.
+
 ---
 
 ## Pendências de decisão
