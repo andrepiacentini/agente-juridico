@@ -1,5 +1,6 @@
 """Ferramentas de consulta do agente, testadas sem IA sobre o banco real (somente leitura)."""
 
+import re
 from contextlib import closing
 
 import sqlite3
@@ -44,12 +45,13 @@ def test_find_case_returns_identification_card(connection) -> None:
         "court_unit_district": "São Bento do Sul",
         "court_unit_status": "ativa",
         "judge": {"name": "Luiz Bonetti Vasconcelos", "status": "aposentado"},
-        "filing_date": "2023-12-13",
-        "sentence_date": "2026-02-18",
+        "filing_date": "13/12/2023",
+        "sentence_date": "18/02/2026",
         "claim_value": 3796.73,
         "status": "julgado",
         "document_count": 19,
         "movement_count": 21,
+        "source": "[cadastro do processo]",
     }
 
 
@@ -98,8 +100,13 @@ def test_judgment_when_all_three_signals_agree(connection) -> None:
 
     assert judgment == {
         "summary": "Julgado: data de sentença, movimentação de sentença e documento de sentença conferem.",
-        "sentence_movement": {"code": 9219, "description": "Sentença com Resolução do Mérito", "date": "2026-02-18"},
-        "sentence_document": {"id": 7878, "type": "Sentença", "date": "2026-02-18"},
+        "sentence_movement": {
+            "code": 9219, "description": "Sentença com Resolução do Mérito", "date": "18/02/2026",
+            "source": "[mov. 9219 — Sentença com Resolução do Mérito, 18/02/2026]",
+        },
+        "sentence_document": {
+            "id": 7878, "type": "Sentença", "date": "18/02/2026", "source": "[doc 7878 — Sentença, 18/02/2026]",
+        },
     }
 
 
@@ -150,7 +157,7 @@ def test_warnings_report_retired_judge(connection) -> None:
         (11, "A comarca está grafada de forma diferente no processo ('CRICIÚMA') e na vara ('Criciúma')."),
         (134, "grafada de forma diferente no processo ('S. José') e na vara ('São José')"),
         (2, "Valor da causa não informado."),
-        (6, "Valor da causa inválido"),
+        (6, "Valor da causa inválido (R$ 0,00)."),
         (IMPLAUSIBLE_VALUE_CASE_ID, "Valor da causa implausível (R$ 9.999.999.999,00)"),
         (17, "Situação 'julgado' sem data de sentença."),
         (INACTIVE_UNIT_CASE_ID, "está desativada."),
@@ -191,6 +198,7 @@ def test_list_parties_groups_by_pole(connection) -> None:
             {"name": "Operadora de Saúde Cambirela Ltda", "person_type": "pessoa jurídica", "document": "99.193.997/0001-35"}
         ],
         "warnings": [],
+        "source": "[cadastro do processo]",
     }
 
 
@@ -223,9 +231,11 @@ def test_list_movements_returns_timeline_in_date_order(connection) -> None:
 
     assert result["found"] is True
     assert len(movements) == 16
-    assert movements[0] == {"date": "2021-01-11", "code": 9926, "description": "Distribuição por Sorteio"}
-    assert movements[10] == {"date": "2022-02-02", "code": 9219, "description": "Sentença com Resolução do Mérito"}
-    assert [movement["date"] for movement in movements] == sorted(movement["date"] for movement in movements)
+    # Cada movimentação é só a citação pronta: ela já traz código, descrição e data, e custa menos contexto (D53).
+    assert movements[0] == "[mov. 9926 — Distribuição por Sorteio, 11/01/2021]"
+    assert movements[10] == "[mov. 9219 — Sentença com Resolução do Mérito, 02/02/2022]"
+    as_iso = ["-".join(reversed(re.search(r"(\d{2}/\d{2}/\d{4})\]$", movement).group(1).split("/"))) for movement in movements]
+    assert as_iso == sorted(as_iso)
 
 
 def test_list_movements_of_case_without_movements_is_empty(connection) -> None:
@@ -251,7 +261,7 @@ def test_list_movements_warns_about_appeal_after_final_judgment(connection) -> N
     warnings = list_movements(connection, LOWERCASE_STATUS_CASE_NUMBER)["warnings"]
 
     assert warnings == [
-        "Recurso de apelação registrado em 2022-03-04, depois do trânsito em julgado (2022-02-21). "
+        "Recurso de apelação registrado em 04/03/2022, depois do trânsito em julgado (21/02/2022). "
         "Sequência incomum, que merece conferência: pode ser recurso interposto fora do prazo ou erro de cadastro."
     ]
 
@@ -278,9 +288,10 @@ def test_list_documents_returns_metadata_without_text(connection) -> None:
         "id": 7865,
         "type": "Petição Inicial",
         "author": "Dr. Carlos Gava Reis — OAB/SC 99.170",
-        "date": "2024-01-08",
+        "date": "08/01/2024",
         "pages": 2,
         "lawyer_side": "autor",
+        "source": "[doc 7865 — Petição Inicial, 08/01/2024]",
     }
     assert documents[1]["lawyer_side"] is None  # despacho do juiz
     assert all("text" not in document and "texto" not in document for document in documents)
@@ -345,8 +356,9 @@ def test_read_document_returns_full_text_with_citation_data(connection) -> None:
         "case_number": REFERENCE_CASE_NUMBER,
         "type": "Sentença",
         "author": "Luiz Bonetti Vasconcelos",
-        "date": "2026-02-18",
+        "date": "18/02/2026",
         "pages": 2,
+        "source": "[doc 7878 — Sentença, 18/02/2026]",
     }
     assert document["text"] == stored_text
     assert len(document["text"]) == 2_443
@@ -432,7 +444,8 @@ def test_search_text_finds_documents_with_snippet(indexed_connection) -> None:
     assert result["total"] == 2_786
     assert len(result["results"]) == 10
     first = result["results"][0]
-    assert set(first) == {"document_id", "case_number", "type", "date", "snippet"}
+    assert set(first) == {"document_id", "case_number", "type", "date", "snippet", "source"}
+    assert first["source"] == f"[doc {first['document_id']} — {first['type']}, {first['date']}]"
     assert "[inversão do ônus]" in first["snippet"].lower()
 
 
@@ -489,7 +502,8 @@ def test_search_parties_finds_person_with_cases_and_pole(indexed_connection) -> 
     assert person["document"] == "999.539.988-87"
     assert person["person_type"] == "pessoa física"
     assert person["names"] == ["João Ziegler Rocha"]
-    assert {"case_number": REFERENCE_CASE_NUMBER, "pole": "ativo"} in person["cases"]
+    # O papel no processo sai como autor/réu: "polo ativo" virou "processo ativo" na resposta do modelo (D50).
+    assert {"case_number": REFERENCE_CASE_NUMBER, "role": "autor"} in person["cases"]
 
 
 def test_search_parties_ignores_accents_and_word_order(indexed_connection) -> None:
@@ -560,6 +574,7 @@ def test_search_cases_by_subject_ignores_accents_and_case(connection) -> None:
     assert set(result["cases"][0]) == {
         "case_number", "case_class", "subject", "district", "status", "filing_date", "claim_value"
     }
+    assert re.fullmatch(r"\d{2}/\d{2}/\d{4}", result["cases"][0]["filing_date"])
 
 
 def test_search_cases_combines_class_and_district(connection) -> None:

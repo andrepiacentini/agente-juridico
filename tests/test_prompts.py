@@ -7,6 +7,7 @@ import pytest
 
 from case_assistant.db import connect
 from case_assistant import sql_query, tools
+from case_assistant.citations import REGISTRY_SOURCE, document_source, movement_source
 from case_assistant.prompts import DATABASE_DESCRIPTION, SYSTEM_PROMPT
 from case_assistant.sql_query import run_sql
 
@@ -110,3 +111,24 @@ def test_system_prompt_has_a_summary_playbook_in_tool_order() -> None:
 
 def test_system_prompt_forbids_deducing_facts_from_subject() -> None:
     assert "Não deduza fatos do assunto ou da classe do processo" in SYSTEM_PROMPT
+
+
+def test_citation_examples_in_the_prompt_are_the_ones_the_tools_produce() -> None:
+    # Um formato só (D53): o exemplo que o modelo lê é exatamente o que as ferramentas devolvem no campo source.
+    assert document_source(7878, "Sentença", "2026-02-18") in SYSTEM_PROMPT
+    assert movement_source(9219, "Sentença com Resolução do Mérito", "2026-02-18") in SYSTEM_PROMPT
+    assert REGISTRY_SOURCE in SYSTEM_PROMPT
+
+
+@pytest.mark.parametrize(
+    "rule",
+    [
+        "source",  # copiar a citação pronta
+        "já estiver na conversa",  # T5.5: dado do histórico também é citado
+        "não crie avisos",  # T7.4: aviso inventado
+        "nomes de campos",  # T7.2/T7.3: "Warning:", "o campo 'judge'"
+        "autor ou réu",  # T7.4: polo lido como situação do processo
+    ],
+)
+def test_system_prompt_has_the_citation_and_form_rules(rule: str) -> None:
+    assert rule in SYSTEM_PROMPT

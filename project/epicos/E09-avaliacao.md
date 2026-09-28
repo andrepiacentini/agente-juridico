@@ -23,7 +23,7 @@
 
 ### T9.3 — Casos das armadilhas `[ ]`
 - **Objetivo:** ~5 casos: processo inexistente, sem magistrado, homônimo, troca de processo na conversa, pergunta impossível.
-- **Passos:** reaproveitar os roteiros do E06 e do E07.
+- **Passos:** reaproveitar os roteiros do E06 e do E07 (`docs/roteiros/`). Incluir as falhas que ficaram em aberto na D53: cartão do processo sem `[cadastro do processo]` (T7.4), resumo curto sem citação (T7.5) e rótulo "[warning: …]" (T7.1); e o resumo raso depois da nova tentativa do validador (D51).
 - **Pronto quando:** os casos estão no arquivo.
 - **Depende de:** T9.1, E07.
 - **Para explicar à banca:** "Cada armadilha do banco tem um caso que prova que o agente não cai nela."
