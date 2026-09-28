@@ -424,6 +424,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Critério retirado por reprovar resposta certa:** "não foi encontrado" como proibido no resumo do processo 1 depois de outro em foco, porque casa com "nenhum documento foi encontrado"; ficou só "não consta no banco o processo", que é o erro real.
 - **Uso de IA:** o Claude Code montou os critérios a partir dos roteiros e das respostas guardadas, e revisou cada critério proibido procurando frases certas que casariam com ele.
 
+### D64 — A bateria roda com um comando e mostra o placar, caso a caso
+- **Decisão:** `uv run case-assistant-eval` roda os casos de `tests/golden.yaml` no agente, cada um numa sessão nova, com as perguntas em ordem e o histórico da conversa, pelo mesmo `run_with_retries` do chat. Em cada pergunta, anota as [ferramentas](docs/glossario.md#ferramenta) chamadas e confere os critérios sem diferença de caixa e acento. Mostra ✓ ou ✗ por caso assim que ele termina, com o tempo e o motivo de cada falha, e o placar no fim; sai com código 1 se algum caso falhar. As opções são `--model` (troca o modelo sem mexer no `.env`), `--case` (roda só os casos escolhidos) e `--output` (grava respostas, ferramentas, falhas e tempos em JSON, para a T9.5). Um erro do modelo vira falha daquele caso e a bateria segue. O código fica em `src/case_assistant/evaluation.py`, na camada de apresentação, ao lado do chat. A T9.4 fica concluída.
+- **Resultado:** 9 testes sem IA cobrem os critérios, a conversa de várias perguntas, o erro do modelo, o relatório e o comando. No [modelo local](docs/glossario.md#modelo-local), `--case processo-inexistente --case magistrado-aposentado` deu 2/2 em 48 s.
+- **Por quê:** ao mexer nas instruções ou nas ferramentas, é fácil consertar uma resposta e estragar outra; com o comando, a bateria de 19 casos diz isso de uma vez. Mostrar cada caso ao terminar importa porque, no modelo local, a bateria inteira leva vários minutos.
+- **Descartado:** rodar a bateria dentro do `pytest` (ela chama um modelo de verdade, demora e custa; a suíte e a [CI](docs/glossario.md#ci) seguem sem IA); rodar os casos em paralelo, que não cabe na memória do notebook com o modelo local.
+- **Uso de IA:** o Claude Code escreveu os testes antes do código; depois do verde, separou a formatação do relatório em duas funções, porque a primeira versão recortava o texto do relatório para mostrar o progresso.
+
 ---
 
 ## Pendências de decisão
