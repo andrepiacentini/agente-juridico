@@ -7,6 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from case_assistant.case_number import extract_case_number, extract_case_numbers
+from case_assistant.citations import REGISTRY_SOURCE, brazilian_date, document_source, movement_source
 from case_assistant.db import ensure_search_index
 from case_assistant.text_normalization import comparable_district, comparable_text
 
@@ -131,6 +132,7 @@ ACTIVE_UNIT_STATUS = "ativa"
 # Acima disso só existe um valor no banco: 9.999.999.999, com cara de preenchimento; o seguinte é 1,27 milhão.
 IMPLAUSIBLE_CLAIM_VALUE = 100_000_000
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
+ROLE_BY_POLE = {"ativo": "autor", "passivo": "réu"}
 
 
 class NotFoundError(Exception):
@@ -182,8 +184,8 @@ def find_case(connection: sqlite3.Connection, case_number: str) -> dict[str, Any
         "court_unit_district": row["unidade_comarca"],
         "court_unit_status": row["unidade_status"],
         "judge": _judge(row),
-        "filing_date": row["dt_aut"],
-        "sentence_date": row["data_sentenca"],
+        "filing_date": brazilian_date(row["dt_aut"]),
+        "sentence_date": brazilian_date(row["data_sentenca"]),
         "claim_value": row["valor_causa"],
         "status": row["situacao"],
         "document_count": row["total_documentos"],
@@ -191,6 +193,7 @@ def find_case(connection: sqlite3.Connection, case_number: str) -> dict[str, Any
         "judgment": _judgment(connection, row["id"], row["data_sentenca"]),
     }
     case["warnings"] = _registry_warnings(case)
+    case["source"] = REGISTRY_SOURCE
     return case
 
 
@@ -219,7 +222,7 @@ def _registry_warnings(case: dict[str, Any]) -> list[str]:
     if claim_value is None:
         warnings.append("Valor da causa não informado.")
     elif claim_value <= 0:
-        warnings.append(f"Valor da causa inválido ({claim_value}).")
+        warnings.append(f"Valor da causa inválido ({_brazilian_currency(claim_value)}).")
     elif claim_value >= IMPLAUSIBLE_CLAIM_VALUE:
         warnings.append(f"Valor da causa implausível ({_brazilian_currency(claim_value)}): parece valor de preenchimento.")
 
@@ -257,13 +260,27 @@ def _judgment(connection: sqlite3.Connection, case_id: int, sentence_date: str |
 def _movement_card(movement: sqlite3.Row | None) -> dict[str, Any] | None:
     if movement is None:
         return None
-    return {"code": movement["codigo"], "description": movement["descricao"], "date": movement["data_mov"]}
+    return _movement(movement["codigo"], movement["descricao"], movement["data_mov"])
 
 
 def _document_card(document: sqlite3.Row | None) -> dict[str, Any] | None:
     if document is None:
         return None
-    return {"id": document["id"], "type": document["tipo"], "date": document["dt_juntada"]}
+    return {
+        "id": document["id"],
+        "type": document["tipo"],
+        "date": brazilian_date(document["dt_juntada"]),
+        "source": document_source(document["id"], document["tipo"], document["dt_juntada"]),
+    }
+
+
+def _movement(code: int, description: str, iso_date: str) -> dict[str, Any]:
+    return {
+        "code": code,
+        "description": description,
+        "date": brazilian_date(iso_date),
+        "source": movement_source(code, description, iso_date),
+    }
 
 
 def _judgment_summary(signals: dict[str, bool]) -> str:
@@ -298,17 +315,18 @@ def list_parties(connection: sqlite3.Connection, case_number: str) -> dict[str, 
         "warnings": [
             f"{row['nome']} aparece mais de uma vez no polo {row['polo']} do cadastro." for row in rows if row["vinculos"] > 1
         ],
+        "source": REGISTRY_SOURCE,
     }
 
 
 @_reports_not_found
 def list_movements(connection: sqlite3.Connection, case_number: str) -> dict[str, Any]:
-    """Andamento do processo em ordem de data: só data, código e descrição de cada movimentação."""
+    """Andamento do processo em ordem de data: cada movimentação já no formato de citação (código, descrição, data)."""
     rows = connection.execute(LIST_MOVEMENTS_QUERY, (_resolve_case_id(connection, case_number),)).fetchall()
     return {
         "found": True,
         "case_number": extract_case_number(case_number),
-        "movements": [{"date": row["data_mov"], "code": row["codigo"], "description": row["descricao"]} for row in rows],
+        "movements": [movement_source(row["codigo"], row["descricao"], row["data_mov"]) for row in rows],
         "warnings": _timeline_warnings(rows),
     }
 
@@ -320,14 +338,15 @@ def _timeline_warnings(rows: list[sqlite3.Row]) -> list[str]:
         return []
     final_judgment_date = min(final_judgment_dates)
     warnings = [
-        f"Recurso de apelação registrado em {row['data_mov']}, depois do trânsito em julgado ({final_judgment_date}). "
+        f"Recurso de apelação registrado em {brazilian_date(row['data_mov'])}, "
+        f"depois do trânsito em julgado ({brazilian_date(final_judgment_date)}). "
         "Sequência incomum, que merece conferência: pode ser recurso interposto fora do prazo ou erro de cadastro."
         for row in rows
         if row["codigo"] == APPEAL_CODE and row["data_mov"] > final_judgment_date
     ]
     if not any(row["codigo"] in SENTENCE_MOVEMENT_CODES for row in rows):
         warnings.append(
-            f"Trânsito em julgado ({final_judgment_date}) sem movimentação de sentença no andamento. "
+            f"Trânsito em julgado ({brazilian_date(final_judgment_date)}) sem movimentação de sentença no andamento. "
             "Merece conferência: a sentença pode não ter sido registrada."
         )
     return warnings
@@ -369,10 +388,11 @@ def read_document(connection: sqlite3.Connection, document_id: int) -> dict[str,
         "case_number": row["numero"],
         "type": row["tipo"],
         "author": row["autor"],
-        "date": row["dt_juntada"],
+        "date": brazilian_date(row["dt_juntada"]),
         "pages": row["num_paginas"],
         "text": row["texto"],
         "warnings": _cited_case_number_warnings(row["texto"], row["numero"]),
+        "source": document_source(row["id"], row["tipo"], row["dt_juntada"]),
     }
 
 
@@ -419,7 +439,8 @@ def search_text(
                 "total": total,
                 "results": [
                     {"document_id": row["id"], "case_number": row["numero"], "type": row["tipo"],
-                     "date": row["dt_juntada"], "snippet": row["trecho"]}
+                     "date": brazilian_date(row["dt_juntada"]), "snippet": row["trecho"],
+                     "source": document_source(row["id"], row["tipo"], row["dt_juntada"])}
                     for row in rows
                 ],
             }
@@ -522,7 +543,7 @@ def search_cases(
         "total": total,
         "cases": [
             {"case_number": row["numero"], "case_class": row["classe"], "subject": row["assunto"],
-             "district": row["comarca"], "status": row["situacao"], "filing_date": row["dt_aut"],
+             "district": row["comarca"], "status": row["situacao"], "filing_date": brazilian_date(row["dt_aut"]),
              "claim_value": row["valor_causa"]}
             for row in rows
         ],
@@ -539,7 +560,7 @@ def _people_by_document(connection: sqlite3.Connection, documents: list[str]) ->
         )
         if row["nome"] not in person["names"]:
             person["names"].append(row["nome"])
-        case = {"case_number": row["numero"], "pole": row["polo"]}
+        case = {"case_number": row["numero"], "role": ROLE_BY_POLE[row["polo"]]}
         if case not in person["cases"]:
             person["cases"].append(case)
     for person in people.values():
@@ -600,9 +621,10 @@ def _document_metadata(row: sqlite3.Row, sides: dict[str, str]) -> dict[str, Any
         "id": row["id"],
         "type": row["tipo"],
         "author": row["autor"],
-        "date": row["dt_juntada"],
+        "date": brazilian_date(row["dt_juntada"]),
         "pages": row["num_paginas"],
         "lawyer_side": sides[oab] if oab else None,
+        "source": document_source(row["id"], row["tipo"], row["dt_juntada"]),
     }
 
 
