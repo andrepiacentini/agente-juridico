@@ -298,6 +298,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** automatizar agora a conferência das respostas. Isso é o comando da bateria (T9.4), e fazer antes seria adiantar o E09.
 - **Uso de IA:** o Claude Code conferiu no banco o esperado de cada pergunta antes de rodar o roteiro. Na revisão, confirmou que o aviso de juiz aposentado do processo 1 era verdadeiro, antes de classificá-lo como fora de lugar e não como invenção.
 
+### D47 — Processo sem documentos: as instruções atuais já bastam, sem regra nova
+- **Decisão:** a T7.1 fica concluída sem mudar as instruções do agente. A regra que já existia no roteiro de resumo ("Processo sem documentos: resuma só pelo andamento e diga que não há documentos"), junto com a regra de não deduzir fatos do assunto, bastou. A verificação virou roteiro em [`docs/roteiros/processo-sem-documentos.md`](docs/roteiros/processo-sem-documentos.md), para a [bateria de avaliação](docs/glossario.md#golden-set) (T9.3).
+- **Resultado com o [modelo local](docs/glossario.md#modelo-local):** "resuma o processo 1" trouxe o cadastro e as 16 movimentações certas e disse duas vezes que não há documentos nem o texto da sentença (99 s). "Quais foram os pedidos do autor no processo 1?" respondeu que, sem a petição inicial, não há como saber, sem deduzir nada de "Rescisão Contratual c/c Perdas e Danos" (19 s). Nenhuma das duas cita as movimentações no formato combinado (fica para a T7.7).
+- **Por quê:** a [ferramenta](docs/glossario.md#ferramenta) já entrega o sinal sem ambiguidade (`document_count: 0` em `find_case`, lista vazia em `list_documents`), e o modelo o usou nas duas perguntas. Cada regra a mais nas instruções é reenviada em todo pedido e pesa no tempo de resposta de um modelo de 4B no notebook de 8 GB.
+- **Descartado:** repetir a regra na lista geral de regras "por garantia", sem uma falha observada que a justifique (YAGNI); pôr um aviso de texto em `list_documents` quando a lista vem vazia, pelo mesmo motivo. Se a bateria (E09) mostrar uma pergunta em que o modelo inventa, a regra entra com essa pergunta como teste.
+- **Uso de IA:** o Claude Code rodou as duas perguntas no modelo local e conferiu no banco cada movimentação e cada aviso da resposta. Antes de classificar "pode ser recurso fora do prazo" como especulação do modelo, confirmou que a frase vinha do próprio aviso de `list_movements`. Erro do assistente: a primeira tentativa rodava o resumo duas vezes seguidas, em primeiro plano e sem mostrar nada até o fim; ficou minutos sem retorno até o autor interromper e perguntar o que estava acontecendo. Refeita com uma rodada só, em segundo plano e com o tempo medido.
+
 ---
 
 ## Pendências de decisão

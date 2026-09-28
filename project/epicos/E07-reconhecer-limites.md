@@ -9,7 +9,7 @@ Cada tarefa = uma regra nas instruções do agente + uma verificação com pergu
 
 ---
 
-### T7.1 — Processo sem documentos `[ ]`
+### T7.1 — Processo sem documentos `[x]`
 - **Objetivo:** "resuma o processo 1" responde só com o andamento e avisa que não há peças disponíveis.
 - **Passos:** regra nas instruções; testar com o processo 1.
 - **Pronto quando:** a resposta menciona explicitamente a ausência de documentos e não inventa fatos.
