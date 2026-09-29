@@ -27,7 +27,7 @@
 - **Depende de:** todos os épicos anteriores.
 - **Para explicar à banca:** "O registro foi escrito ao longo do projeto, não no final — aqui só revisei."
 
-### T12.4 — Roteiro da demonstração `[ ]`
+### T12.4 — Roteiro da demonstração `[x]`
 - **Objetivo:** sequência de perguntas da demo, com tempo estimado e plano B.
 - **Passos:** ordem: 4 perguntas no 3161 → mesmas no processo 1 → troca de modelo → pergunta que falha (T12.5); plano B: terminal + Claude.
 - **Pronto quando:** o roteiro está em `docs/roteiro-demo.md` e foi ensaiado uma vez cronometrado.
