@@ -120,3 +120,23 @@ def test_async_version_fails_at_once_on_permanent_errors() -> None:
         run_async(agent)
 
     assert agent.calls == 1
+
+
+def test_async_version_passes_the_event_handler_to_the_agent() -> None:
+    # A web mostra cada chamada de ferramenta enquanto o agente trabalha (T10.2).
+    received = {}
+
+    class RecordingAgent:
+        async def run(self, question, **kwargs):
+            received.update(kwargs)
+            return "resposta"
+
+    async def handler(ctx, events) -> None:
+        return None
+
+    async def notify(text: str) -> None:
+        return None
+
+    asyncio.run(run_with_retries_async(RecordingAgent(), "pergunta", [], None, on_retry=notify, event_stream_handler=handler))
+
+    assert received["event_stream_handler"] is handler

@@ -7,6 +7,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from pydantic_ai import Agent, ModelRetry, RunContext
+from pydantic_ai.agent import EventStreamHandler
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
 from pydantic_ai.messages import ModelMessage, ToolCallPart
 from pydantic_ai.models import Model
@@ -153,11 +154,17 @@ async def run_with_retries_async(
     session: Session | None,
     on_retry: Callable[[str], Awaitable[None]],
     sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    event_stream_handler: EventStreamHandler[Session] | None = None,
 ) -> Any:
-    """Como run_with_retries, para a interface web: roda no laço assíncrono, na mesma thread da conexão da sessão."""
+    """Como run_with_retries, para a interface web: roda no laço assíncrono, na mesma thread da conexão da sessão.
+
+    O event_stream_handler recebe cada chamada de ferramenta enquanto o agente trabalha (T10.2).
+    """
     for attempt in range(1, MAX_ATTEMPTS + 1):
         try:
-            return await agent.run(question, message_history=history, deps=session)
+            return await agent.run(
+                question, message_history=history, deps=session, event_stream_handler=event_stream_handler
+            )
         except ModelAPIError as error:
             wait, notice = _retry_plan(error, attempt)
             await on_retry(notice)
