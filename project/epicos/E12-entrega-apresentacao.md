@@ -36,7 +36,7 @@
 - **Pronto quando:** a pergunta está no roteiro e se comporta igual em 3 execuções.
 - **Depende de:** E04, T7.6.
 
-### T12.6 — Respostas para as 5 perguntas da arguição `[ ]`
+### T12.6 — Respostas para as 5 perguntas da arguição `[x]`
 - **Objetivo:** texto curto para cada pergunta, com links para o `DECISOES.md`.
 - **Passos:** partir das respostas prontas do plano; atualizar com o que realmente aconteceu; salvar fora do repositório, junto do roteiro.
 - **Pronto quando:** as 5 respostas cabem em uma página e cada uma aponta uma evidência no projeto.
