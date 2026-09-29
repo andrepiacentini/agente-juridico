@@ -6,6 +6,7 @@ O Chainlit mostra os dois na própria conversa; este módulo não conhece o Chai
 import plotly.graph_objects as go
 
 from case_assistant.citations import brazilian_number
+from case_assistant.cost_projection import ProjectionConfig, break_even_answers, mean_cost_per_answer, monthly_projection
 from case_assistant.pricing import PriceTable
 from case_assistant.usage_report import GroupRow, UsageReport, UsageTotals
 
@@ -13,9 +14,10 @@ EMPTY_PANEL = "Ainda não há respostas registradas."
 COST_DECIMALS = 4
 RECENT_SESSIONS = 10
 SHORT_SESSION_ID = 8
+NEXT_PRICE_DATE = "2027-01-01"  # o Google anuncia o Gemini 3.8 Flash com preço dobrado a partir desta data (D73)
 
 
-def panel_text(report: UsageReport, prices: PriceTable) -> str:
+def panel_text(report: UsageReport, prices: PriceTable, projection: ProjectionConfig | None = None) -> str:
     if not report.total.answers:
         return EMPTY_PANEL
     total = report.total
@@ -42,11 +44,44 @@ def panel_text(report: UsageReport, prices: PriceTable) -> str:
             f"{', '.join(f'`{model}`' for model in session.models)} | {_row(session.totals)} |"
             for session in report.by_session[:RECENT_SESSIONS]
         ),
+        *(_projection_lines(report, prices, projection) if projection else []),
         "",
         f"_Preços por milhão de tokens conforme `prices.toml`; câmbio R$ {brazilian_number(prices.usd_brl, 4)} "
         f"({prices.exchange_date}). modelo local: sem custo por token (energia e máquina fora da conta)._",
     ]
     return "\n".join(lines)
+
+
+def _projection_lines(report: UsageReport, prices: PriceTable, projection: ProjectionConfig) -> list[str]:
+    """Custo mensal de cada cenário para cada modelo pago registrado, e onde o servidor próprio passa a compensar."""
+    lines = []
+    for model in [row.label for row in report.by_model]:
+        today = mean_cost_per_answer(report.records, prices, model)
+        next_year = mean_cost_per_answer(report.records, prices, model, price_date=NEXT_PRICE_DATE)
+        if not today or next_year is None:
+            continue  # modelo local (custo zero) ou sem preço: não há o que projetar
+        server = projection.self_hosted_monthly_usd * prices.usd_brl
+        lines += [
+            "",
+            f"### Projeção mensal — `{model}`",
+            f"Custo médio medido: R$ {brazilian_number(today, COST_DECIMALS)} por resposta hoje, "
+            f"R$ {brazilian_number(next_year, COST_DECIMALS)} no preço anunciado para 2027; "
+            f"{projection.workdays_per_month} dias úteis por mês.",
+            "",
+            "| Cenário | Respostas por mês | Custo hoje | Custo em 2027 | Servidor próprio |",
+            "|---|---:|---:|---:|---:|",
+            *(
+                f"| {row.name} | {brazilian_number(row.answers_per_month, 0)} | R$ {brazilian_number(row.api_cost_brl, 2)} | "
+                f"R$ {brazilian_number(row.answers_per_month * next_year, 2)} | R$ {brazilian_number(row.self_hosted_brl, 2)} |"
+                for row in monthly_projection(projection, today, prices.usd_brl)
+            ),
+            "",
+            f"O servidor próprio sai mais barato a partir de {brazilian_number(break_even_answers(server, today), 0)} respostas "
+            f"por mês (no preço de 2027, a partir de {brazilian_number(break_even_answers(server, next_year), 0)}). "
+            f"Servidor considerado: {projection.self_hosted_description} ({projection.self_hosted_source}). "
+            "A capacidade de atendimento dele não foi medida: volumes grandes podem exigir mais de uma GPU.",
+        ]
+    return lines
 
 
 def panel_figures(report: UsageReport) -> list[tuple[str, go.Figure]]:

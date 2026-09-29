@@ -89,3 +89,9 @@ def test_an_empty_log_gives_an_empty_report(prices) -> None:
     report = usage_report([], prices)
 
     assert report.total.answers == 0 and report.by_model == [] and report.by_session == []
+
+
+def test_report_keeps_its_records_for_the_projection(prices) -> None:
+    records = [answer(GEMINI, "a", [])]
+
+    assert usage_report(records, prices).records == records

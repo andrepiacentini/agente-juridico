@@ -39,7 +39,7 @@
 - **Depende de:** T13.3.
 - **Para explicar à banca:** "O acompanhamento de consumo está no próprio chat, sem outra ferramenta."
 
-### T13.5 — Projeção de custo e ponto de equilíbrio `[ ]`
+### T13.5 — Projeção de custo e ponto de equilíbrio `[x]`
 - **Objetivo:** com o consumo medido, projetar o custo mensal para o uso real (usuários × perguntas por dia × mix de tipos) e comparar com um servidor próprio com modelo aberto.
 - **Passos:** rodar a bateria (E09) uma vez em cada modelo com o registro ligado; custo médio por tipo de pergunta; projeção em cenários de uso; custo do servidor próprio como estimativa declarada, com fonte; ponto de equilíbrio; mostrar a projeção no painel; registrar no `DECISOES.md`.
 - **Pronto quando:** a tabela de cenários e o ponto de equilíbrio estão no `DECISOES.md` e no painel.

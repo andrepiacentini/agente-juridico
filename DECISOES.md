@@ -513,6 +513,24 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** um relatório HTML gerado por comando (D71); abrir o painel perguntando ao agente, que gastaria tokens para mostrar números que o código já tem.
 - **Uso de IA:** o Claude Code testou o painel no Chrome com os números reais do registro; num dos testes, a ferramenta de navegador falhou e o autor clicou no botão para que o teste seguisse.
 
+### D76 — Custo medido: R$ 0,05 por resposta no Gemini; servidor próprio compensa a partir de ~145 mil respostas por mês
+- **Decisão:** a bateria de 19 casos rodou uma vez em cada modelo com o registro de uso ligado, e o consumo medido virou a base da projeção de custo (`cost_projection.py`), que também aparece no painel "Ver consumo". Os cenários de uso (pessoas × perguntas por dia × 22 dias úteis) e o custo de referência de um servidor próprio ficam na seção `[projection]` do `prices.toml`, com fonte. A T13.5 fica concluída e, com ela, o E13.
+- **Consumo medido (27 respostas em cada modelo):** no Gemini, média de 10.600 [tokens](docs/glossario.md#token) de entrada e 385 de saída por resposta, **R$ 0,0489 por resposta** (R$ 0,0978 no preço anunciado para 2027), **5,3 s** em média; a bateria inteira custou R$ 1,32. Por tipo de pergunta: R$ 0,017 quando responde pelo histórico, R$ 0,03–0,045 para cadastro, andamento, busca, SQL e minuta, e R$ 0,110 quando lê documentos (resumo com peças: 24 mil tokens de entrada). No [modelo local](docs/glossario.md#modelo-local): zero por token, **46,7 s** em média, 163 s quando lê documentos. O Gemini não reaproveitou cache nenhum nesta rodada; o Ollama reaproveitou 89% da entrada.
+- **Projeção mensal (20 perguntas por pessoa por dia):**
+
+  | Cenário | Respostas por mês | Gemini hoje | Gemini em 2027 | Servidor próprio (1 GPU L40S) |
+  |---|---:|---:|---:|---:|
+  | Gabinete (10 pessoas) | 4.400 | R$ 215 | R$ 430 | R$ 7.082 |
+  | Comarca (100 pessoas) | 44.000 | R$ 2.152 | R$ 4.303 | R$ 7.082 |
+  | Tribunal (2.000 pessoas) | 880.000 | R$ 43.031 | R$ 86.062 | R$ 7.082 ou mais |
+
+  O servidor próprio sai mais barato a partir de **~145 mil respostas por mês** no preço de hoje e de **~72 mil** no de 2027; com a máquina reservada por 1 ano (US$ 1,172/h, R$ 4.460/mês), a partir de ~91 mil e ~46 mil. Servidor de referência: AWS `g6e.xlarge`, 1 GPU NVIDIA L40S de 48 GB, US$ 1,861/h sob demanda × 730 h = US$ 1.358,53/mês (R$ 7.082 ao câmbio de 5,2132), conferido em dois agregadores de preços da AWS em 29/09/2026.
+- **O que isso responde:** o custo por pergunta quase não depende do tamanho da base, porque as [ferramentas](docs/glossario.md#ferramenta) devolvem metadados e só o texto dos documentos pedidos; com uma base 10.000 vezes maior, uma pergunta sobre um processo custa o mesmo. O que cresce é o volume de perguntas. Para um gabinete ou uma comarca, o modelo pago é mais barato e muito mais rápido; para o tribunal inteiro, um servidor próprio com modelo aberto maior compensa com folga e mantém os dados dentro do tribunal. A arquitetura não muda: a troca é uma variável no `.env`.
+- **Ressalvas, escritas também no painel:** a capacidade de atendimento de uma única GPU não foi medida, e 880 mil respostas por mês (cerca de 40 mil por dia útil) podem exigir mais de uma; o custo do servidor é de aluguel na nuvem, sem pessoal, energia ou licenças de um servidor comprado; a qualidade de um modelo aberto maior não foi medida nesta bateria (só a do `qwen3:4b`).
+- **Resultado da bateria nesta rodada:** Gemini 17/19 (19/19 na D65) e local 16/19 (14/19 na D65); o Gemini inventou uma "citação" com nome de ferramenta e, no número com dígito errado, sugeriu o 3161 depois de procurar números parecidos com SQL — o contrário do que a D54 decidiu. Detalhes em `docs/avaliacao/README.md`.
+- **Descartado:** projetar a partir do custo de uma pergunta de exemplo, que subestimaria o resumo com documentos; um mix de tipos de pergunta inventado — o custo médio vem da própria bateria, que tem as 4 perguntas do edital e as armadilhas.
+- **Uso de IA:** o Claude Code gravou a medição num registro separado, para não misturar com os testes manuais, e conferiu o preço do servidor em duas fontes. Errou uma conta feita à mão no teste do ponto de equilíbrio (277.782 no lugar de 277.778); o teste falhou e ele corrigiu a conta, não o código.
+
 ---
 
 ## Pendências de decisão

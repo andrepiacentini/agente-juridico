@@ -63,3 +63,21 @@ def test_panel_has_three_charts_with_titles(report) -> None:
 def test_model_names_in_the_session_table_are_code_so_markdown_does_not_eat_them(report) -> None:
     # ":gemini-3" virava emoji no Markdown do Chainlit e o nome saía "google .8-flash" (D69).
     assert f"`{LOCAL}`, `{GEMINI}`" in panel_text(*report)
+
+
+def test_panel_projects_the_monthly_cost_of_the_paid_model(report) -> None:
+    from case_assistant.cost_projection import ProjectionConfig, Scenario
+
+    config = ProjectionConfig(
+        workdays_per_month=22, scenarios=[Scenario("Gabinete (10 pessoas)", 10, 20)],
+        self_hosted_monthly_usd=1_000.0, self_hosted_description="servidor de teste", self_hosted_source="fonte de teste",
+    )
+    report_data, prices = report
+
+    text = panel_text(report_data, prices, projection=config)
+
+    # 4.400 respostas × R$ 0,0188 (2026) e × R$ 0,0375 (2027); servidor: US$ 1.000 × 5,2132 = R$ 5.213,20
+    assert "### Projeção mensal — `google:gemini-3.8-flash`" in text
+    assert "| Gabinete (10 pessoas) | 4.400 | R$ 82,58 | R$ 165,15 | R$ 5.213,20 |" in text
+    assert "a partir de 277.778 respostas por mês" in text  # US$ 1.000 ÷ US$ 0,0036
+    assert "servidor de teste" in text and "fonte de teste" in text
