@@ -23,7 +23,7 @@
 - **Depende de:** E09.
 - **Para explicar à banca:** "O raciocínio interno deixava cada resposta mais lenta sem melhorar o uso das ferramentas."
 
-### T11.3 — Medir o tempo das 4 perguntas do edital `[ ]`
+### T11.3 — Medir o tempo das 4 perguntas do edital `[x]`
 - **Objetivo:** tabela de tempo por pergunta no modelo local, com tokens por segundo.
 - **Passos:** rodar as 4 perguntas no 3161; cronometrar; registrar os tokens de entrada e de saída (registro da T13.1) e calcular tokens por segundo, separando a leitura do prompt da geração da resposta — a suspeita é que a demora vem mais da leitura das instruções e dos documentos do que da escrita.
 - **Pronto quando:** a tabela está no `DECISOES.md`.
@@ -47,7 +47,8 @@
 - **Depende de:** E09.
 - **Para explicar à banca:** "Tenho um modelo menor testado para o caso de a máquina ficar sem memória ao vivo."
 
-### T11.6 — Medir a memória com videochamada aberta (opcional) `[ ]`
+### T11.6 — Medir a memória com videochamada aberta (opcional) `[-]`
+- **Cancelada (D78):** a apresentação continua presencial (D28), regra desta tarefa; o pico de memória do modelo já está medido na D77.
 - **Opcional (D28):** o edital prevê apresentação **presencial**. Esta tarefa só é feita se a apresentação passar a ser remota; caso contrário, é cancelada no fim do E11.
 - **Objetivo:** saber se a demo com modelo local aguenta o cenário real: Chainlit no navegador **e** uma videochamada aberta ao mesmo tempo.
 - **Passos:** fechar todos os outros programas; abrir o Chainlit **sempre no Safari**, só com essa aba; abrir uma chamada do Google Meet em **outro navegador** (Chrome), com câmera e compartilhamento de tela ativos; rodar as 4 perguntas do edital no processo 3161 e a minuta; acompanhar a "Pressão de memória" e o uso de swap no Monitor de Atividade; anotar o tempo de cada resposta. Repetir com o `qwen3:1.7b` se a pressão ficar amarela ou vermelha.

@@ -72,7 +72,7 @@ Função do programa que o modelo pode pedir para executar, como `buscar_process
 ### Framework (biblioteca de agentes)
 Conjunto de código pronto que resolve a parte repetitiva de um tipo de programa. Aqui: o "laço" pergunta → escolha de ferramenta → execução → resposta. Exemplos: [Pydantic AI](#pydantic-ai), LangChain.
 
-<a id="fts5"></a>
+<a id="fts5"></a><a id="fts"></a>
 ### FTS5 (busca por palavras)
 Recurso que já vem dentro do [SQLite](#sqlite) para buscar palavras em textos longos com rapidez — como o "localizar" de um editor, mas em milhares de documentos ao mesmo tempo.
 
