@@ -9,6 +9,7 @@ from pydantic_ai.messages import ModelMessage, ToolCallPart
 
 from case_assistant.agent import ModelNotConfiguredError, build_agent, run_with_retries
 from case_assistant.session import Session, open_session
+from case_assistant.tool_display import tool_call_label
 
 WELCOME = "Assistente de processos do TJSC. Pergunte em português; digite 'sair' para encerrar."
 PROMPT = "\nVocê: "
@@ -76,6 +77,5 @@ def _tool_call_lines(messages: list[ModelMessage]) -> list[str]:
     for message in messages:
         for part in message.parts:
             if isinstance(part, ToolCallPart):
-                arguments = ", ".join(f"{name}={value!r}" for name, value in part.args_as_dict().items())
-                lines.append(f"  → {part.tool_name}({arguments})")
+                lines.append(f"  → {tool_call_label(part)}")
     return lines

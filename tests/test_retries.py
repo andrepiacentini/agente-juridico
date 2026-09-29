@@ -1,9 +1,11 @@
 """Novas tentativas quando o serviço do modelo recusa um pedido por indisponibilidade temporária (T5.9). Sem IA."""
 
+import asyncio
+
 import pytest
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
 
-from case_assistant.agent import MAX_ATTEMPTS, run_with_retries
+from case_assistant.agent import MAX_ATTEMPTS, run_with_retries, run_with_retries_async
 
 
 class ScriptedAgent:
@@ -19,6 +21,9 @@ class ScriptedAgent:
         if isinstance(outcome, Exception):
             raise outcome
         return outcome
+
+    async def run(self, question, **kwargs):
+        return self.run_sync(question, **kwargs)
 
 
 def unavailable(status: int = 503) -> ModelHTTPError:
@@ -82,3 +87,56 @@ def test_permanent_errors_fail_at_once_without_retrying(status: int) -> None:
 
     assert agent.calls == 1
     assert notices == [] and waits == []
+
+
+def run_async(agent):
+    """A interface web (Chainlit) roda num laço assíncrono: avisos e esperas também são assíncronos (T10.1)."""
+    notices, waits = [], []
+
+    async def notify(text: str) -> None:
+        notices.append(text)
+
+    async def wait(seconds: float) -> None:
+        waits.append(seconds)
+
+    result = asyncio.run(run_with_retries_async(agent, "pergunta", [], None, on_retry=notify, sleep=wait))
+    return result, notices, waits
+
+
+def test_async_version_retries_with_the_same_notices_and_waits() -> None:
+    result, notices, waits = run_async(ScriptedAgent(unavailable(503), "resposta"))
+
+    assert result == "resposta"
+    assert notices == [
+        "O serviço do modelo está indisponível no momento (erro 503). Tentando de novo em 5 s… (tentativa 2 de 3)"
+    ]
+    assert waits == [5]
+
+
+def test_async_version_fails_at_once_on_permanent_errors() -> None:
+    agent = ScriptedAgent(unavailable(401), "nunca chega")
+
+    with pytest.raises(ModelHTTPError):
+        run_async(agent)
+
+    assert agent.calls == 1
+
+
+def test_async_version_passes_the_event_handler_to_the_agent() -> None:
+    # A web mostra cada chamada de ferramenta enquanto o agente trabalha (T10.2).
+    received = {}
+
+    class RecordingAgent:
+        async def run(self, question, **kwargs):
+            received.update(kwargs)
+            return "resposta"
+
+    async def handler(ctx, events) -> None:
+        return None
+
+    async def notify(text: str) -> None:
+        return None
+
+    asyncio.run(run_with_retries_async(RecordingAgent(), "pergunta", [], None, on_retry=notify, event_stream_handler=handler))
+
+    assert received["event_stream_handler"] is handler

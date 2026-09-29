@@ -37,7 +37,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E07 | [Reconhecer limites](epicos/E07-reconhecer-limites.md) | O agente diz "não consta" em vez de inventar | 9 | `[x]` |
 | E08 | [Minuta de sentença](epicos/E08-minuta-sentenca.md) | Minuta rotulada como proposta, ou recusa explicada | 5 | `[x]` |
 | E09 | [Bateria de perguntas de avaliação](epicos/E09-avaliacao.md) | Placar de acertos por modelo | 5 | `[x]` |
-| E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[ ]` |
+| E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[x]` |
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Resposta em menos de 30 s no MacBook de 8 GB | 6 | `[ ]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[ ]` |
 

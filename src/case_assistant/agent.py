@@ -1,11 +1,14 @@
 """Laço do agente com Pydantic AI: modelo escolhido por `LLM_MODEL`, ferramentas e estado da sessão (E05, E06)."""
 
+import asyncio
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic_ai import Agent, ModelRetry, RunContext
+from pydantic_ai.agent import EventStreamHandler
 from pydantic_ai.exceptions import ModelAPIError, ModelHTTPError
 from pydantic_ai.messages import ModelMessage, ToolCallPart
 from pydantic_ai.models import Model
@@ -21,6 +24,10 @@ from case_assistant.tools import SENTENCE_DOCUMENT_TYPES
 MODEL_VARIABLE = "LLM_MODEL"
 # Opcional: nível de raciocínio ("low", "true", "false"…). O Gemini precisa de "low" (D30); o modelo local, de nada.
 THINKING_VARIABLE = "LLM_THINKING"
+# Opcional: modelos que a interface web oferece para troca (T10.3), separados por vírgula, cada um com o raciocínio
+# depois de "@": "ollama:qwen3:4b-instruct-2507-q4_K_M,google:gemini-3.8-flash@low". O LLM_MODEL vem sempre primeiro.
+MODEL_OPTIONS_VARIABLE = "LLM_MODEL_OPTIONS"
+THINKING_SEPARATOR = "@"
 BOOLEAN_SETTINGS = {"true": True, "false": False}
 # Recusas temporárias do serviço do modelo (D41): tentar de novo, avisando o usuário, antes de desistir.
 MAX_ATTEMPTS = 3
@@ -42,8 +49,32 @@ class ModelNotConfiguredError(RuntimeError):
     """Nenhum modelo foi informado em LLM_MODEL."""
 
 
-def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
-    """Cria o agente. O modelo e o raciocínio vêm da configuração: o código não tem caminho especial por fornecedor."""
+@dataclass(frozen=True)
+class ModelOption:
+    """Um modelo que a interface pode oferecer, com o raciocínio que ele exige ("" = padrão do modelo)."""
+
+    model: str
+    thinking: str
+
+
+def model_options() -> list[ModelOption]:
+    """Os modelos da configuração: o LLM_MODEL (com o LLM_THINKING) e os de LLM_MODEL_OPTIONS, sem repetir."""
+    configured = os.environ.get(MODEL_VARIABLE, "").strip()
+    if not configured:
+        raise ModelNotConfiguredError(f"Defina {MODEL_VARIABLE} no .env (veja .env.example).")
+    options = [ModelOption(configured, _configured_thinking())]
+    for entry in os.environ.get(MODEL_OPTIONS_VARIABLE, "").split(","):
+        model, _, thinking = entry.strip().partition(THINKING_SEPARATOR)
+        if model and model not in {option.model for option in options}:
+            options.append(ModelOption(model, thinking.strip().lower()))
+    return options
+
+
+def build_agent(model: Model | str | None = None, thinking: str | None = None) -> Agent[Session, str]:
+    """Cria o agente. O modelo e o raciocínio vêm da configuração: o código não tem caminho especial por fornecedor.
+
+    Sem `thinking`, o raciocínio vem de LLM_THINKING; a interface web passa o de cada modelo que oferece (T10.3).
+    """
     model = model or os.environ.get(MODEL_VARIABLE)
     if not model:
         raise ModelNotConfiguredError(f"Defina {MODEL_VARIABLE} no .env (veja .env.example).")
@@ -53,7 +84,7 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
         system_prompt=SYSTEM_PROMPT,
         instructions=_focused_case_instructions,
         tools=AGENT_TOOLS,
-        model_settings=_model_settings(),
+        model_settings=_model_settings(_configured_thinking() if thinking is None else thinking),
         retries={"output": OUTPUT_RETRIES},
     )
     agent.output_validator(_require_cited_cases_queried)
@@ -119,8 +150,11 @@ def _queried_case_numbers(messages: list[ModelMessage]) -> set[str]:
     }
 
 
-def _model_settings() -> ModelSettings | None:
-    thinking = os.environ.get(THINKING_VARIABLE, "").strip().lower()
+def _configured_thinking() -> str:
+    return os.environ.get(THINKING_VARIABLE, "").strip().lower()
+
+
+def _model_settings(thinking: str) -> ModelSettings | None:
     if not thinking:
         return None
     return {"thinking": BOOLEAN_SETTINGS.get(thinking, thinking)}
@@ -139,16 +173,48 @@ def run_with_retries(
         try:
             return agent.run_sync(question, message_history=history, deps=session)
         except ModelAPIError as error:
-            reason = _temporary_failure_reason(error)
-            if reason is None or attempt == MAX_ATTEMPTS:
-                raise
-            wait = RETRY_WAIT_SECONDS * attempt
-            on_retry(
-                f"O serviço do modelo está indisponível no momento ({reason}). "
-                f"Tentando de novo em {wait} s… (tentativa {attempt + 1} de {MAX_ATTEMPTS})"
-            )
+            wait, notice = _retry_plan(error, attempt)
+            on_retry(notice)
             sleep(wait)
     raise AssertionError("inalcançável: a última tentativa devolve ou relança")
+
+
+async def run_with_retries_async(
+    agent: Agent[Session, str] | Any,
+    question: str,
+    history: list[ModelMessage],
+    session: Session | None,
+    on_retry: Callable[[str], Awaitable[None]],
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+    event_stream_handler: EventStreamHandler[Session] | None = None,
+) -> Any:
+    """Como run_with_retries, para a interface web: roda no laço assíncrono, na mesma thread da conexão da sessão.
+
+    O event_stream_handler recebe cada chamada de ferramenta enquanto o agente trabalha (T10.2).
+    """
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            return await agent.run(
+                question, message_history=history, deps=session, event_stream_handler=event_stream_handler
+            )
+        except ModelAPIError as error:
+            wait, notice = _retry_plan(error, attempt)
+            await on_retry(notice)
+            await sleep(wait)
+    raise AssertionError("inalcançável: a última tentativa devolve ou relança")
+
+
+def _retry_plan(error: ModelAPIError, attempt: int) -> tuple[float, str]:
+    """Quanto esperar e o que avisar antes da próxima tentativa; relança o erro se não vale tentar de novo."""
+    reason = _temporary_failure_reason(error)
+    if reason is None or attempt == MAX_ATTEMPTS:
+        raise error
+    wait = RETRY_WAIT_SECONDS * attempt
+    notice = (
+        f"O serviço do modelo está indisponível no momento ({reason}). "
+        f"Tentando de novo em {wait} s… (tentativa {attempt + 1} de {MAX_ATTEMPTS})"
+    )
+    return wait, notice
 
 
 def _temporary_failure_reason(error: ModelAPIError) -> str | None:

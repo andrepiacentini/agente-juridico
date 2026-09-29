@@ -4,7 +4,7 @@ import pytest
 from pydantic_ai.messages import SystemPromptPart, ToolCallPart, ToolReturnPart
 from pydantic_ai.models.test import TestModel
 
-from case_assistant.agent import ModelNotConfiguredError, build_agent
+from case_assistant.agent import ModelNotConfiguredError, ModelOption, build_agent, model_options
 from case_assistant.prompts import SYSTEM_PROMPT
 from case_assistant.session import open_session
 
@@ -97,3 +97,38 @@ def test_tools_use_the_connection_of_the_session(monkeypatch) -> None:
 
     returns = [part.content for m in result.all_messages() for part in m.parts if isinstance(part, ToolReturnPart)]
     assert returns and returns[0]["found"] is False  # o número gerado não existe, mas a consulta rodou no banco da sessão
+
+
+LOCAL_MODEL = "ollama:qwen3:4b-instruct-2507-q4_K_M"
+CLOUD_MODEL = "google:gemini-3.8-flash"
+
+
+def test_model_options_come_from_the_configuration_with_the_thinking_of_each_one(monkeypatch) -> None:
+    # T10.3 (D69): a lista do seletor da tela vem do .env; o código não tem nome de modelo.
+    monkeypatch.setenv("LLM_MODEL", LOCAL_MODEL)
+    monkeypatch.setenv("LLM_MODEL_OPTIONS", f"{LOCAL_MODEL}, {CLOUD_MODEL}@low")
+
+    assert model_options() == [ModelOption(LOCAL_MODEL, ""), ModelOption(CLOUD_MODEL, "low")]
+
+
+def test_the_configured_model_is_always_the_first_option(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_MODEL", CLOUD_MODEL)
+    monkeypatch.setenv("LLM_THINKING", "low")
+    monkeypatch.setenv("LLM_MODEL_OPTIONS", LOCAL_MODEL)
+
+    assert model_options() == [ModelOption(CLOUD_MODEL, "low"), ModelOption(LOCAL_MODEL, "")]
+
+
+def test_without_options_the_list_has_only_the_configured_model(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_MODEL", LOCAL_MODEL)
+    monkeypatch.delenv("LLM_MODEL_OPTIONS", raising=False)
+    monkeypatch.delenv("LLM_THINKING", raising=False)
+
+    assert model_options() == [ModelOption(LOCAL_MODEL, "")]
+
+
+def test_an_explicit_thinking_wins_over_the_environment(monkeypatch) -> None:
+    monkeypatch.setenv("LLM_THINKING", "low")
+
+    assert build_agent(TestModel(), thinking="").model_settings is None
+    assert build_agent(TestModel(), thinking="high").model_settings == {"thinking": "high"}
