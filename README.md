@@ -161,6 +161,7 @@ desafio-tjsc/
 ├── tests/                    testes sem IA (pytest) e a bateria de avaliação (golden.yaml)
 ├── docs/
 │   ├── plan.md               análise do edital e do banco, arquitetura decidida
+│   ├── roteiro-demo.md       sequência da demonstração, com tempos e plano B
 │   ├── glossario.md          termos técnicos em linguagem simples, citados pelo DECISOES.md
 │   ├── avaliacao/            placares da bateria por modelo e data
 │   ├── roteiros/             cenários testados à mão, com as saídas dos modelos
