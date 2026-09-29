@@ -12,9 +12,17 @@ Programa em que um modelo de linguagem não só responde, mas **decide que açõ
 ### Alucinação
 Quando o modelo de linguagem afirma algo que parece plausível, mas é inventado. No contexto jurídico é o risco mais grave, por isso o projeto exige citação da fonte e respostas "não consta".
 
+<a id="api"></a>
+### API e chave de API
+Porta de entrada de um serviço na internet para programas, e não para pessoas: é por ela que o agente manda a pergunta ao modelo em nuvem e recebe a resposta. A **chave de API** é a senha que identifica quem está chamando; fica no arquivo `.env`, nunca no código.
+
 <a id="arquitetura-em-camadas"></a>
 ### Arquitetura em camadas
 Organização do programa em partes empilhadas, cada uma com um papel: acesso ao banco, regras do negócio, agente e tela. Cada parte só usa a que está abaixo dela, o que permite trocar a tela sem mexer nas regras.
+
+<a id="autorizador"></a>
+### Autorizador do SQLite
+Função que o [SQLite](#sqlite) consulta antes de cada operação de uma consulta, perguntando "posso?". No projeto, durante a consulta livre, ela responde sim só para leitura e nega todo o resto — é a segunda camada de proteção do [SQL](#sql) livre, por baixo da validação do texto e por cima da conexão [somente leitura](#somente-leitura).
 
 <a id="banco-vetorial"></a>
 ### Banco vetorial
@@ -23,6 +31,14 @@ Tipo de banco de dados feito para guardar [embeddings](#embedding) e achar "o qu
 <a id="branch"></a>
 ### Branch (ramo do Git)
 Linha de trabalho paralela dentro do repositório: uma cópia do código em que se pode mexer sem afetar a versão principal (`main`). Quando o trabalho fica pronto, ele é incorporado de volta.
+
+<a id="bytecode"></a>
+### Bytecode (cache do Python)
+Versão pré-traduzida de um arquivo de código que o [Python](#python) guarda para não traduzi-lo de novo a cada execução. Ele decide se a cópia guardada ainda vale pelo tamanho e pela hora do arquivo; duas versões gravadas no mesmo segundo com o mesmo tamanho o enganam (D31).
+
+<a id="cache-de-prompt"></a>
+### Cache do modelo (entrada reaproveitada)
+Quando duas chamadas seguidas ao modelo começam com o mesmo texto (as instruções e o histórico da conversa), o modelo pode reaproveitar o trabalho já feito sobre esse começo em vez de lê-lo de novo. No modelo local isso acontece no [KV cache](#kv-cache) do [Ollama](#ollama); nos modelos em nuvem, o fornecedor cobra mais barato pelos [tokens](#token) reaproveitados.
 
 <a id="chainlit"></a>
 ### Chainlit
@@ -48,9 +64,17 @@ Livro de Robert C. Martin ("Uncle Bob") com regras para escrever código fácil 
 ### CLI / terminal
 Interface de texto, sem janelas: o usuário digita, o programa responde na mesma tela preta. É a forma mais simples de rodar o agente e serve de plano B na demo.
 
+<a id="commit"></a>
+### Commit, merge e clone (Git)
+Três operações do Git. **Commit:** gravar um conjunto de mudanças no histórico, com uma mensagem. **Merge:** juntar o trabalho de uma [branch](#branch) em outra, o que acontece quando um [pull request](#pull-request) é aprovado. **Clone:** copiar o repositório inteiro, com o histórico, para outra pasta ou outra máquina.
+
 <a id="contexto"></a>
 ### Contexto (janela de contexto)
 Quantidade máxima de texto que o modelo consegue "ter em mente" de uma vez — instruções, histórico da conversa e dados consultados, somados. Medida em [tokens](#token). Modelos pequenos têm janelas menores.
+
+<a id="cota"></a>
+### Cota (limite de uso de uma API)
+Quantidade máxima de pedidos que um fornecedor aceita de uma conta num período — por minuto ou por dia. No plano gratuito do Gemini, a cota medida foi de 20 pedidos por dia (D42); passar dela gera o [erro 429](#erro-http).
 
 <a id="ddd"></a>
 ### DDD (design dirigido pelo domínio)
@@ -60,9 +84,21 @@ Organizar o código com os mesmos conceitos e nomes do assunto tratado — aqui,
 ### 12 fatores
 Conjunto de boas práticas para aplicações modernas. A principal aqui: configurações (modelo, chaves, caminhos) ficam fora do código, em [variáveis de ambiente](#variavel-de-ambiente).
 
+<a id="docstring"></a>
+### Docstring
+Texto de explicação escrito logo abaixo do nome de uma função no [Python](#python). Nas [ferramentas](#ferramenta) do agente, a docstring é o que o modelo lê para decidir quando usar cada uma e o que cada parâmetro espera.
+
 <a id="embedding"></a>
 ### Embedding
 Conversão de um texto em uma lista de números que representa o seu "significado", permitindo achar textos parecidos. Funciona bem para ideias; funciona mal para códigos exatos, como número de processo.
+
+<a id="endpoint"></a>
+### Endpoint (compatível com OpenAI)
+Endereço específico dentro de uma [API](#api) para uma operação, como "conversar com o modelo". O [Ollama](#ollama) oferece um endpoint no mesmo formato da API da OpenAI, e é por ele que o [Pydantic AI](#pydantic-ai) fala com o modelo local — o que permite trocar de fornecedor sem mudar o código, mas também limita as opções que podem ser passadas por pedido (D77).
+
+<a id="erro-http"></a>
+### Erros 429 e 503
+Códigos de resposta de um serviço na internet. **429:** "pedidos demais" — a [cota](#cota) ou o limite por minuto foi ultrapassado. **503:** "serviço indisponível" — o fornecedor está sobrecarregado. Os dois são temporários, e por isso o agente espera alguns segundos e tenta de novo, avisando o usuário (D41).
 
 <a id="ferramenta"></a>
 ### Ferramenta (tool calling)
@@ -80,6 +116,10 @@ Recurso que já vem dentro do [SQLite](#sqlite) para buscar palavras em textos l
 ### Golden set (bateria de avaliação)
 Lista fixa de perguntas com o que a resposta certa deve conter. Roda-se sempre que algo muda, para saber se o agente melhorou ou piorou.
 
+<a id="gpu"></a>
+### GPU
+Placa de processamento gráfico, o tipo de chip em que os [modelos de linguagem](#llm) rodam rápido. No MacBook M1 o modelo local usa a parte gráfica do próprio chip; um servidor próprio para um modelo maior precisa de uma GPU dedicada, como a NVIDIA L40S usada como referência de custo (D76).
+
 <a id="hash"></a>
 ### Hash (impressão digital de arquivo)
 Código calculado a partir do conteúdo de um arquivo. Se um único byte mudar, o código muda. Serve para provar que o banco não foi alterado.
@@ -91,6 +131,10 @@ Pessoas diferentes com o mesmo nome. No banco há 643 nomes nessa situação, di
 <a id="join"></a>
 ### JOIN
 Comando [SQL](#sql) que junta informações de tabelas diferentes — por exemplo, o processo com o nome do seu magistrado, que fica em outra tabela.
+
+<a id="formatos"></a>
+### JSON, YAML, TOML e Markdown
+Formatos de arquivo de texto usados no projeto. **JSON:** dados estruturados para programas (as respostas da bateria de avaliação). **YAML:** dados estruturados legíveis por pessoas (os casos da bateria, `golden.yaml`). **TOML:** configuração (o `pyproject.toml` e a tabela de preços `prices.toml`). **Markdown:** texto com títulos, listas e tabelas, como este glossário e o `DECISOES.md`.
 
 <a id="kiss-yagni-dry"></a>
 ### KISS, YAGNI e DRY
@@ -108,13 +152,13 @@ Memória de trabalho que o modelo usa durante a conversa, proporcional ao tamanh
 ### Latência
 Tempo entre enviar a pergunta e receber a resposta. Meta do projeto: menos de 30 segundos no modelo local.
 
+<a id="launchctl"></a>
+### launchctl e LaunchAgent (macOS)
+`launchctl` é o comando do macOS que controla programas de fundo e as [variáveis de ambiente](#variavel-de-ambiente) que os aplicativos herdam ao abrir. Um **LaunchAgent** é um arquivo de configuração que o macOS executa a cada login; o projeto usa um para fixar a compressão do [KV cache](#kv-cache) do [Ollama](#ollama) (D77).
+
 <a id="llm"></a>
 ### LLM (modelo de linguagem)
 O "cérebro" do chat: um programa treinado em muito texto que entende e produz linguagem. Exemplos: Qwen, Claude, GPT. O tamanho é medido em bilhões de parâmetros (ex.: "4B" = 4 bilhões); maior tende a ser melhor, mas exige mais memória.
-
-<a id="observabilidade"></a>
-### Observabilidade (logs estruturados)
-Capacidade de ver o que o programa fez. Cada chamada de [ferramenta](#ferramenta) grava um registro com nome, parâmetros, tempo gasto e quantidade de resultados, em formato fácil de filtrar.
 
 <a id="metadados"></a>
 ### Metadados
@@ -124,9 +168,17 @@ Dados *sobre* um documento, não o documento em si: tipo, data, autor, número d
 ### Minuta de sentença
 Rascunho de uma decisão judicial. No projeto, é sempre identificada como **proposta** e nunca como sentença proferida.
 
+<a id="instruct"></a>
+### Modelo instruct
+Variante de um modelo de linguagem treinada para responder direto a instruções, sem o [modo raciocínio](#thinking). O modelo local do projeto, `qwen3:4b-instruct-2507`, é dessa variante (D25).
+
 <a id="modelo-local"></a>
 ### Modelo local × modelo em nuvem
-**Local:** roda no próprio computador (via [Ollama](#ollama)), sem internet e sem enviar dados para fora. **Nuvem:** roda nos servidores do fornecedor (ex.: Claude, da Anthropic), é mais capaz, mas exige internet e envia os dados.
+**Local:** roda no próprio computador (via [Ollama](#ollama)), sem internet e sem enviar dados para fora. **Nuvem:** roda nos servidores do fornecedor (ex.: Gemini, do Google, ou Claude, da Anthropic), é mais capaz, mas exige internet e envia os dados.
+
+<a id="thinking"></a>
+### Modo raciocínio (thinking)
+Recurso de alguns modelos (como o Qwen3) de "pensar em voz alta" antes de responder. Melhora tarefas difíceis, mas deixa a resposta bem mais lenta.
 
 <a id="movimentacao"></a>
 ### Movimentação processual
@@ -140,13 +192,25 @@ Conversa com várias perguntas seguidas em que o sistema lembra do que já foi d
 ### Número CNJ
 Formato padrão nacional do número de processo: `NNNNNNN-DD.AAAA.J.TR.OOOO` (ex.: `0000007-79.2023.8.99.9014`).
 
+<a id="observabilidade"></a>
+### Observabilidade (logs estruturados)
+Capacidade de ver o que o programa fez. Cada chamada de [ferramenta](#ferramenta) grava um registro com nome, parâmetros, tempo gasto e quantidade de resultados, em formato fácil de filtrar.
+
 <a id="ollama"></a>
 ### Ollama
 Programa que baixa e roda [modelos de linguagem](#llm) no próprio computador.
 
+<a id="plotly"></a>
+### Plotly
+Biblioteca [Python](#python) que desenha gráficos interativos para páginas web. O [Chainlit](#chainlit) sabe mostrá-los dentro da conversa, e é assim que o painel de consumo exibe custo por modelo, tokens por tipo de pergunta e custo acumulado (D75).
+
 <a id="pressao-de-memoria"></a>
 ### Pressão de memória (swap)
 Indicador do Monitor de Atividade do Mac que mostra se a [RAM](#ram) está dando conta: verde é folga; amarelo e vermelho indicam que o sistema começou a usar o disco como memória extra (*swap*). O disco é muito mais lento que a RAM, então tudo fica lento — principalmente o [modelo local](#modelo-local).
+
+<a id="ptax"></a>
+### PTAX
+Taxa de câmbio oficial calculada pelo Banco Central do Brasil a cada dia útil, a partir das cotações do mercado. O projeto usa a PTAX de venda, com a data, para converter os preços em dólar dos modelos para reais (D73).
 
 <a id="pull-request"></a>
 ### Pull request
@@ -212,9 +276,9 @@ Código que verifica se outro código funciona, rodado com um comando (`uv run p
 ### Text-to-SQL
 Abordagem em que o modelo escreve a consulta [SQL](#sql) inteira a partir da pergunta. Modelos pequenos erram com frequência (inventam colunas, esquecem regras), por isso aqui é só uma "válvula de escape".
 
-<a id="thinking"></a>
-### Modo raciocínio (thinking)
-Recurso de alguns modelos (como o Qwen3) de "pensar em voz alta" antes de responder. Melhora tarefas difíceis, mas deixa a resposta bem mais lenta.
+<a id="thread"></a>
+### Thread
+Linha de execução dentro de um programa; um programa pode ter várias trabalhando ao mesmo tempo. Importa aqui porque a conexão com o [SQLite](#sqlite) só pode ser usada pela thread que a abriu — por isso as [ferramentas](#ferramenta) do agente são escritas para rodar sempre na mesma (D67).
 
 <a id="timeout"></a>
 ### Timeout / LIMIT
@@ -224,14 +288,18 @@ Recurso de alguns modelos (como o Qwen3) de "pensar em voz alta" antes de respon
 ### Token
 Unidade de texto que o modelo processa — em português, em média, pouco menos de uma palavra. Usado para medir o tamanho do [contexto](#contexto).
 
+<a id="tokens-por-segundo"></a>
+### Tokens por segundo (tok/s)
+Velocidade do modelo: quantos [tokens](#token) ele lê ou escreve em um segundo. Ler o pedido (as instruções e os documentos) é muito mais rápido do que escrever a resposta; no modelo local, a leitura ficou em ~120 tok/s e a escrita em 6 a 9 tok/s (D78).
+
 <a id="uv"></a>
 ### uv
 Ferramenta que prepara o ambiente do projeto com um único comando (`uv sync`): baixa a versão certa do [Python](#python) e instala as bibliotecas exatamente nas versões registradas no projeto (arquivo `uv.lock`). Assim o programa roda igual na máquina do autor e na da banca, sem instalação manual. Faz o papel do `pip` e do `venv` juntos, bem mais rápido.
 
-<a id="variavel-de-ambiente"></a>
-### Variável de ambiente (`.env`)
-Configuração guardada fora do código, num arquivo `.env`. Permite trocar o modelo (ou guardar uma chave de acesso) sem mexer no programa.
-
 <a id="validador-de-resposta"></a>
 ### Validador da resposta
 Conferência feita por código depois que o modelo responde e antes de a resposta chegar ao usuário. Se a regra não for cumprida, a resposta volta ao modelo com o motivo, e ele tenta de novo. Aqui, garante que todo número de processo citado na pergunta tenha sido consultado no banco antes de o agente afirmar qualquer coisa sobre ele. Serve para regras que o modelo pequeno não segue só com as [instruções](#system-prompt).
+
+<a id="variavel-de-ambiente"></a>
+### Variável de ambiente (`.env`)
+Configuração guardada fora do código, num arquivo `.env`. Permite trocar o modelo (ou guardar uma chave de acesso) sem mexer no programa.

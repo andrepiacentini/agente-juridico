@@ -20,7 +20,7 @@
 - **Depende de:** T12.1.
 - **Para explicar à banca:** "Testei o README como se fosse outra pessoa, num clone limpo."
 
-### T12.3 — Revisar o `DECISOES.md` `[ ]`
+### T12.3 — Revisar o `DECISOES.md` `[x]`
 - **Objetivo:** conferir se toda decisão tem justificativa e se os termos técnicos estão no glossário.
 - **Passos:** reler; completar lacunas; conferir links do glossário.
 - **Pronto quando:** nenhuma decisão sem "por quê" e nenhum termo técnico sem explicação.
