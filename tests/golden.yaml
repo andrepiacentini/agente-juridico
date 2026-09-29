@@ -240,11 +240,11 @@ cases:
       - ask: a do CPF 999.125.243-15
         must_contain:
           - "0000018-16.2024.8.99.9001"
-          - "17/11/2025"                         # a data que saiu errada antes da D53
           - ["[cadastro do processo]", "[mov."]  # em aberto (D53): o cartão saiu sem citar o cadastro
         must_not_contain:
           - "0000027-05.2020.8.99.9005"          # processo da outra Adriana Bittencourt
-          - "09/11/2025"
+          - "09/11/2025"                         # a data errada de antes da D53; a certa (17/11/2025) não é
+                                                 # exigida: "a do CPF…" não pede a data da sentença (D65)
           - processo ativo
 
   - id: pergunta-impossivel
