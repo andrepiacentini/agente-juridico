@@ -14,7 +14,7 @@
 - **Depende de:** E06.
 - **Para explicar à banca:** "A interface é uma camada fina; toda a lógica está no agente, que é o mesmo do terminal."
 
-### T10.2 — Mostrar cada consulta como passo `[ ]`
+### T10.2 — Mostrar cada consulta como passo `[x]`
 - **Objetivo:** exibir nome da ferramenta, parâmetros e resultado de cada chamada.
 - **Passos:** transformar cada chamada de ferramenta em um `cl.Step` recolhível.
 - **Pronto quando:** a pergunta de resumo do 3161 mostra os passos na ordem.

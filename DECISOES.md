@@ -454,6 +454,14 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** `cl.make_async(run_with_retries)`, que rodaria o agente em outra thread e quebraria a conexão; guardar o arquivo `chainlit.md` que o Chainlit cria sozinho na primeira execução, em inglês — o texto de abertura é da T10.4.
 - **Uso de IA:** o Claude Code conferiu no navegador as duas perguntas seguidas (na primeira tentativa, a extensão do Chrome não estava conectada; o autor ajustou e o teste foi refeito).
 
+### D68 — Cada consulta do agente aparece na tela, ao vivo, num bloco "Consultas ao banco"
+- **Decisão:** no chat web, cada chamada de [ferramenta](docs/glossario.md#ferramenta) vira um passo do [Chainlit](docs/glossario.md#chainlit) com o nome e os argumentos (`find_case(case_number='0000007-79.2023.8.99.9014')`); aberto, mostra os argumentos e o JSON que a ferramenta devolveu. Os passos são criados enquanto o agente trabalha, pelo `event_stream_handler` do [Pydantic AI](docs/glossario.md#pydantic-ai), que `run_with_retries_async` agora repassa. Ficam agrupados num passo "Consultas ao banco", criado antes de o agente começar, e cada um se recolhe ao terminar. O texto do passo sai de `tool_display.py`, que o chat do terminal também passou a usar: o formato da chamada fica num lugar só. A T10.2 fica concluída.
+- **Por quê ao vivo:** com o [modelo local](docs/glossario.md#modelo-local), um resumo leva minutos; ver `find_case`, `list_movements`, `list_documents` e as leituras aparecerem um a um mostra à banca o agente decidindo e deixa claro que ele está trabalhando. É o requisito "fundamentar" visível: cada consulta pode ser aberta para conferir o que o agente leu antes de responder.
+- **Resultado no navegador:** "Resuma o processo 0000007-79.2023.8.99.9014…" mostrou, na ordem, `find_case`, `list_movements`, `list_documents` e `read_document` dos docs 7865, 7868 e 7878, e depois o resumo com a sentença (parcialmente procedente, R$ 1.523,18).
+- **Dois ajustes depois do primeiro teste:** os passos soltos ficavam abertos depois de terminar (o JSON de `list_documents` ocupava várias telas) e apareciam depois da resposta; agrupados num passo-pai e com recolhimento automático, ficaram fechados e em bloco. A resposta continua aparecendo acima do bloco de consultas: é como o Chainlit 2.12 dispõe os passos de uma resposta, não a ordem em que o código os envia.
+- **Descartado:** mostrar os passos só no fim, a partir do histórico (mais simples, mas a tela ficaria parada por minutos no modelo local); pôr a resposta dentro do passo-pai, que a esconderia junto das consultas.
+- **Uso de IA:** o Claude Code testou no Chrome e foi assim que viu os passos abertos e fora de ordem na primeira versão. O rótulo "Used" antes de cada passo vem da tradução em inglês do Chainlit, que segue o idioma do navegador (fica para a T10.4).
+
 ---
 
 ## Pendências de decisão
