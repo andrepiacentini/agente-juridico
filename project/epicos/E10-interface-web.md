@@ -21,7 +21,7 @@
 - **Depende de:** T10.1.
 - **Para explicar à banca:** "Dá para abrir cada passo e conferir exatamente o que o agente leu antes de responder."
 
-### T10.3 — Escolha do modelo na tela `[ ]`
+### T10.3 — Escolha do modelo na tela `[x]`
 - **Objetivo:** trocar entre modelo local e Claude sem reiniciar.
 - **Passos:** usar as configurações de chat do Chainlit; criar o agente com o modelo escolhido.
 - **Pronto quando:** a troca funciona no meio da demonstração.
