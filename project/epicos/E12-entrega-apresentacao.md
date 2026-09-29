@@ -6,7 +6,7 @@
 
 ---
 
-### T12.1 — Escrever o `README.md` `[ ]`
+### T12.1 — Escrever o `README.md` `[x]`
 - **Objetivo:** instruções para instalar e rodar do zero.
 - **Passos:** pré-requisitos (uv, Ollama); `uv sync`; `ollama pull`; configurar `.env`; rodar terminal e web; rodar testes; mapa das pastas.
 - **Pronto quando:** o README cobre todos os comandos na ordem.
