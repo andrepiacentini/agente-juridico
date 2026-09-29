@@ -67,6 +67,7 @@ class UsageReport:
     by_session: list[SessionRow] = field(default_factory=list)
     by_question_type: list[GroupRow] = field(default_factory=list)
     cumulative_cost: list[tuple[str, float]] = field(default_factory=list)  # (data e hora, custo acumulado em R$)
+    records: list[UsageRecord] = field(default_factory=list)  # a projeção de custo parte das mesmas respostas
 
 
 def question_type(tools: Iterable[str]) -> str:
@@ -82,6 +83,7 @@ def usage_report(records: list[UsageRecord], prices: PriceTable) -> UsageReport:
         by_session=_sessions(ordered, prices),
         by_question_type=_group(ordered, prices, key=lambda record: question_type(record.tools)),
         cumulative_cost=_cumulative_cost(ordered, prices),
+        records=ordered,
     )
 
 

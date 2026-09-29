@@ -20,6 +20,7 @@ from pydantic_ai.messages import AgentStreamEvent, FunctionToolCallEvent, Functi
 from case_assistant.agent import ModelNotConfiguredError, ModelOption, build_agent, model_options, run_with_retries_async
 from case_assistant.session import Session, open_session
 from case_assistant.tool_display import tool_call_label, tool_result_text
+from case_assistant.cost_projection import ProjectionConfig
 from case_assistant.pricing import PriceTable
 from case_assistant.usage import UsageLog, record_answer, usage_record
 from case_assistant.usage_footer import usage_footer
@@ -87,6 +88,7 @@ async def start_chat() -> None:
     cl.user_session.set("model_options", options)
     cl.user_session.set("usage_log", UsageLog.from_environment())
     cl.user_session.set("prices", _load_prices())
+    cl.user_session.set("projection", _load_projection())
     await cl.context.emitter.set_commands(USAGE_COMMANDS)
     agent = _build_agent(options[0])
     resources = ExitStack()
@@ -170,7 +172,16 @@ async def _show_usage_panel() -> None:
         return
     report = usage_report(cl.user_session.get("usage_log").records(), prices)
     charts = [cl.Plotly(name=name, figure=figure, display="inline") for name, figure in panel_figures(report)]
-    await cl.Message(content=panel_text(report, prices), elements=charts).send()
+    text = panel_text(report, prices, projection=cl.user_session.get("projection"))
+    await cl.Message(content=text, elements=charts).send()
+
+
+def _load_projection() -> ProjectionConfig | None:
+    try:
+        return ProjectionConfig.from_environment()
+    except (OSError, KeyError, ValueError) as error:  # sem cenários, o painel mostra só o consumo
+        logger.warning("cenários de projeção indisponíveis: %s", error)
+        return None
 
 
 def _load_prices() -> PriceTable | None:

@@ -38,3 +38,28 @@ valid_from = "2026-01-01"
 input = 0
 output = 0
 cache_read = 0
+
+# Projeção de custo mensal (T13.5, D76). O custo por resposta vem do registro de uso, não daqui; aqui ficam só os
+# cenários de uso e a referência de custo de um servidor próprio.
+[projection]
+workdays_per_month = 22
+
+[[projection.scenarios]]
+name = "Gabinete (10 pessoas)"
+users = 10
+questions_per_user_per_day = 20
+
+[[projection.scenarios]]
+name = "Comarca (100 pessoas)"
+users = 100
+questions_per_user_per_day = 20
+
+[[projection.scenarios]]
+name = "Tribunal (2.000 pessoas)"
+users = 2000
+questions_per_user_per_day = 20
+
+[projection.self_hosted]
+description = "Servidor com 1 GPU NVIDIA L40S de 48 GB (AWS g6e.xlarge), ligado o mês todo (730 h), para um modelo aberto maior que o do notebook"
+monthly_usd = 1358.53   # US$ 1,861 por hora sob demanda × 730 h; com reserva de 1 ano, US$ 1,172 por hora
+source = "Preço sob demanda do g6e.xlarge em US East (N. Virginia), conferido em instances.vantage.sh e compute.doit.com em 2026-09-29"
