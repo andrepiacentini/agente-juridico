@@ -141,7 +141,7 @@ O agente fala com o Ollama pelo endpoint compatível com OpenAI, que ignora o ta
 
 No Linux, sem o app, as duas vão como variáveis de ambiente do serviço do Ollama (`OLLAMA_CONTEXT_LENGTH=16384` e `OLLAMA_KV_CACHE_TYPE=q8_0`); não foi testado neste projeto.
 
-Para conferir: depois de uma pergunta, `ollama ps` mostra `CONTEXT` em `16384` e o modelo em cerca de 3,9 GB. Com isso o modelo, a janela e o sistema cabem em cerca de 7 dos 8 GB; feche o que não for a demonstração.
+Para conferir: depois de uma pergunta, `ollama ps` mostra `CONTEXT` em `16384` e o modelo em cerca de 3,9 GB. Com isso o modelo, a janela e o sistema cabem em cerca de 7 dos 8 GB; feche os demais programas.
 
 ## Mapa das pastas
 
@@ -161,7 +161,6 @@ desafio-tjsc/
 ├── tests/                    testes sem IA (pytest) e a bateria de avaliação (golden.yaml)
 ├── docs/
 │   ├── plan.md               análise do edital e do banco, arquitetura decidida
-│   ├── roteiro-demo.md       sequência da demonstração, com tempos e plano B
 │   ├── glossario.md          termos técnicos em linguagem simples, citados pelo DECISOES.md
 │   ├── avaliacao/            placares da bateria por modelo e data
 │   ├── roteiros/             cenários testados à mão, com as saídas dos modelos

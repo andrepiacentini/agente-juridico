@@ -179,8 +179,6 @@ Modelo de 4B inventa colunas, esquece o `LOWER(situacao)`, erra JOINs. A soluç�
 1. **Ferramentas tipadas** (6–8 funções Python com SQL escrito à mão, parâmetros validados) cobrem ~95% das perguntas. O modelo só escolhe *qual* ferramenta e com *quais* argumentos — decisão fácil para 4B.
 2. **`consultar_sql`** como válvula de escape para perguntas imprevistas — só `SELECT`, conexão *read-only*, `LIMIT` forçado, timeout, schema no prompt. Erros do SQLite voltam ao modelo como observação; ele tenta de novo até 2×, depois declara que não conseguiu.
 
-Resposta pronta para a arguição #2: *"O agente decide via tool calling sobre um conjunto fechado de ferramentas com contratos explícitos; quando erra, o erro é devolvido como observação e há um teto de tentativas; o SQL livre nunca escreve no banco."*
-
 ---
 
 ## 4. Arquitetura
@@ -289,7 +287,7 @@ Além do histórico de mensagens, o `processo_em_foco` é injetado no system pro
 | Agente | **Pydantic AI** | Loop de tool calling pronto; ferramentas = funções Python tipadas (schema JSON sai dos type hints); **model-agnostic por string** (`ollama` via endpoint OpenAI-compatível, `anthropic:`, `openai:`, `groq:`); `message_history` nativo; sem camadas mágicas. ~150 linhas de código próprio | LangChain/LangGraph (abstrações pesadas e instáveis; difícil explicar na arguição), LlamaIndex (centrado em RAG), CrewAI/AutoGen (multi-agente é overkill). Loop manual com `litellm` é válido, mas reimplementa normalização de tool-calls entre provedores |
 | Banco | **SQLite direto, read-only** + FTS5 | Zero infra; o desafio *é* esse arquivo. `mode=ro` garante que nenhum SQL gerado escreva | Qdrant/Chroma (§3); DuckDB (não há analítica pesada) |
 | LLM local | **`qwen3:4b-instruct-2507-q4_K_M`** no Ollama (D25) | Melhor tool calling da faixa 4B, bom em PT-BR, Q4_K_M ≈ 2,5 GB; variante *instruct*, sem modo raciocínio — a etiqueta `qwen3:4b` hoje é só-raciocínio e ignora `think=False` | `llama3.1:8b` (4,9 GB + KV cache não sobra RAM), `gemma3:4b` (sem tool calling no Ollama), `llama3.2:3b` (tool calling fraco) |
-| LLM nuvem (demo) | **Gemini 3.8 Flash** via `google:` (plano gratuito, D30); **Claude Sonnet 5** via `anthropic:` como opção com crédito | Mesmo código, troca `LLM_MODEL` no `.env`. Ter os dois na apresentação mostra portabilidade e protege contra o modelo local travar ao vivo | — |
+| LLM nuvem (demo) | **Gemini 3.8 Flash** via `google:` (plano gratuito, D30); **Claude Sonnet 5** via `anthropic:` como opção com crédito | Mesmo código, troca `LLM_MODEL` no `.env`. | — |
 | UI | **Chainlit** | Chat pronto em ~40 linhas e **mostra cada tool call e resultado como "passo" colapsável** — o avaliador vê o agente decidir. Demonstra "Fundamentar" visualmente | Streamlit (exibir tool calls exige código extra), Gradio, React (custo sem retorno) |
 | Testes | `pytest` — testes das ferramentas (sem LLM) + golden set de ~12 perguntas | Opcional pelo edital; incluir e explicar: ferramentas são determinísticas e cobrem as armadilhas; golden set é a regressão ao mexer no prompt | cobertura, CI |
 
@@ -402,43 +400,6 @@ Os nomes dos arquivos de código seguem a regra de identificadores em inglês (D
 
 ---
 
-## 7. Plano de execução
-
-| Fase | Entrega | Verificação |
-|---|---|---|
-| **0 — Setup** (½ dia) | `brew install uv`, `uv init`, `ollama pull qwen3:4b-instruct-2507-q4_K_M`, `git init`, esqueleto, `DECISOES.md` com a decisão RAG × SQL | `uv run python -c "import sqlite3"`; Ollama responde |
-| **1 — Ferramentas** (1 dia) | `db.py` + `tools.py` com as 7 funções e normalizações; testes unitários das armadilhas | `pytest` verde sem LLM |
-| **2 — Agente CLI** (1 dia) | `agent.py` + `prompts.py` + `cli.py`; roda com `ollama` e com `anthropic` trocando env | As 4 perguntas do edital no processo 3161 e no processo 1 |
-| **3 — Limites e minuta** (1 dia) | Regras de "não consta"; template da minuta com disclaimer; `processo_em_foco` | Golden set: processo sem docs, sem magistrado, sentença sem texto, homônimo |
-| **4 — UI** (½ dia) | Chainlit com passos visíveis; seletor de modelo | Demo end-to-end |
-| **5 — Ajuste do modelo local** (½ dia) | `num_ctx`, KV q8, tamanho das respostas das tools | Latência < 30 s por resposta no M1 |
-| **6 — Entregáveis** (½ dia) | README, DECISOES.md completo, roteiro da demo, respostas da arguição | Alguém sem contexto sobe em 5 min |
-
-Total: ~5 dias de trabalho concentrado. Se o prazo for menor, cortar a Fase 4 (fica no CLI) — nunca a Fase 3.
-
----
-
-## 8. Respostas prontas para a arguição
-
-1. **Por que essa arquitetura e não outra?** Perguntas ancoradas em chave exata + dados majoritariamente estruturados + documentos que cabem no contexto → agente sobre SQL. RAG vetorial descartado (§3); FTS5 cobre busca textual; `sqlite-vec` é o caminho se busca semântica virar requisito.
-2. **Como decide o que consultar? O que acontece quando erra?** Tool calling sobre ferramentas tipadas; SQL livre só leitura com `LIMIT`/timeout; erro vira observação; teto de 2 tentativas; depois declara limite. Mostrar ao vivo uma pergunta que falha de propósito.
-3. **Como usou IA no desenvolvimento?** Registrar no `DECISOES.md` conforme avança: o que o assistente fez, prompts, onde errou (ex.: sugerir RAG por reflexo, esquecer o casing de `situacao`).
-4. **O que não fez por falta de tempo?** Busca semântica, cache de respostas, avaliação sistemática com LLM-juiz, streaming da minuta, extração de advogados para uma tabela própria.
-5. **Dados reais, sigilosos, 10.000×?** Postgres com RLS e views por perfil; PII mascarada antes de chegar ao LLM (ou LLM on-premise — o suporte a Ollama já demonstra); `consultar_sql` livre desligado em produção (só ferramentas auditadas); log de toda consulta; índices por `numero`; o padrão "metadados primeiro, texto sob demanda" escala sem mudança de design.
-
----
-
-## 9. Riscos
-
-| Risco | Mitigação |
-|---|---|
-| O modelo local alucina argumento ou ignora "não consta" | Golden set + regra no prompt + a UI mostra a fonte, então o erro é visível, não escondido. Demo com Claude como plano B |
-| Latência da minuta no M1 (~1.500 tokens de saída) | Streaming na UI (modelo *instruct*, sem raciocínio); ou minuta com o modelo em nuvem |
-| RAM estourar ao vivo | `num_ctx=8192`, fechar apps, `qwen3:1.7b` no bolso |
-| Modelo pequeno confunde `situacao` vs. movimentação de sentença | `buscar_processo` já retorna o campo derivado `julgamento` cruzando os três sinais, para o modelo não ter que raciocinar |
-
----
-
-## 10. Próximo passo
+## 7. Próximo passo
 
 Fase 0 + Fase 1 (ferramentas + testes das armadilhas): não dependem de LLM nenhum e são a base que justifica toda a arquitetura na arguição.

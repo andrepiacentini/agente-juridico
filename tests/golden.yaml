@@ -277,7 +277,6 @@ cases:
   # --- Pergunta que falha de propósito (T12.5): a consulta natural estoura o tempo limite; o agente tem que admitir.
   - id: pergunta-que-falha
     description: consulta SQL que estoura os 5 s; o agente lê o erro, bate no teto de tentativas e admite (T12.5)
-    source: docs/roteiros/pergunta-que-falha.md
     turns:
       - ask: Com uma única consulta SQL, conte quantos documentos mencionam no texto o nome de alguma parte de um processo diferente do seu.
         must_call: [run_sql]
