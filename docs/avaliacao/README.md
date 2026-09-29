@@ -19,3 +19,12 @@ Falhas do modelo local:
 | `processo-existente-depois-de-foco` | resumo sem `list_movements` (em aberto desde a D51) |
 | `minuta-redija-a-sentenca` | "redija a sentença" lida como pedido da sentença existente (em aberto desde a D59) |
 | `homonimo`, pergunta 2 | resposta certa; o critério exigia a data da sentença, que a pergunta não pede (corrigido) |
+
+## 29/09/2026 — 19 casos, com o registro de uso ligado (T13.5)
+
+| Modelo | Placar | Tempo total | Tempo médio por resposta | Custo da bateria | Arquivo |
+|---|---|---|---|---|---|
+| `gemini-3.8-flash`, raciocínio "low" | 17/19 | 144 s | 5,3 s | R$ 1,32 (27 respostas; R$ 0,0489 cada, em média) | [`placar-gemini-3.8-flash-2026-09-29.json`](placar-gemini-3.8-flash-2026-09-29.json) |
+| `qwen3:4b-instruct-2507-q4_K_M` (local) | 16/19 | 1.260 s | 46,7 s | R$ 0 | [`placar-qwen3-4b-2026-09-29.json`](placar-qwen3-4b-2026-09-29.json) |
+
+Falhas novas do Gemini nesta rodada: no resumo do processo 1, uma "citação" inventada (`[doc. — list_documents]`, nome de ferramenta no lugar de documento); no número com dígito errado, disse que o dígito não confere, mas procurou números parecidos com `run_sql` e sugeriu o 3161, em vez de avisar do provável erro de digitação. O placar dele oscila entre rodadas (19/19 na anterior). Análise de custo: [`DECISOES.md`](../../DECISOES.md) D76.

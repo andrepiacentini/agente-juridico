@@ -62,11 +62,17 @@ def test_model_failure_is_reported_and_chat_goes_on(monkeypatch) -> None:
     monkeypatch.delenv("LLM_THINKING", raising=False)
     calls = []
 
+    class Answered:
+        output = "ok"
+
+        def all_messages(self):
+            return []
+
     def failing_then_ok(agent, session, question, history, write):
         calls.append(question)
         if len(calls) == 1:
             raise ConnectionError("modelo fora do ar")
-        return "ok", history
+        return Answered()
 
     monkeypatch.setattr(cli, "_ask", failing_then_ok)
     printed = run_chat(TestModel(call_tools=[]), "primeira", "segunda", "sair")
@@ -115,3 +121,22 @@ def test_chat_shows_retry_notice_and_then_the_answer(monkeypatch) -> None:
     joined = "\n".join(printed)
     assert "indisponível no momento (erro 503). Tentando de novo em 5 s… (tentativa 2 de 3)" in joined
     assert "Resposta depois da recusa." in joined
+
+
+def test_each_answer_is_recorded_in_the_usage_log(monkeypatch, tmp_path) -> None:
+    # E13: o consumo de cada resposta do terminal vai para o registro de uso, com canal e modelo.
+    from case_assistant.usage import UsageLog
+
+    monkeypatch.delenv("LLM_THINKING", raising=False)
+    usage_log = UsageLog(tmp_path / "uso.sqlite")
+    with open_session() as session:
+        cli.chat(
+            build_agent(TestModel(call_tools=[], custom_output_text="ok")), session,
+            read=scripted("olá", "tudo bem?", "sair"), write=lambda _: None, usage_log=usage_log, model="test",
+        )
+
+    records = usage_log.records()
+    assert [(record.channel, record.model, record.session_id) for record in records] == [
+        ("terminal", "test", session.id), ("terminal", "test", session.id)
+    ]
+    assert all(record.output_tokens > 0 for record in records)
