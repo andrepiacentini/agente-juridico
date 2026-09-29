@@ -4,6 +4,7 @@ import asyncio
 import os
 import time
 from collections.abc import Awaitable, Callable
+from dataclasses import dataclass
 from typing import Any
 
 from pydantic_ai import Agent, ModelRetry, RunContext
@@ -23,6 +24,10 @@ from case_assistant.tools import SENTENCE_DOCUMENT_TYPES
 MODEL_VARIABLE = "LLM_MODEL"
 # Opcional: nível de raciocínio ("low", "true", "false"…). O Gemini precisa de "low" (D30); o modelo local, de nada.
 THINKING_VARIABLE = "LLM_THINKING"
+# Opcional: modelos que a interface web oferece para troca (T10.3), separados por vírgula, cada um com o raciocínio
+# depois de "@": "ollama:qwen3:4b-instruct-2507-q4_K_M,google:gemini-3.8-flash@low". O LLM_MODEL vem sempre primeiro.
+MODEL_OPTIONS_VARIABLE = "LLM_MODEL_OPTIONS"
+THINKING_SEPARATOR = "@"
 BOOLEAN_SETTINGS = {"true": True, "false": False}
 # Recusas temporárias do serviço do modelo (D41): tentar de novo, avisando o usuário, antes de desistir.
 MAX_ATTEMPTS = 3
@@ -44,8 +49,32 @@ class ModelNotConfiguredError(RuntimeError):
     """Nenhum modelo foi informado em LLM_MODEL."""
 
 
-def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
-    """Cria o agente. O modelo e o raciocínio vêm da configuração: o código não tem caminho especial por fornecedor."""
+@dataclass(frozen=True)
+class ModelOption:
+    """Um modelo que a interface pode oferecer, com o raciocínio que ele exige ("" = padrão do modelo)."""
+
+    model: str
+    thinking: str
+
+
+def model_options() -> list[ModelOption]:
+    """Os modelos da configuração: o LLM_MODEL (com o LLM_THINKING) e os de LLM_MODEL_OPTIONS, sem repetir."""
+    configured = os.environ.get(MODEL_VARIABLE, "").strip()
+    if not configured:
+        raise ModelNotConfiguredError(f"Defina {MODEL_VARIABLE} no .env (veja .env.example).")
+    options = [ModelOption(configured, _configured_thinking())]
+    for entry in os.environ.get(MODEL_OPTIONS_VARIABLE, "").split(","):
+        model, _, thinking = entry.strip().partition(THINKING_SEPARATOR)
+        if model and model not in {option.model for option in options}:
+            options.append(ModelOption(model, thinking.strip().lower()))
+    return options
+
+
+def build_agent(model: Model | str | None = None, thinking: str | None = None) -> Agent[Session, str]:
+    """Cria o agente. O modelo e o raciocínio vêm da configuração: o código não tem caminho especial por fornecedor.
+
+    Sem `thinking`, o raciocínio vem de LLM_THINKING; a interface web passa o de cada modelo que oferece (T10.3).
+    """
     model = model or os.environ.get(MODEL_VARIABLE)
     if not model:
         raise ModelNotConfiguredError(f"Defina {MODEL_VARIABLE} no .env (veja .env.example).")
@@ -55,7 +84,7 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
         system_prompt=SYSTEM_PROMPT,
         instructions=_focused_case_instructions,
         tools=AGENT_TOOLS,
-        model_settings=_model_settings(),
+        model_settings=_model_settings(_configured_thinking() if thinking is None else thinking),
         retries={"output": OUTPUT_RETRIES},
     )
     agent.output_validator(_require_cited_cases_queried)
@@ -121,8 +150,11 @@ def _queried_case_numbers(messages: list[ModelMessage]) -> set[str]:
     }
 
 
-def _model_settings() -> ModelSettings | None:
-    thinking = os.environ.get(THINKING_VARIABLE, "").strip().lower()
+def _configured_thinking() -> str:
+    return os.environ.get(THINKING_VARIABLE, "").strip().lower()
+
+
+def _model_settings(thinking: str) -> ModelSettings | None:
     if not thinking:
         return None
     return {"thinking": BOOLEAN_SETTINGS.get(thinking, thinking)}

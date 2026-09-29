@@ -462,6 +462,14 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** mostrar os passos só no fim, a partir do histórico (mais simples, mas a tela ficaria parada por minutos no modelo local); pôr a resposta dentro do passo-pai, que a esconderia junto das consultas.
 - **Uso de IA:** o Claude Code testou no Chrome e foi assim que viu os passos abertos e fora de ordem na primeira versão. O rótulo "Used" antes de cada passo vem da tradução em inglês do Chainlit, que segue o idioma do navegador (fica para a T10.4).
 
+### D69 — Troca de modelo na tela, com a lista vinda do .env e o raciocínio de cada modelo
+- **Decisão:** as configurações do chat web ganharam um seletor "Modelo". A lista vem de uma variável nova e opcional, `LLM_MODEL_OPTIONS` (modelos separados por vírgula, cada um com o nível de raciocínio depois de "@": `ollama:qwen3:4b-instruct-2507-q4_K_M,google:gemini-3.8-flash@low`); o `LLM_MODEL` entra sempre, em primeiro lugar, e sem a variável a lista tem só ele. Ao trocar, só o agente é recriado; a sessão continua, com o histórico e o processo em foco. `build_agent` passou a aceitar o raciocínio explícito; sem ele, continua lendo `LLM_THINKING`, e o terminal e a bateria não mudam. O `.env` do autor não foi alterado: a variável está documentada no `.env.example`. A T10.3 fica concluída.
+- **Por quê:** nenhum nome de modelo pode estar fixo no código (regra dos [12 fatores](docs/glossario.md#doze-fatores) do projeto), e o raciocínio depende do modelo: o Gemini precisa de "low" (D30), o [modelo local](docs/glossario.md#modelo-local) não pode ter nenhum. Um `LLM_THINKING` único para os dois quebraria um deles depois da troca.
+- **Resultado no navegador:** com o modelo local, "quem é o juiz do processo 0000007-79.2023.8.99.9014?" → "Luiz Bonetti Vasconcelos, porém ele está aposentado. [cadastro do processo]". Troca pelo painel para o Gemini, sem reiniciar; em seguida, "e quem são as partes?", sem número → `list_parties` do 3161 e as duas partes citadas. A conversa e o foco atravessaram a troca.
+- **Defeito corrigido na hora:** o aviso da troca saiu "respondo com o modelo google .8-flash": o leitor de Markdown do Chainlit engoliu ":gemini-3", provavelmente como código de emoji. O nome do modelo passou a ir como código (entre crases).
+- **Descartado:** um `LLM_THINKING` por provedor (ex.: `LLM_THINKING_GOOGLE`), que exigiria no código a lista de provedores; recriar a sessão na troca, que perderia o histórico e o foco — o objetivo é repetir a mesma pergunta nos dois modelos.
+- **Uso de IA:** o Claude Code testou a troca no Chrome, passando a lista pela linha de comando para não mexer no `.env` do autor, e foi assim que viu o nome do modelo quebrado no aviso.
+
 ---
 
 ## Pendências de decisão

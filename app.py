@@ -9,17 +9,20 @@ from collections.abc import AsyncIterable
 from contextlib import ExitStack
 
 import chainlit as cl
+from chainlit.input_widget import Select
 from dotenv import load_dotenv
 from pydantic_ai import RunContext
 from pydantic_ai.agent import EventStreamHandler
 from pydantic_ai.messages import AgentStreamEvent, FunctionToolCallEvent, FunctionToolResultEvent
 
-from case_assistant.agent import ModelNotConfiguredError, build_agent, run_with_retries_async
+from case_assistant.agent import ModelNotConfiguredError, ModelOption, build_agent, model_options, run_with_retries_async
 from case_assistant.session import Session, open_session
 from case_assistant.tool_display import tool_call_label, tool_result_text
 
 MODEL_FAILURE_MESSAGE = "Não consegui obter resposta do modelo: {error}"
 QUERIES_STEP_NAME = "Consultas ao banco"
+MODEL_SETTING = "model"
+MODEL_CHANGED_MESSAGE = "A partir de agora, respondo com o modelo `{model}`. A conversa e o processo em foco continuam."
 
 
 @cl.on_chat_start
@@ -29,10 +32,16 @@ async def start_chat() -> None:
     # O aviso de observabilidade do Pydantic AI polui o log do servidor; esconde mesmo com um .env antigo.
     os.environ.setdefault("PYDANTIC_AI_NO_BANNER", "1")
     try:
-        agent = build_agent()
+        options = model_options()
     except ModelNotConfiguredError as error:
         await cl.Message(content=str(error)).send()
         return
+    # A troca de modelo fica nas configurações do chat, com os modelos do .env (T10.3): a mesma pergunta nos dois.
+    await cl.ChatSettings(
+        [Select(id=MODEL_SETTING, label="Modelo", values=[option.model for option in options], initial_index=0)]
+    ).send()
+    cl.user_session.set("model_options", options)
+    agent = _build_agent(options[0])
     resources = ExitStack()
     cl.user_session.set("resources", resources)
     cl.user_session.set("session", resources.enter_context(open_session()))
@@ -67,11 +76,26 @@ async def answer(message: cl.Message) -> None:
     await cl.Message(content=result.output).send()
 
 
+@cl.on_settings_update
+async def change_model(settings: dict[str, str]) -> None:
+    """Troca só o agente: a sessão (histórico e processo em foco) continua a mesma."""
+    options: list[ModelOption] = cl.user_session.get("model_options") or []
+    chosen = next((option for option in options if option.model == settings.get(MODEL_SETTING)), None)
+    if chosen is None:
+        return
+    cl.user_session.set("agent", _build_agent(chosen))
+    await cl.Message(content=MODEL_CHANGED_MESSAGE.format(model=chosen.model)).send()
+
+
 @cl.on_chat_end
 async def end_chat() -> None:
     resources = cl.user_session.get("resources")
     if resources is not None:
         resources.close()
+
+
+def _build_agent(option: ModelOption):
+    return build_agent(option.model, thinking=option.thinking)
 
 
 async def _notify(text: str) -> None:
