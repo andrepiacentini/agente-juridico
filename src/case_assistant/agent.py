@@ -13,8 +13,10 @@ from pydantic_ai.settings import ModelSettings
 
 from case_assistant.agent_tools import AGENT_TOOLS
 from case_assistant.case_number import extract_case_numbers
+from case_assistant.citations import cited_document_ids
 from case_assistant.prompts import SYSTEM_PROMPT, focus_reminder, with_draft_notice
 from case_assistant.session import Session
+from case_assistant.tools import SENTENCE_DOCUMENT_TYPES
 
 MODEL_VARIABLE = "LLM_MODEL"
 # Opcional: nível de raciocínio ("low", "true", "false"…). O Gemini precisa de "low" (D30); o modelo local, de nada.
@@ -24,6 +26,12 @@ BOOLEAN_SETTINGS = {"true": True, "false": False}
 MAX_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = 5  # 5 s antes da 2ª tentativa, 10 s antes da 3ª
 TEMPORARY_HTTP_STATUSES = {429: "limite de pedidos", 500: "", 502: "", 503: "", 504: ""}
+UNREAD_SENTENCE_MESSAGE = (
+    "Você citou a sentença [doc {document_id}] sem ler o texto dela. Chame read_document(document_id={document_id}) "
+    "e responda com a decisão e os fundamentos que estão no documento."
+)
+# Cada guarda da resposta (número não consultado, sentença não lida) pode devolver a resposta ao modelo uma vez.
+OUTPUT_RETRIES = 2
 UNQUERIED_CASE_MESSAGE = (
     "Você ainda não consultou o processo {case_number} nesta conversa. "
     "Chame find_case(case_number='{case_number}') antes de responder."
@@ -46,8 +54,10 @@ def build_agent(model: Model | str | None = None) -> Agent[Session, str]:
         instructions=_focused_case_instructions,
         tools=AGENT_TOOLS,
         model_settings=_model_settings(),
+        retries={"output": OUTPUT_RETRIES},
     )
     agent.output_validator(_require_cited_cases_queried)
+    agent.output_validator(_require_cited_sentences_read)
     agent.output_validator(_ensure_draft_notice)
     return agent
 
@@ -67,6 +77,28 @@ def _require_cited_cases_queried(ctx: RunContext[Session], output: str) -> str:
     if unqueried:
         raise ModelRetry(UNQUERIED_CASE_MESSAGE.format(case_number=unqueried[0]))
     return output
+
+
+def _require_cited_sentences_read(ctx: RunContext[Session], output: str) -> str:
+    # Regra nas instruções não bastou (D66): o modelo local citava a sentença para "os fundamentos estão lá",
+    # sem abrir o documento. Na minuta, a sentença existente não deve ser lida (D57), e o guarda não vale.
+    if ctx.deps.draft_run_id == ctx.run_id:
+        return output
+    read = _read_document_ids(ctx.messages)
+    unread = [document_id for document_id in cited_document_ids(output, SENTENCE_DOCUMENT_TYPES) if document_id not in read]
+    if unread:
+        raise ModelRetry(UNREAD_SENTENCE_MESSAGE.format(document_id=unread[0]))
+    return output
+
+
+def _read_document_ids(messages: list[ModelMessage]) -> set[int]:
+    requested = [
+        str(part.args_as_dict().get("document_id", ""))
+        for message in messages
+        for part in message.parts
+        if isinstance(part, ToolCallPart) and part.tool_name == "read_document"
+    ]
+    return {int(document_id) for document_id in requested if document_id.isdigit()}
 
 
 def _ensure_draft_notice(ctx: RunContext[Session], output: str) -> str:
