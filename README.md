@@ -87,7 +87,7 @@ Todas as variáveis estão comentadas em [`.env.example`](.env.example).
 ```bash
 uv run pytest                                   # ~400 testes; não usam IA e rodam na CI em todo PR
 uv run pytest tests/test_tools.py -k "without_documents"   # um teste
-uv run case-assistant-eval                      # bateria de 19 conversas (tests/golden.yaml) com o modelo do .env
+uv run case-assistant-eval                      # bateria de 20 conversas (tests/golden.yaml) com o modelo do .env
 uv run case-assistant-eval --model google:gemini-3.8-flash --case edital-1-resumo-3161 --output respostas.json
 ```
 

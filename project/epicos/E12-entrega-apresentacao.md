@@ -34,7 +34,7 @@
 - **Depende de:** E09.
 - **Para explicar à banca:** (é o próprio roteiro).
 
-### T12.5 — Pergunta que falha de propósito `[ ]`
+### T12.5 — Pergunta que falha de propósito `[x]`
 - **Objetivo:** escolher uma pergunta que mostre o agente errando uma consulta, lendo o erro e se recuperando (ou admitindo o limite).
 - **Passos:** testar candidatas com `consultar_sql`; escolher a que se comporta de forma previsível.
 - **Pronto quando:** a pergunta está no roteiro e se comporta igual em 3 execuções.
