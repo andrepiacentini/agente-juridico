@@ -13,7 +13,7 @@
 - **Depende de:** E05 (E10 se feito).
 - **Para explicar à banca:** "O README foi escrito para quem nunca viu o projeto."
 
-### T12.2 — Teste de instalação do zero `[ ]`
+### T12.2 — Teste de instalação do zero `[x]`
 - **Objetivo:** confirmar que alguém sem contexto sobe o projeto em 5 minutos.
 - **Passos:** clonar o repositório em outra pasta; seguir só o README; anotar cada tropeço e corrigir o README.
 - **Pronto quando:** a instalação funciona seguindo apenas o README.
