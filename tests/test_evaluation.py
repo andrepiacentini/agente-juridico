@@ -120,3 +120,13 @@ def test_main_runs_the_chosen_cases_writes_the_answers_and_fails_when_a_case_fai
     saved = json.loads(output.read_text(encoding="utf-8"))
     assert [case["id"] for case in saved["cases"]] == ["um"]
     assert saved["cases"][0]["turns"][0]["failures"] == ["falta: texto que não vem"]
+
+
+def test_run_case_records_tokens_per_turn_and_in_the_usage_log(tmp_path) -> None:
+    from case_assistant.usage import UsageLog
+
+    usage_log = UsageLog(tmp_path / "uso.sqlite")
+    result = run_case(build_agent(scripted_model(ANSWER)), CASE, usage_log=usage_log, model="modelo-x")
+
+    assert all(turn.input_tokens > 0 and turn.output_tokens > 0 for turn in result.turns)
+    assert [(record.channel, record.model) for record in usage_log.records()] == [("bateria", "modelo-x")] * 2

@@ -15,3 +15,9 @@ def original_database_is_never_modified():
     assert sha256_of(DEFAULT_DATABASE_PATH) == REFERENCE_DATABASE_SHA256, (
         "Algum teste alterou o desafio.sqlite original; restaure com `git checkout -- desafio.sqlite`."
     )
+
+
+@pytest.fixture(autouse=True)
+def isolated_usage_log(tmp_path, monkeypatch):
+    """Nenhum teste grava no registro de uso de verdade (E13): cada um tem o seu, numa pasta temporária."""
+    monkeypatch.setenv("USAGE_DB_PATH", str(tmp_path / "usage.sqlite"))

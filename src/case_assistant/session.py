@@ -1,9 +1,10 @@
 """Estado de uma conversa: com qual banco o agente fala e de qual processo estamos tratando (E05, E06)."""
 
 import sqlite3
+import uuid
 from collections.abc import Iterator
 from contextlib import closing, contextmanager
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 from case_assistant.db import connect, ensure_search_index
 
@@ -18,6 +19,8 @@ class Session:
     failed_sql_attempts: int = 0
     sql_attempts_run_id: str | None = None
     draft_run_id: str | None = None
+    # Identifica a conversa no registro de uso (E13).
+    id: str = field(default_factory=lambda: uuid.uuid4().hex)
 
 
 @contextmanager

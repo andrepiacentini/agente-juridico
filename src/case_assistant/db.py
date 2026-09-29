@@ -18,7 +18,7 @@ class DatabaseNotFoundError(FileNotFoundError):
 
 def connect() -> sqlite3.Connection:
     """Abre o banco em modo somente leitura; qualquer escrita é recusada pelo próprio SQLite (D04)."""
-    database_path = _configured_database_path()
+    database_path = configured_database_path()
     if not database_path.is_file():
         raise DatabaseNotFoundError(f"Banco não encontrado em {database_path} (variável {DATABASE_PATH_VARIABLE}).")
 
@@ -30,7 +30,8 @@ def connect() -> sqlite3.Connection:
     return connection
 
 
-def _configured_database_path() -> Path:
+def configured_database_path() -> Path:
+    """O caminho do desafio.sqlite: DATABASE_PATH, ou o arquivo na raiz do projeto."""
     configured = os.environ.get(DATABASE_PATH_VARIABLE)
     return Path(configured).expanduser().resolve() if configured else DEFAULT_DATABASE_PATH
 

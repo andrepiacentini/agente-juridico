@@ -5,6 +5,7 @@ Uso: uv run chainlit run app.py
 """
 
 import os
+import time
 from collections.abc import AsyncIterable
 from contextlib import ExitStack
 
@@ -18,8 +19,10 @@ from pydantic_ai.messages import AgentStreamEvent, FunctionToolCallEvent, Functi
 from case_assistant.agent import ModelNotConfiguredError, ModelOption, build_agent, model_options, run_with_retries_async
 from case_assistant.session import Session, open_session
 from case_assistant.tool_display import tool_call_label, tool_result_text
+from case_assistant.usage import UsageLog, record_answer, usage_record
 
 MODEL_FAILURE_MESSAGE = "Não consegui obter resposta do modelo: {error}"
+WEB_CHANNEL = "web"
 QUERIES_STEP_NAME = "o banco de dados"  # a interface mostra "Consultou o banco de dados"
 MODEL_SETTING = "model"
 # As 4 perguntas do edital sobre o processo de referência, com o mesmo texto da bateria de avaliação (T10.4).
@@ -69,6 +72,7 @@ async def start_chat() -> None:
         [Select(id=MODEL_SETTING, label="Modelo", values=[option.model for option in options], initial_index=0)]
     ).send()
     cl.user_session.set("model_options", options)
+    cl.user_session.set("usage_log", UsageLog.from_environment())
     agent = _build_agent(options[0])
     resources = ExitStack()
     cl.user_session.set("resources", resources)
@@ -86,6 +90,7 @@ async def answer(message: cl.Message) -> None:
     # aparece abaixo delas, e cada consulta pode ser aberta para conferir o que o agente leu.
     queries = cl.Step(name=QUERIES_STEP_NAME, type="run", default_open=True)
     await queries.send()
+    start = time.monotonic()
     try:
         result = await run_with_retries_async(
             agent,
@@ -100,6 +105,8 @@ async def answer(message: cl.Message) -> None:
         await cl.Message(content=MODEL_FAILURE_MESSAGE.format(error=error)).send()
         return
     await queries.update()
+    usage = usage_record(result, WEB_CHANNEL, cl.user_session.get("session"), cl.user_session.get("model"), time.monotonic() - start)
+    record_answer(cl.user_session.get("usage_log"), usage)
     cl.user_session.set("history", result.all_messages())
     await cl.Message(content=result.output).send()
 
@@ -123,6 +130,7 @@ async def end_chat() -> None:
 
 
 def _build_agent(option: ModelOption):
+    cl.user_session.set("model", option.model)  # o registro de uso anota com qual modelo cada resposta saiu
     return build_agent(option.model, thinking=option.thinking)
 
 
