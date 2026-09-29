@@ -531,6 +531,25 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** projetar a partir do custo de uma pergunta de exemplo, que subestimaria o resumo com documentos; um mix de tipos de pergunta inventado — o custo médio vem da própria bateria, que tem as 4 perguntas do edital e as armadilhas.
 - **Uso de IA:** o Claude Code gravou a medição num registro separado, para não misturar com os testes manuais, e conferiu o preço do servidor em duas fontes. Errou uma conta feita à mão no teste do ponto de equilíbrio (277.782 no lugar de 277.778); o teste falhou e ele corrigiu a conta, não o código.
 
+## 29/09/2026
+
+### D77 — Janela do modelo local em 16 mil tokens com cache comprimido; a preferência mora no app do Ollama, não no código
+- **Decisão:** o [Ollama](docs/glossario.md#ollama) passa a rodar o `qwen3:4b` com [janela de contexto](docs/glossario.md#contexto) de 16.384 [tokens](docs/glossario.md#token) e [KV cache](docs/glossario.md#kv-cache) comprimido (`OLLAMA_KV_CACHE_TYPE=q8_0`). Os dois ajustes ficam no servidor, fora do código do agente: a janela na tela de configurações do app do Ollama (*Context length*), a compressão numa variável de ambiente (`launchctl setenv`, com um LaunchAgent em `docs/ollama/` para valer a cada login). O passo a passo está no `README.md`. A T11.1 fica concluída.
+- **Por quê no servidor, e não por pedido:** o prefixo `ollama:` do Pydantic AI fala com o endpoint compatível com OpenAI, e esse endpoint **ignora** o `num_ctx` mandado no pedido — testado: com `num_ctx=16384` no corpo, o modelo carregado continuou em 8.192; pelo endpoint nativo (`/api/chat`), o mesmo pedido recarregou o modelo com 16.384. Mesmo que funcionasse, mandar uma opção só do Ollama quebraria a regra de código sem caminho por fornecedor (D08).
+- **Por quê na tela do app, e não na variável:** o app do Ollama grava a preferência (`context_length`, hoje em 8.192 desde a D45) no seu próprio banco e a repassa ao servidor como `OLLAMA_CONTEXT_LENGTH`, por cima do que o `launchctl` tiver — foi assim que a variável em 16.384 apareceu como 8.192 no processo. A compressão do cache o app não gerencia, e a variável passa direto.
+- **Medido (pergunta "Resuma o processo 0000007-79.2023.8.99.9014", CLI, mesmo Mac de 8 GB com o ambiente de desenvolvimento aberto):**
+
+  | Configuração | Modelo carregado (`ollama ps`) | Cache da janela | Pico do processo do modelo | Maior pedido | Tempo | Saída |
+  |---|---:|---:|---:|---:|---:|---:|
+  | 8.192, cache sem compressão (antes) | 3,8 GB | 1,2 GB | 3,59 GB | 8.015 tokens | 186 s | 842 tokens |
+  | 16.384, cache sem compressão | 5,5 GB | 2,4 GB | não medido | — | — | — |
+  | **16.384, cache `q8_0` (agora)** | **3,9 GB** | **1,2 GB** | **3,63 GB** | **8.969 tokens** | 252 s | 1.353 tokens |
+
+  A mesma pergunta chamou as mesmas 6 ferramentas nas duas rodadas (cadastro, movimentações, lista de documentos e três leituras). Com 8.192, o maior pedido ficou a 177 tokens do limite e a resposta saiu sem o andamento; com 16.384, o modelo escreveu a resposta completa (andamento, avisos e fontes com movimentação), e o último pedido, de 8.969 tokens, **não caberia** na janela antiga — o Ollama teria recusado (D45). O tempo maior vem da resposta mais longa (511 tokens a mais, a ~19 tokens/s) e da leitura do pedido maior, não da janela em si. A compressão custou nada de memória: o modelo carregado subiu de 3,8 para 3,9 GB, e o processo, de 3,59 para 3,63 GB — o orçamento de `plan.md` §5 (2,5 GB de pesos + 1,2 GB de cache) se confirmou.
+- **O que a medição não fecha:** o critério "uso total abaixo de ~7 GB" não pôde ser conferido, porque o Mac já estava saturado antes de o modelo entrar (7,5 GB usados e 6 GB de swap com o Claude Code, o editor e o navegador abertos) — nas duas rodadas o total ficou em 7,56 GB, número do ambiente, não do modelo. O que cabe ao modelo é o pico do processo, 3,6 GB, dentro do orçamento. A conferência do total é feita com a máquina só com a demo aberta (checklist do E12 e, se a apresentação for remota, T11.6).
+- **Descartado:** `num_ctx` por pedido (ignorado pelo endpoint, ver acima); rodar `ollama serve` pelo terminal em vez do app — funciona, e foi como a medição a 16 mil foi feita, mas duplicaria o servidor que o app já sobe e deixaria a configuração num terminal aberto; 16.384 sem compressão (5,5 GB carregados, 1,2 GB a mais só de cache, fora do orçamento); 32.768 (o cache dobraria para 2,4 GB, e o pior processo, 19 documentos ≈ 15 mil tokens, cabe em 16 mil).
+- **Uso de IA:** o Claude Code descobriu o "por cima" do app ao comparar a variável no `launchctl` com a do processo e localizou a preferência lendo o banco do app só em leitura; tentou gravar 16.384 nesse banco e instalar o LaunchAgent, e o próprio bloqueio de segurança do Claude Code impediu as duas coisas — a mudança na tela do app e a instalação do agente ficaram para o autor, e a medição saiu com o servidor subido pelo terminal. Erro do assistente: o amostrador de memória leu a coluna errada do swap na primeira rodada, e a linha de base ficou sem esse número; corrigido antes da segunda.
+
 ---
 
 ## Pendências de decisão
