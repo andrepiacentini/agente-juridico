@@ -101,7 +101,7 @@ cases:
       - ask: O processo 0000007-79.2023.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?
         must_call: [read_document]
         must_contain:
-          - parcialmente procedente
+          - ["parcialmente procedente", "parcialmente", "procedência parcial"]   # "acolhendo parcialmente" (D66)
           - "1.523,18"                           # valor da condenação na sentença
           - ["excessivo", "razoabilidade", "proporcionalidade"]   # fundamento do acolhimento parcial
           - "[doc 7878"

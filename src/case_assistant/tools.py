@@ -295,10 +295,15 @@ def _judgment(connection: sqlite3.Connection, case_id: int, sentence_date: str |
         "movimentação de sentença": movement is not None,
         "documento de sentença": document is not None,
     }
+    sentence_document = _document_card(document)
+    summary = _judgment_summary(signals)
+    if sentence_document is not None:
+        # Simétrico ao "o texto da sentença não está no banco": sem isto, o modelo local supôs que também faltava (D66).
+        summary += f" O texto da sentença, com a decisão e os fundamentos, está no {sentence_document['source']}."
     return {
-        "summary": _judgment_summary(signals),
+        "summary": summary,
         "sentence_movement": _movement_card(movement),
-        "sentence_document": _document_card(document),
+        "sentence_document": sentence_document,
     }
 
 

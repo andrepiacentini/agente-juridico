@@ -12,6 +12,7 @@ from case_assistant.tools import check_draft_basis, find_case, prepare_draft, li
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
+SENTENCE_DOCUMENT_WITHOUT_DATE_CASE_NUMBER = "0000001-61.2021.8.99.9008"
 MISSING_CASE_NUMBER = "0000999-40.2023.8.99.9014"  # dígito verificador certo, mas fora do banco
 LOWERCASE_STATUS_CASE_NUMBER = "0000001-43.2021.8.99.9014"  # processo 1: situacao "julgado"
 UPPERCASE_STATUS_CASE_NUMBER = "0000002-98.2020.8.99.9002"  # situacao "JULGADO"
@@ -110,7 +111,9 @@ def test_judgment_when_all_three_signals_agree(connection) -> None:
     judgment = find_case(connection, REFERENCE_CASE_NUMBER)["judgment"]
 
     assert judgment == {
-        "summary": "Julgado: data de sentença, movimentação de sentença e documento de sentença conferem.",
+        # D66: sem dizer onde está o texto, o modelo local respondeu que ele "não está disponível no banco".
+        "summary": "Julgado: data de sentença, movimentação de sentença e documento de sentença conferem. "
+        "O texto da sentença, com a decisão e os fundamentos, está no [doc 7878 — Sentença, 18/02/2026].",
         "sentence_movement": {
             "code": 9219, "description": "Sentença com Resolução do Mérito", "date": "18/02/2026",
             "source": "[mov. 9219 — Sentença com Resolução do Mérito, 18/02/2026]",
@@ -131,6 +134,15 @@ def test_judgment_reports_sentence_date_without_sentence_text(connection) -> Non
     assert judgment["sentence_document"] is None
 
 
+def test_judgment_points_to_the_sentence_text_even_without_sentence_date(connection) -> None:
+    judgment = find_case(connection, SENTENCE_DOCUMENT_WITHOUT_DATE_CASE_NUMBER)["judgment"]
+
+    assert judgment["summary"].startswith("Sinais divergentes.")
+    assert judgment["summary"].endswith(
+        "O texto da sentença, com a decisão e os fundamentos, está no [doc 922 — Sentença, 17/02/2023]."
+    )
+
+
 def test_judgment_when_there_is_no_sentence_signal(connection) -> None:
     judgment = find_case(connection, CASE_WITHOUT_ANY_SENTENCE_SIGNAL_NUMBER)["judgment"]
 
@@ -147,6 +159,8 @@ def test_judgment_counts_match_database_profile(connection) -> None:
     assert sum(summary.startswith("Sinais divergentes") for summary in summaries) == 4_554
     # sem documento, mas com outro sinal: data+movimentação (4.413), só movimentação (83), só data (13)
     assert sum("não está no banco" in summary for summary in summaries) == 4_413 + 83 + 13
+    # com documento de sentença: os 1.775 julgados e os 45 divergentes que têm o documento
+    assert sum("O texto da sentença, com a decisão e os fundamentos, está no [doc" in summary for summary in summaries) == 1_775 + 45
 
 
 def warnings_for(connection, case_id: int) -> list[str]:
