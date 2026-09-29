@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<!-- Define, a cada login, a compressão do cache do Ollama (D77). O app do Ollama herda a variável ao abrir;
+     se ele abrir antes deste agente, feche e abra o app. -->
+<plist version="1.0">
+<dict>
+    <key>Label</key>
+    <string>local.ollama-kv-cache</string>
+    <key>ProgramArguments</key>
+    <array>
+        <string>/bin/launchctl</string>
+        <string>setenv</string>
+        <string>OLLAMA_KV_CACHE_TYPE</string>
+        <string>q8_0</string>
+    </array>
+    <key>RunAtLoad</key>
+    <true/>
+</dict>
+</plist>
