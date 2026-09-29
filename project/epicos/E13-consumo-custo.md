@@ -18,7 +18,7 @@
 - **Depende de:** E10.
 - **Para explicar à banca:** "Cada resposta deixa um registro de quanto consumiu: é a base de qualquer conversa sobre custo."
 
-### T13.2 — Tabela de preços por modelo `[ ]`
+### T13.2 — Tabela de preços por modelo `[x]`
 - **Objetivo:** calcular o custo de cada resposta a partir dos tokens.
 - **Passos:** preço por milhão de tokens (entrada e saída) de cada modelo e câmbio dólar–real em configuração, com a data da cotação e a fonte (página oficial de preços); modelo local com preço zero; função de custo testada.
 - **Pronto quando:** o custo de uma resposta de exemplo bate com a conta feita à mão.

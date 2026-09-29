@@ -1,0 +1,40 @@
+# Tabela de preços dos modelos, usada para calcular o custo de cada resposta (E13, D73).
+#
+# Preços em dólar por milhão de tokens. Cada modelo tem a fonte e períodos de vigência: o custo de uma resposta usa
+# o período mais recente cujo valid_from (AAAA-MM-DD) é igual ou anterior à data da resposta. Um modelo que não está
+# aqui tem custo "desconhecido" (nunca zero). O caminho deste arquivo pode ser trocado pela variável PRICES_PATH.
+#
+#   input       entrada que não veio do cache
+#   output      saída; no Gemini, inclui os tokens de raciocínio
+#   cache_read  entrada reaproveitada do cache (o fornecedor a conta dentro da entrada, cobrada à parte)
+
+[exchange]
+usd_brl = 5.2132
+date = "2026-09-28"
+source = "PTAX venda do Banco Central do Brasil (olinda.bcb.gov.br, CotacaoDolarDia)"
+
+[[models]]
+model = "google:gemini-3.8-flash"
+source = "https://ai.google.dev/gemini-api/docs/pricing — Standard, página atualizada em 2026-09-24, consultada em 2026-09-29"
+
+[[models.prices]]
+valid_from = "2026-09-24"   # data da página consultada; antes disso o preço não foi conferido
+input = 0.75
+output = 3.75
+cache_read = 0.075
+
+[[models.prices]]
+valid_from = "2027-01-01"   # a própria página anuncia o preço dobrado a partir desta data
+input = 1.50
+output = 7.50
+cache_read = 0.15
+
+[[models]]
+model = "ollama:qwen3:4b-instruct-2507-q4_K_M"
+source = "Modelo local (Ollama): nada é cobrado por token. Energia e máquina não entram nesta conta."
+
+[[models.prices]]
+valid_from = "2026-01-01"
+input = 0
+output = 0
+cache_read = 0
