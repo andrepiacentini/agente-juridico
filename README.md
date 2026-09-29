@@ -21,14 +21,14 @@ Toda resposta cita a fonte no formato `[doc 7878 — Sentença, 18/02/2026]`, `[
 
 - macOS ou Linux com **8 GB de RAM** (o projeto foi desenvolvido e medido num MacBook M1 de 8 GB).
 - [uv](https://docs.astral.sh/uv/) — instala o Python 3.12 e as dependências: `brew install uv` (ou `curl -LsSf https://astral.sh/uv/install.sh | sh`).
-- [Ollama](https://ollama.com/download) para o modelo local, **ou** uma chave do Google AI Studio para o Gemini na nuvem (ver [Trocar de modelo](#trocar-de-modelo)).
+- [Ollama](https://ollama.com/download) instalado e aberto, para o modelo local, **ou** uma chave do Google AI Studio para o Gemini na nuvem (ver [Trocar de modelo](#trocar-de-modelo)).
 
 ### Instalação
 
 ```bash
 git clone https://github.com/andrepiacentini/desafio-tjsc.git
 cd desafio-tjsc
-uv sync                                       # cria o .venv com o Python 3.12 e tudo que está no uv.lock
+uv sync                                       # cria o .venv com o Python 3.12 e tudo que está no uv.lock (alguns minutos na primeira vez)
 ollama pull qwen3:4b-instruct-2507-q4_K_M     # modelo local (~2,5 GB); pule se for usar só o Gemini
 cp .env.example .env                          # já vem com o modelo local como padrão
 ```
@@ -43,7 +43,7 @@ O banco `desafio.sqlite` já está no repositório e é aberto **somente para le
 uv run chainlit run app.py -w
 ```
 
-Abra <http://localhost:8000>. A tela inicial oferece as quatro perguntas do edital como atalhos. Cada resposta traz, abaixo, "Consultou o banco de dados" com os passos do agente (o que ele pediu e o que o banco devolveu), o consumo de tokens e o custo. A engrenagem ao lado do campo de mensagem troca o modelo sem perder a conversa; o botão "Ver consumo" abre o painel de uso e a projeção de custo mensal.
+O navegador abre sozinho em <http://localhost:8000>. A tela inicial oferece as quatro perguntas do edital como atalhos. Cada resposta traz, abaixo, "Consultou o banco de dados" com os passos do agente (o que ele pediu e o que o banco devolveu), o consumo de tokens e o custo. A engrenagem ao lado do campo de mensagem troca o modelo sem perder a conversa; o botão "Ver consumo" abre o painel de uso e a projeção de custo mensal.
 
 ### Chat no terminal
 
@@ -139,6 +139,8 @@ O agente fala com o Ollama pelo endpoint compatível com OpenAI, que ignora o ta
 
    Depois, feche e abra o app do Ollama.
 
+No Linux, sem o app, as duas vão como variáveis de ambiente do serviço do Ollama (`OLLAMA_CONTEXT_LENGTH=16384` e `OLLAMA_KV_CACHE_TYPE=q8_0`); não foi testado neste projeto.
+
 Para conferir: depois de uma pergunta, `ollama ps` mostra `CONTEXT` em `16384` e o modelo em cerca de 3,9 GB. Com isso o modelo, a janela e o sistema cabem em cerca de 7 dos 8 GB; feche o que não for a demonstração.
 
 ## Mapa das pastas
@@ -154,6 +156,7 @@ desafio-tjsc/
 ├── chainlit.md               tela de boas-vindas do chat
 ├── prices.toml               preços dos modelos e cenários da projeção de custo
 ├── .env.example              todas as variáveis de ambiente, comentadas
+├── usage.sqlite              registro de consumo, criado na primeira resposta; fora do Git
 ├── src/case_assistant/       o pacote: db, tools, agent, prompts, session, cli, avaliação, uso e custo
 ├── tests/                    testes sem IA (pytest) e a bateria de avaliação (golden.yaml)
 ├── docs/
