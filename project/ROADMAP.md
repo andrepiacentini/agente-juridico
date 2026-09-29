@@ -38,10 +38,11 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E08 | [Minuta de sentença](epicos/E08-minuta-sentenca.md) | Minuta rotulada como proposta, ou recusa explicada | 5 | `[x]` |
 | E09 | [Bateria de perguntas de avaliação](epicos/E09-avaliacao.md) | Placar de acertos por modelo | 5 | `[x]` |
 | E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[x]` |
-| E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Resposta em menos de 30 s no MacBook de 8 GB | 6 | `[ ]` |
+| E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Tempo e memória do modelo local medidos, como plano B | 6 | `[ ]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[ ]` |
+| E13 | [Consumo e custo](epicos/E13-consumo-custo.md) | Custo por resposta e painel de consumo no chat, com projeção | 5 | `[ ]` |
 
-**Total: 80 tarefas.**
+**Total: 85 tarefas.**
 
 ## Ordem e dependências
 
@@ -51,11 +52,13 @@ E01 ──> E02 ──> E03 ──┬──> E05 ──> E06 ──> E07 ──>
                       └──> E04 ──────────> (entra no E05) ────┤
                                                               │
                              E10 (depois do E05) ─────────────┤
+                             E13 (depois do E10) ─────────────┤
                              E11 (depois do E09) ─────────────┘
 ```
 
 - **E01 a E04 não dependem de IA nenhuma.** São a base que justifica a arquitetura e podem ser testados e demonstrados sozinhos.
-- **Se faltar tempo:** cortar E10 (a demo fica no terminal) e depois E11. **Nunca cortar E07** — "reconhecer limites" é requisito do edital e o banco foi montado para testar isso.
+- **Ordem a partir do E10 (D71):** E13 (a medição de consumo alimenta a decisão de custo), depois o E11 enxuto, depois o E12.
+- **Se faltar tempo:** cortar o painel (T13.4) e depois E11. **Nunca cortar E07** — "reconhecer limites" é requisito do edital e o banco foi montado para testar isso.
 
 ## Marcos (o que dá para mostrar em cada ponto)
 
@@ -63,7 +66,7 @@ E01 ──> E02 ──> E03 ──┬──> E05 ──> E06 ──> E07 ──>
 |---|---|---|
 | M1 — Base pronta | E04 | `pytest` verde: as armadilhas do banco estão cobertas sem usar IA |
 | M2 — Agente conversa | E06 | As 4 perguntas do edital no terminal, sobre o processo 3161 |
-| M3 — Agente confiável | E09 | Placar da bateria de avaliação com modelo local e com Claude |
+| M3 — Agente confiável | E09 | Placar da bateria de avaliação com modelo local e com Gemini |
 | M4 — Pronto para banca | E12 | Demo completa no navegador + roteiro + respostas da arguição |
 
 ## Processos de referência (usados em várias tarefas)
