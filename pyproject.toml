@@ -25,3 +25,7 @@ build-backend = "uv_build"
 dev = [
     "pytest>=9.1.1",
 ]
+
+[tool.pytest.ini_options]
+# app.py (interface web) fica na raiz, fora do pacote: os testes da tela de boas-vindas o importam (T10.4).
+pythonpath = ["."]

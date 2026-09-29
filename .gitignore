@@ -11,8 +11,12 @@ __pycache__/
 .env.*
 !.env.example
 
-# Chainlit (dados gerados em execução)
-.chainlit/
+# Chainlit: o resto é gerado em execução; a configuração e a tradução pt-BR são do projeto (D70)
+.chainlit/*
+!.chainlit/config.toml
+!.chainlit/translations/
+.chainlit/translations/*
+!.chainlit/translations/pt-BR.json
 .files/
 
 # Sistema e editores
