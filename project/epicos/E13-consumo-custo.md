@@ -32,7 +32,7 @@
 - **Depende de:** T13.2, E10.
 - **Para explicar à banca:** "Quem usa vê, pergunta a pergunta, quanto aquilo custou."
 
-### T13.4 — Painel de consumo dentro do chat `[ ]`
+### T13.4 — Painel de consumo dentro do chat `[x]`
 - **Objetivo:** um botão "Ver consumo" no chat que mostra tabelas e gráficos do acumulado histórico, por sessão, por modelo e por tipo de pergunta.
 - **Passos:** ação do Chainlit que monta o painel na conversa; gráficos com o Plotly (elemento suportado pelo Chainlit; dependência nova); tabelas com os totais; tudo lido do registro da T13.1.
 - **Pronto quando:** depois de algumas perguntas nos dois modelos, o painel mostra os números certos e os gráficos na própria conversa.

@@ -506,6 +506,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** acumular o total da conversa na sessão do Chainlit, que duplicaria a conta do registro; mostrar o rodapé também no terminal, que a tarefa não pede.
 - **Uso de IA:** o Claude Code testou os dois modelos no Chrome, para ver o custo zero e o custo real na mesma conversa, e foi assim que viu o bloco de consultas vazio.
 
+### D75 — Painel de consumo dentro do chat, num clique, sem chamar o modelo
+- **Decisão:** o chat web ganhou o painel "Ver consumo": um resumo (respostas, [tokens](docs/glossario.md#token), custo, tempo médio), três tabelas (por modelo, por tipo de pergunta, conversas mais recentes) e três gráficos (custo por modelo, tokens de entrada e de saída por tipo de pergunta, custo acumulado no tempo), com os preços e o câmbio usados no rodapé. Abre pelo botão "Ver consumo" embaixo de cada resposta, num clique, ou pelo comando junto do campo de mensagem, num chat ainda vazio. Monta tudo a partir do registro de uso e da tabela de preços, sem passar pelo agente: abrir o painel não consome tokens. O cálculo (`usage_report.py`) não conhece Chainlit nem gráficos; a apresentação (`usage_panel.py`, tabelas em Markdown e gráficos do Plotly) não conhece o Chainlit; o `app.py` só junta as duas. O tipo de pergunta sai das [ferramentas](docs/glossario.md#ferramenta) chamadas, na ordem: minuta, leitura de documentos, consulta livre (SQL), busca, cadastro e andamento, sem consulta. O Plotly entrou nas dependências. A T13.4 fica concluída.
+- **Resultado no navegador:** com as 8 respostas registradas até aqui (7 no [modelo local](docs/glossario.md#modelo-local), 1 no Gemini), o painel mostrou 50.864 tokens e R$ 0,0150 no total, a divisão por modelo (local: 7 respostas, R$ 0,0000, 28 s em média; Gemini: 1, R$ 0,0150, 2 s), por tipo de pergunta e as 6 conversas, e os três gráficos na própria conversa.
+- **Dois ajustes depois do primeiro teste:** o nome do Gemini voltou a sair "google .8-flash" na tabela de conversas (o mesmo ":gemini-3" que o Markdown lê como emoji, D69), e passou a ir como código; e o comando exigia marcar o botão e ainda digitar alguma coisa para enviar, desajeitado numa demonstração, então ganhou a companhia do botão de um clique embaixo de cada resposta.
+- **Descartado:** um relatório HTML gerado por comando (D71); abrir o painel perguntando ao agente, que gastaria tokens para mostrar números que o código já tem.
+- **Uso de IA:** o Claude Code testou o painel no Chrome com os números reais do registro; num dos testes, a ferramenta de navegador falhou e o autor clicou no botão para que o teste seguisse.
+
 ---
 
 ## Pendências de decisão
