@@ -499,6 +499,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** o custo que o Pydantic AI calcula sozinho (`usage.cost`), que vem de uma tabela de preços embutida na biblioteca, sem data nem fonte à vista e possivelmente desatualizada; custo zero para modelo sem preço, que faria um modelo pago parecer de graça no painel.
 - **Uso de IA:** o Claude Code consultou a página oficial de preços do Google e a API da PTAX do Banco Central em vez de usar valores de memória, e foi assim que achou a mudança de preço de janeiro de 2027.
 
+### D74 — Cada resposta do chat web mostra, logo abaixo, o que consumiu e o total da conversa
+- **Decisão:** abaixo de cada resposta, em itálico, o chat web mostra os [tokens](docs/glossario.md#token), o custo em reais e o tempo da resposta, e o total da conversa: "3.665 tokens · R$ 0,0150 · 2 s — nesta conversa: 10.941 tokens · R$ 0,0150". O total sai do próprio registro de uso, filtrado pela sessão, que é a fonte única dos números. O custo vai com 4 casas, porque uma pergunta custa frações de centavo; se alguma resposta da conversa usou modelo sem preço, o rodapé diz "custo desconhecido" em vez de somar só as conhecidas. O formato de número brasileiro (`brazilian_number`) foi para `citations.py`, e o valor da causa em `tools.py`, que fazia a mesma conta à mão, passou a usá-lo. Sem tabela de preços, o chat funciona sem o rodapé. A T13.3 fica concluída.
+- **Resultado no navegador:** no [modelo local](docs/glossario.md#modelo-local), "qual o assunto do processo 3161?" → "7.276 tokens · R$ 0,0000 · 41 s"; depois da troca para o Gemini, "e quem é o juiz?", respondida pelo histórico → "3.665 tokens · R$ 0,0150 · 2 s — nesta conversa: 10.941 tokens · R$ 0,0150". Uma pergunta de seguimento no Gemini custou R$ 0,015.
+- **Ajuste feito no teste:** quando o modelo responde pelo histórico, sem consultar o banco, aparecia um bloco "Consultou o banco de dados" vazio, o que é falso. O bloco passou a ser removido quando a resposta não chamou nenhuma [ferramenta](docs/glossario.md#ferramenta) (sabido pelo próprio registro de uso).
+- **Descartado:** acumular o total da conversa na sessão do Chainlit, que duplicaria a conta do registro; mostrar o rodapé também no terminal, que a tarefa não pede.
+- **Uso de IA:** o Claude Code testou os dois modelos no Chrome, para ver o custo zero e o custo real na mesma conversa, e foi assim que viu o bloco de consultas vazio.
+
 ---
 
 ## Pendências de decisão

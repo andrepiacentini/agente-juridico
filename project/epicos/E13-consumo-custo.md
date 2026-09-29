@@ -25,7 +25,7 @@
 - **Depende de:** T13.1.
 - **Para explicar à banca:** "O preço é configuração com data e fonte: quando o fornecedor muda a tabela, muda uma linha, não o código."
 
-### T13.3 — Consumo em cada resposta `[ ]`
+### T13.3 — Consumo em cada resposta `[x]`
 - **Objetivo:** mostrar, abaixo de cada resposta do chat web, tokens, custo e tempo ("3.214 tokens · R$ 0,004 · 11 s"), e o acumulado da sessão.
 - **Passos:** rodapé discreto na mensagem; total da sessão acumulado junto com o histórico.
 - **Pronto quando:** uma pergunta no navegador mostra o rodapé com os números do registro.

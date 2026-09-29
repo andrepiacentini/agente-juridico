@@ -7,7 +7,7 @@ from collections.abc import Callable
 from typing import Any
 
 from case_assistant.case_number import check_digits, extract_case_number, extract_case_numbers, has_valid_check_digits
-from case_assistant.citations import REGISTRY_SOURCE, brazilian_date, document_source, movement_source
+from case_assistant.citations import REGISTRY_SOURCE, brazilian_date, brazilian_number, document_source, movement_source
 from case_assistant.db import ensure_search_index
 from case_assistant.text_normalization import comparable_district, comparable_text
 
@@ -280,7 +280,7 @@ def _registry_warnings(case: dict[str, Any]) -> list[str]:
 
 
 def _brazilian_currency(value: float) -> str:
-    return "R$ " + f"{value:,.2f}".replace(",", "\u00a0").replace(".", ",").replace("\u00a0", ".")
+    return f"R$ {brazilian_number(value, 2)}"
 
 
 
