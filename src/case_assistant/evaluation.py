@@ -17,13 +17,15 @@ from typing import Any
 import yaml
 from dotenv import load_dotenv
 from pydantic_ai import Agent
-from pydantic_ai.messages import ModelMessage, ToolCallPart
+from pydantic_ai.messages import ModelMessage
 
 from case_assistant.agent import MODEL_VARIABLE, ModelNotConfiguredError, build_agent, run_with_retries
 from case_assistant.session import Session, open_session
 from case_assistant.text_normalization import comparable_text
+from case_assistant.usage import UsageLog, record_answer, usage_record
 
 DEFAULT_GOLDEN_PATH = Path("tests/golden.yaml")
+EVALUATION_CHANNEL = "bateria"
 
 
 @dataclass(frozen=True)
@@ -33,6 +35,8 @@ class TurnResult:
     tools_called: list[str]
     failures: list[str]
     seconds: float
+    input_tokens: int = 0
+    output_tokens: int = 0
 
 
 @dataclass(frozen=True)
@@ -72,8 +76,17 @@ def _alternatives(criterion: str | list[str]) -> list[str]:
     return criterion if isinstance(criterion, list) else [criterion]
 
 
-def run_case(agent: Agent[Session, str], case: dict[str, Any], clock: Callable[[], float] = time.monotonic) -> CaseResult:
-    """Uma conversa por caso, numa sessão nova: as perguntas seguem na ordem, com o histórico."""
+def run_case(
+    agent: Agent[Session, str],
+    case: dict[str, Any],
+    clock: Callable[[], float] = time.monotonic,
+    usage_log: UsageLog | None = None,
+    model: str = "",
+) -> CaseResult:
+    """Uma conversa por caso, numa sessão nova: as perguntas seguem na ordem, com o histórico.
+
+    Os tokens de cada pergunta ficam no resultado e, com `usage_log`, no registro de uso (E13).
+    """
     result = CaseResult(case_id=case["id"])
     history: list[ModelMessage] = []
     with open_session() as session:
@@ -84,15 +97,15 @@ def run_case(agent: Agent[Session, str], case: dict[str, Any], clock: Callable[[
             except Exception as error:  # fronteira da bateria: um caso que quebra não derruba os outros
                 result.turns.append(TurnResult(turn["ask"], "", [], [f"erro do modelo: {error}"], clock() - start))
                 break  # as perguntas seguintes dependem desta
-            tools_called = _tool_names(run.new_messages())
-            failures = turn_failures(turn, run.output, tools_called)
-            result.turns.append(TurnResult(turn["ask"], run.output, tools_called, failures, clock() - start))
+            usage = usage_record(run, EVALUATION_CHANNEL, session, model, clock() - start)
+            if usage_log is not None:
+                record_answer(usage_log, usage)
+            failures = turn_failures(turn, run.output, usage.tools)
+            result.turns.append(
+                TurnResult(turn["ask"], run.output, usage.tools, failures, usage.seconds, usage.input_tokens, usage.output_tokens)
+            )
             history = run.all_messages()
     return result
-
-
-def _tool_names(messages: list[ModelMessage]) -> list[str]:
-    return [part.tool_name for message in messages for part in message.parts if isinstance(part, ToolCallPart)]
 
 
 def format_report(results: list[CaseResult]) -> str:
@@ -124,13 +137,15 @@ def main(argv: list[str] | None = None) -> int:
         print(error)
         return 2
     cases = [case for case in load_cases(arguments.golden) if not arguments.case or case["id"] in arguments.case]
+    model = arguments.model or os.environ.get(MODEL_VARIABLE, "")
+    usage_log = UsageLog.from_environment()
     results = []
     for case in cases:
-        results.append(run_case(agent, case))
+        results.append(run_case(agent, case, usage_log=usage_log, model=model))
         print(format_case(results[-1]))  # cada caso ao terminar: a bateria inteira leva minutos no modelo local
     print(f"\n{format_score(results)}")
     if arguments.output:
-        _save_answers(arguments.output, arguments.model or os.environ.get(MODEL_VARIABLE, ""), results)
+        _save_answers(arguments.output, model, results)
     return 0 if all(case.passed for case in results) else 1
 
 

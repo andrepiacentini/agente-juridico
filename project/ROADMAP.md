@@ -40,7 +40,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[x]` |
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Tempo e memória do modelo local medidos, como plano B | 6 | `[ ]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[ ]` |
-| E13 | [Consumo e custo](epicos/E13-consumo-custo.md) | Custo por resposta e painel de consumo no chat, com projeção | 5 | `[ ]` |
+| E13 | [Consumo e custo](epicos/E13-consumo-custo.md) | Custo por resposta e painel de consumo no chat, com projeção | 5 | `[~]` |
 
 **Total: 85 tarefas.**
 

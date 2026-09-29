@@ -11,6 +11,9 @@ __pycache__/
 .env.*
 !.env.example
 
+# Registro de uso das respostas (E13): dado local de cada máquina
+usage.sqlite
+
 # Chainlit: o resto é gerado em execução; a configuração e a tradução pt-BR são do projeto (D70)
 .chainlit/*
 !.chainlit/config.toml

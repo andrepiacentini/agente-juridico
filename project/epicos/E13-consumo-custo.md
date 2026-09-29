@@ -11,9 +11,9 @@
 
 ---
 
-### T13.1 — Registrar o uso de cada resposta `[ ]`
+### T13.1 — Registrar o uso de cada resposta `[x]`
 - **Objetivo:** gravar, a cada resposta, sessão, modelo, tokens de entrada e de saída, ferramentas chamadas, tempo e data.
-- **Passos:** ler os tokens de `result.usage()` do Pydantic AI; gravar num SQLite próprio, no caminho de uma variável do `.env`; registrar no chat web, no terminal e na bateria (a bateria também passa a gravar os tokens no JSON de respostas). Testes sem IA.
+- **Passos:** ler os tokens de `result.usage` do Pydantic AI; gravar num SQLite próprio, no caminho de uma variável do `.env`; registrar no chat web, no terminal e na bateria (a bateria também passa a gravar os tokens no JSON de respostas). Testes sem IA.
 - **Pronto quando:** uma pergunta no chat, no terminal e na bateria gera o registro, e os testes confirmam que o `desafio.sqlite` não é tocado.
 - **Depende de:** E10.
 - **Para explicar à banca:** "Cada resposta deixa um registro de quanto consumiu: é a base de qualquer conversa sobre custo."
