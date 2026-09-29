@@ -1,8 +1,9 @@
 """Laço do agente com Pydantic AI: modelo escolhido por `LLM_MODEL`, ferramentas e estado da sessão (E05, E06)."""
 
+import asyncio
 import os
 import time
-from collections.abc import Callable
+from collections.abc import Awaitable, Callable
 from typing import Any
 
 from pydantic_ai import Agent, ModelRetry, RunContext
@@ -139,16 +140,42 @@ def run_with_retries(
         try:
             return agent.run_sync(question, message_history=history, deps=session)
         except ModelAPIError as error:
-            reason = _temporary_failure_reason(error)
-            if reason is None or attempt == MAX_ATTEMPTS:
-                raise
-            wait = RETRY_WAIT_SECONDS * attempt
-            on_retry(
-                f"O serviço do modelo está indisponível no momento ({reason}). "
-                f"Tentando de novo em {wait} s… (tentativa {attempt + 1} de {MAX_ATTEMPTS})"
-            )
+            wait, notice = _retry_plan(error, attempt)
+            on_retry(notice)
             sleep(wait)
     raise AssertionError("inalcançável: a última tentativa devolve ou relança")
+
+
+async def run_with_retries_async(
+    agent: Agent[Session, str] | Any,
+    question: str,
+    history: list[ModelMessage],
+    session: Session | None,
+    on_retry: Callable[[str], Awaitable[None]],
+    sleep: Callable[[float], Awaitable[None]] = asyncio.sleep,
+) -> Any:
+    """Como run_with_retries, para a interface web: roda no laço assíncrono, na mesma thread da conexão da sessão."""
+    for attempt in range(1, MAX_ATTEMPTS + 1):
+        try:
+            return await agent.run(question, message_history=history, deps=session)
+        except ModelAPIError as error:
+            wait, notice = _retry_plan(error, attempt)
+            await on_retry(notice)
+            await sleep(wait)
+    raise AssertionError("inalcançável: a última tentativa devolve ou relança")
+
+
+def _retry_plan(error: ModelAPIError, attempt: int) -> tuple[float, str]:
+    """Quanto esperar e o que avisar antes da próxima tentativa; relança o erro se não vale tentar de novo."""
+    reason = _temporary_failure_reason(error)
+    if reason is None or attempt == MAX_ATTEMPTS:
+        raise error
+    wait = RETRY_WAIT_SECONDS * attempt
+    notice = (
+        f"O serviço do modelo está indisponível no momento ({reason}). "
+        f"Tentando de novo em {wait} s… (tentativa {attempt + 1} de {MAX_ATTEMPTS})"
+    )
+    return wait, notice
 
 
 def _temporary_failure_reason(error: ModelAPIError) -> str | None:
