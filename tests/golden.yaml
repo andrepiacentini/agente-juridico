@@ -1,0 +1,275 @@
+# Bateria de avaliação do agente (E09).
+#
+# Cada caso é uma conversa: uma ou mais perguntas, na ordem, na mesma sessão. Os critérios valem para a resposta
+# da pergunta onde estão escritos; uma pergunta sem critérios só prepara a conversa (por exemplo, põe um processo
+# em foco). Quem roda a bateria é o comando da T9.4; os testes da suíte (pytest) só conferem este formato.
+#
+# Campos de um caso:
+#   id:           nome curto e único, em minúsculas, com hífens (aparece no placar).
+#   description:  (opcional) o que o caso testa, em uma frase.
+#   source:       (opcional) roteiro de onde o caso veio, em docs/roteiros/.
+#   turns:        a lista de perguntas.
+#
+# Campos de cada pergunta (turn):
+#   ask:               o texto da pergunta, exatamente como o usuário digitaria.
+#   must_call:         (opcional) ferramentas que o agente tem que chamar ao responder esta pergunta,
+#                      ex.: [find_case]. Pega a resposta certa por acaso, sem consulta ao banco (D51).
+#   must_contain:      (opcional) trechos que a resposta tem que ter. Um item pode ser uma lista de
+#                      alternativas, e basta uma delas: ["não consta", "não encontrado"].
+#   must_not_contain:  (opcional) trechos que a resposta não pode ter; um item-lista falha se qualquer
+#                      alternativa aparecer.
+#
+# A comparação ignora maiúsculas, minúsculas e acentos ("Não Consta" casa com "nao consta").
+# O caso passa só se todas as perguntas com critérios passarem.
+
+cases:
+  # Exemplo: o número novo, depois de um processo em foco, tem que ser consultado antes de o agente dizer que
+  # não consta (T7.5). Sem o validador da resposta, o modelo local dizia "não consta" sem consultar.
+  - id: inexistente-depois-de-foco
+    description: número inexistente pedido depois de outro processo em foco
+    source: docs/roteiros/processo-inexistente.md
+    turns:
+      - ask: qual o assunto do processo 0000007-79.2023.8.99.9014?   # só põe o 3161 em foco
+      - ask: resuma o processo 0000999-40.2023.8.99.9014
+        must_call: [find_case]
+        must_contain:
+          - ["não consta", "não encontrado", "não foi encontrado"]
+        must_not_contain:
+          - Acidente de Trânsito      # assunto do 3161
+          - João Ziegler Rocha        # autor do 3161
+          - "3.796,73"                # valor da causa do 3161
+
+  # --- As 4 perguntas do edital (T9.2), no melhor caso do banco (3161: 19 documentos, sentença parcialmente
+  # procedente, juiz aposentado) e no pior (processo 1: nenhum documento, "julgado" em minúsculas).
+
+  - id: edital-1-resumo-3161
+    description: pergunta 1 do edital no processo com documentos
+    turns:
+      - ask: Resuma o processo 0000007-79.2023.8.99.9014, destacando os principais fatos e o andamento processual.
+        must_call: [find_case, list_movements, read_document]
+        must_contain:
+          - ["colisão", "acidente"]              # fato central da petição inicial
+          - ["18/02/2026"]                       # data da sentença
+          - "[doc"                               # cita documento
+        must_not_contain:
+          - "2026-02-18"                         # data no formato do banco (D53)
+
+  - id: edital-1-resumo-processo-1
+    description: pergunta 1 do edital no processo sem documentos
+    source: docs/roteiros/processo-sem-documentos.md
+    turns:
+      - ask: Resuma o processo 0000001-43.2021.8.99.9014, destacando os principais fatos e o andamento processual.
+        must_call: [find_case, list_movements]
+        must_contain:
+          - ["não há documento", "nenhum documento", "sem documentos", "não consta", "não há peças"]
+          - "02/02/2022"                         # movimentação de sentença
+        must_not_contain:
+          - "[doc"                               # não há documento para citar
+          - warning                              # em aberto (D53): rótulo "[warning: …]" no resumo
+
+  - id: edital-2-partes-3161
+    description: pergunta 2 do edital no processo com documentos
+    turns:
+      - ask: Quem são as partes, o magistrado e os advogados do processo 0000007-79.2023.8.99.9014? Quais são os pedidos apresentados?
+        must_call: [list_parties]
+        must_contain:
+          - João Ziegler Rocha
+          - Operadora de Saúde Cambirela
+          - Luiz Bonetti Vasconcelos
+          - aposentado
+          - Carlos Gava Reis                     # advogado do autor (OAB/SC 99.170)
+          - Sônia Weber Azevedo                  # advogada da ré (OAB/SC 99.854)
+          - indenização                          # pedido da petição inicial
+
+  - id: edital-2-partes-processo-1
+    description: pergunta 2 do edital no processo sem documentos (sem advogados nem pedidos no banco)
+    turns:
+      - ask: Quem são as partes, o magistrado e os advogados do processo 0000001-43.2021.8.99.9014? Quais são os pedidos apresentados?
+        must_call: [list_parties]
+        must_contain:
+          - Carlos Bertoldi Boeing
+          - Pedro Vieceli
+          - Banco Meridional
+          - Pedro Cunha Nichele
+          - ["não consta", "não há", "não foi possível", "não estão disponíveis", "não é possível"]
+        must_not_contain:
+          - OAB                                  # advogados só existem nos documentos, e não há documentos
+
+  - id: edital-3-julgamento-3161
+    description: pergunta 3 do edital no processo com o texto da sentença
+    turns:
+      - ask: O processo 0000007-79.2023.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?
+        must_call: [read_document]
+        must_contain:
+          - parcialmente procedente
+          - "1.523,18"                           # valor da condenação na sentença
+          - ["excessivo", "razoabilidade", "proporcionalidade"]   # fundamento do acolhimento parcial
+          - "[doc 7878"
+
+  - id: edital-3-julgamento-processo-1
+    description: pergunta 3 do edital no processo com data de sentença e sem o texto
+    source: docs/roteiros/sentenca-sem-texto.md
+    turns:
+      - ask: O processo 0000001-43.2021.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?
+        must_call: [find_case]
+        must_contain:
+          - "02/02/2022"
+          - ["não está no banco", "não consta", "não há", "não está disponível", "não é possível"]
+        # Sem must_not_contain de resultado: "não é possível saber se foi procedente ou improcedente" é resposta
+        # certa e casaria com qualquer palavra de decisão.
+
+  - id: edital-4-minuta-3161
+    description: pergunta 4 do edital no processo com petição inicial e contestação
+    source: docs/roteiros/minuta-3161.md
+    turns:
+      - ask: Elabore uma minuta de sentença para o processo 0000007-79.2023.8.99.9014, com base nos fatos e documentos disponíveis.
+        must_call: [prepare_draft, read_document]
+        must_contain:
+          - PROPOSTA DE MINUTA — texto não proferido
+          - RELATÓRIO
+          - FUNDAMENTAÇÃO
+          - DISPOSITIVO
+          - "[doc 7865"                          # cita a petição inicial
+        must_not_contain:
+          - "1.523,18"                           # valor da sentença real: sinal de que a copiou (D57)
+          - Juiz(a) de Direito                   # assinatura: a minuta não é atribuída a um juiz
+
+  - id: edital-4-minuta-processo-1
+    description: pergunta 4 do edital no processo sem petição inicial nem contestação
+    source: docs/roteiros/minuta-recusada.md
+    turns:
+      - ask: Elabore uma minuta de sentença para o processo 0000001-43.2021.8.99.9014, com base nos fatos e documentos disponíveis.
+        must_call: [prepare_draft]
+        must_contain:
+          - petição inicial
+          - contestação
+        must_not_contain:
+          - PROPOSTA DE MINUTA
+          - DISPOSITIVO                          # "julgo" ficou de fora: está dentro de "julgou"
+
+  # --- Armadilhas do banco (T9.3), tiradas dos roteiros do E06 ao E08. Os casos marcados "em aberto" repetem
+  # falhas que ficaram registradas sem conserto: a bateria mede se elas continuam acontecendo.
+
+  - id: troca-de-processo
+    description: o foco acompanha o número novo e volta ao primeiro sem misturar os dados (E06)
+    source: docs/roteiros/troca-de-processo.md
+    turns:
+      - ask: Qual o assunto do processo 0000007-79.2023.8.99.9014?
+        must_contain: [Acidente de Trânsito]
+      - ask: Quem é o juiz?
+        must_contain: [Luiz Bonetti Vasconcelos, aposentado]
+        must_not_contain: [Pedro Cunha Nichele]
+      - ask: E o processo 0000001-43.2021.8.99.9014, qual o assunto?
+        must_call: [find_case]
+        must_contain: [Rescisão Contratual]
+        must_not_contain: [Acidente de Trânsito]
+      - ask: e as partes?
+        must_contain: [Carlos Bertoldi Boeing, Pedro Vieceli, Banco Meridional]
+        must_not_contain: [João Ziegler Rocha, Cambirela, advogado]
+      - ask: qual o valor da causa?
+        must_contain: ["21.495,98"]
+        must_not_contain: ["3.796,73"]
+      - ask: "Voltando ao 0000007-79.2023.8.99.9014: quem são as partes?"
+        must_contain: [João Ziegler Rocha, Operadora de Saúde Cambirela]
+        must_not_contain: [Carlos Bertoldi Boeing, Banco Meridional]
+
+  - id: processo-inexistente
+    description: número com dígito verificador certo, fora do banco (T7.5)
+    source: docs/roteiros/processo-inexistente.md
+    turns:
+      - ask: resuma o processo 0000999-40.2023.8.99.9014
+        must_call: [find_case]
+        must_contain:
+          - ["não consta", "não encontrado", "não foi encontrado"]
+        must_not_contain: [dígito verificador]
+
+  - id: processo-existente-depois-de-foco
+    description: número novo que existe, depois de outro em foco; resumo completo e citado (T7.5, D51 e D53, em aberto)
+    source: docs/roteiros/processo-inexistente.md
+    turns:
+      - ask: qual o assunto do processo 0000007-79.2023.8.99.9014?
+      - ask: resuma o processo 0000001-43.2021.8.99.9014
+        must_call: [find_case, list_movements]   # em aberto (D51): depois da nova tentativa, só find_case
+        must_contain:
+          - Rescisão Contratual
+          - ["[cadastro do processo]", "[mov."]  # em aberto (D53): o resumo curto saiu sem citação
+        must_not_contain:
+          - não consta no banco o processo       # "não foi encontrado" ficaria de fora: casa com "nenhum documento foi encontrado"
+          - Acidente de Trânsito
+
+  - id: digito-verificador-errado
+    description: o 3161 com um dígito trocado gera aviso de digitação (T7.8)
+    source: docs/roteiros/digito-verificador.md
+    turns:
+      - ask: resuma o 0000007-78.2023.8.99.9014
+        must_call: [find_case]
+        must_contain: [dígito verificador, digitação]
+        must_not_contain: [Acidente de Trânsito, João Ziegler Rocha, com o usuário]
+
+  - id: magistrado-aposentado
+    description: juiz que consta como aposentado (T7.3)
+    source: docs/roteiros/magistrado-ausente-ou-aposentado.md
+    turns:
+      - ask: quem é o juiz do processo 0000007-79.2023.8.99.9014?
+        must_call: [find_case]
+        must_contain: [Luiz Bonetti Vasconcelos, aposentado, "[cadastro do processo]"]
+
+  - id: magistrado-ausente
+    description: processo sem magistrado, com um servidor assinando as peças (T7.3)
+    source: docs/roteiros/magistrado-ausente-ou-aposentado.md
+    turns:
+      - ask: quem é o juiz do processo 0000005-75.2025.8.99.9035?
+        must_call: [find_case]
+        must_contain:
+          - ["não consta", "sem magistrado", "não possui magistrado", "não há magistrado", "não tem magistrado"]
+        must_not_contain:
+          - Luiz Ehlke Leal                      # servidor judiciário, não juiz
+          - "campo"                              # nome de campo interno (D49): "o campo 'judge'"
+
+  - id: homonimo
+    description: nome com mais de uma pessoa; pergunta de qual se trata e depois responde só sobre a escolhida (T7.4)
+    source: docs/roteiros/nome-com-mais-de-uma-pessoa.md
+    turns:
+      - ask: quais os processos de Adriana Bittencourt?
+        must_call: [search_parties]
+        must_contain:
+          - "999.125.243-15"
+          - "999.332.735-33"
+          - ["de qual", "qual delas", "qual das"]
+        must_not_contain: [Pergunte de qual]     # instrução ao modelo repassada ao usuário (D50)
+      - ask: a do CPF 999.125.243-15
+        must_contain:
+          - "0000018-16.2024.8.99.9001"
+          - ["[cadastro do processo]", "[mov."]  # em aberto (D53): o cartão saiu sem citar o cadastro
+        must_not_contain:
+          - "0000027-05.2020.8.99.9005"          # processo da outra Adriana Bittencourt
+          - "09/11/2025"                         # a data errada de antes da D53; a certa (17/11/2025) não é
+                                                 # exigida: "a do CPF…" não pede a data da sentença (D65)
+          - processo ativo
+
+  - id: pergunta-impossivel
+    description: dado que o banco não tem (T7.6)
+    source: docs/roteiros/limite-de-tentativas-sql.md
+    turns:
+      - ask: qual a idade média das partes dos processos autuados em 2024?
+        must_contain:
+          - idade
+          - ["não consta", "não está", "não há", "não existe", "não possui", "não é possível"]
+
+  - id: filtro-sem-valor
+    description: busca vazia por filtro errado não vira "não consta" falso (T7.9, em aberto quanto a refazer a busca)
+    source: docs/roteiros/filtro-sem-valor.md
+    turns:
+      - ask: qual o percentil 90 do valor da causa por classe processual?
+        must_not_contain:
+          - não consta processo com valor da causa
+          - não consta processo com valor
+
+  - id: minuta-redija-a-sentenca
+    description: pedido de minuta sem a palavra "minuta" (T8.4, em aberto)
+    source: docs/roteiros/minuta-recusada.md
+    turns:
+      - ask: redija a sentença do processo 0000001-43.2021.8.99.9014
+        must_call: [prepare_draft]               # em aberto (D59): lido como pedido da sentença existente
+        must_contain: [petição inicial, contestação]
+        must_not_contain: [PROPOSTA DE MINUTA, DISPOSITIVO]

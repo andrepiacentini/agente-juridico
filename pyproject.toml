@@ -10,10 +10,12 @@ dependencies = [
     "chainlit>=2.12.0",
     "pydantic-ai-slim[anthropic,google,openai]>=2.50.0",
     "python-dotenv>=1.2.3",
+    "pyyaml>=6.0.3",
 ]
 
 [project.scripts]
 case-assistant = "case_assistant.cli:main"
+case-assistant-eval = "case_assistant.evaluation:main"
 
 [build-system]
 requires = ["uv_build>=0.12.19,<0.13.0"]
