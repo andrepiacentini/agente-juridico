@@ -19,6 +19,11 @@ def brazilian_date(iso_date: str | None) -> str | None:
     return f"{day}/{month}/{year}"
 
 
+def brazilian_number(value: float, decimals: int) -> str:
+    """Número no formato brasileiro: ponto no milhar e vírgula nos decimais (7.100; 0,0188; 21.495,98)."""
+    return f"{value:,.{decimals}f}".replace(",", "\u00a0").replace(".", ",").replace("\u00a0", ".")
+
+
 def movement_source(code: int, description: str, iso_date: str) -> str:
     return f"[mov. {code} — {description}, {brazilian_date(iso_date)}]"
 

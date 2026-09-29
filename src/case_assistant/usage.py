@@ -69,11 +69,13 @@ class UsageLog:
         with closing(self._connect()) as connection, connection:
             connection.execute(f"INSERT INTO answer_usage VALUES ({', '.join('?' * len(values))})", values)
 
-    def records(self) -> list[UsageRecord]:
+    def records(self, session_id: str | None = None) -> list[UsageRecord]:
+        """Todas as respostas registradas, na ordem; com `session_id`, só as de uma conversa."""
         if not self.path.is_file():
             return []
+        query = f"SELECT {', '.join(_COLUMNS)} FROM answer_usage WHERE ? IS NULL OR session_id = ? ORDER BY rowid"
         with closing(self._connect()) as connection:
-            rows = connection.execute(f"SELECT {', '.join(_COLUMNS)} FROM answer_usage ORDER BY rowid").fetchall()
+            rows = connection.execute(query, (session_id, session_id)).fetchall()
         return [UsageRecord(**{**dict(zip(_COLUMNS, row)), "tools": json.loads(row[_COLUMNS.index("tools")])}) for row in rows]
 
     def _connect(self) -> sqlite3.Connection:

@@ -4,6 +4,7 @@ Camada fina sobre o mesmo agente do terminal: aqui não há SQL nem regra de neg
 Uso: uv run chainlit run app.py
 """
 
+import logging
 import os
 import time
 from collections.abc import AsyncIterable
@@ -19,7 +20,11 @@ from pydantic_ai.messages import AgentStreamEvent, FunctionToolCallEvent, Functi
 from case_assistant.agent import ModelNotConfiguredError, ModelOption, build_agent, model_options, run_with_retries_async
 from case_assistant.session import Session, open_session
 from case_assistant.tool_display import tool_call_label, tool_result_text
+from case_assistant.pricing import PriceTable
 from case_assistant.usage import UsageLog, record_answer, usage_record
+from case_assistant.usage_footer import usage_footer
+
+logger = logging.getLogger(__name__)
 
 MODEL_FAILURE_MESSAGE = "Não consegui obter resposta do modelo: {error}"
 WEB_CHANNEL = "web"
@@ -73,6 +78,7 @@ async def start_chat() -> None:
     ).send()
     cl.user_session.set("model_options", options)
     cl.user_session.set("usage_log", UsageLog.from_environment())
+    cl.user_session.set("prices", _load_prices())
     agent = _build_agent(options[0])
     resources = ExitStack()
     cl.user_session.set("resources", resources)
@@ -104,11 +110,14 @@ async def answer(message: cl.Message) -> None:
         await queries.remove()
         await cl.Message(content=MODEL_FAILURE_MESSAGE.format(error=error)).send()
         return
-    await queries.update()
     usage = usage_record(result, WEB_CHANNEL, cl.user_session.get("session"), cl.user_session.get("model"), time.monotonic() - start)
+    if usage.tools:
+        await queries.update()
+    else:
+        await queries.remove()  # respondeu pelo histórico: um bloco "Consultou o banco de dados" vazio seria falso
     record_answer(cl.user_session.get("usage_log"), usage)
     cl.user_session.set("history", result.all_messages())
-    await cl.Message(content=result.output).send()
+    await cl.Message(content=result.output + _footer(usage)).send()
 
 
 @cl.on_settings_update
@@ -127,6 +136,23 @@ async def end_chat() -> None:
     resources = cl.user_session.get("resources")
     if resources is not None:
         resources.close()
+
+
+def _load_prices() -> PriceTable | None:
+    try:
+        return PriceTable.from_environment()
+    except (OSError, KeyError, ValueError) as error:  # sem tabela de preços, o chat funciona sem o rodapé de custo
+        logger.warning("tabela de preços indisponível: %s", error)
+        return None
+
+
+def _footer(usage) -> str:
+    """Consumo da resposta e da conversa, em itálico, abaixo do texto (T13.3)."""
+    prices = cl.user_session.get("prices")
+    if prices is None:
+        return ""
+    conversation = cl.user_session.get("usage_log").records(session_id=usage.session_id)
+    return f"\n\n*{usage_footer(usage, conversation, prices)}*"
 
 
 def _build_agent(option: ModelOption):
