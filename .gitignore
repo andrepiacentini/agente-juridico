@@ -29,3 +29,6 @@ usage.sqlite
 
 # Configuração local do Claude Code (a compartilhada, .claude/settings.json, é versionada)
 .claude/settings.local.json
+
+# Orientações só do apresentador (roteiro da demo, respostas da arguição): ficam só nesta máquina
+docs/apenas_para_mim/

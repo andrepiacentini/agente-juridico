@@ -20,7 +20,6 @@ Cada tarefa tem sempre os mesmos campos:
 | **Passos** | O "meio": o que fazer, na ordem |
 | **Pronto quando** | O "fim": como provar que terminou |
 | **Depende de** | O que precisa estar pronto antes |
-| **Para explicar à banca** | Uma frase para usar na apresentação |
 
 Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída · `[-]` cancelada (explicar no `DECISOES.md`).
 
@@ -58,16 +57,6 @@ E01 ──> E02 ──> E03 ──┬──> E05 ──> E06 ──> E07 ──>
 
 - **E01 a E04 não dependem de IA nenhuma.** São a base que justifica a arquitetura e podem ser testados e demonstrados sozinhos.
 - **Ordem a partir do E10 (D71):** E13 (a medição de consumo alimenta a decisão de custo), depois o E11 enxuto, depois o E12.
-- **Se faltar tempo:** cortar o painel (T13.4) e depois E11. **Nunca cortar E07** — "reconhecer limites" é requisito do edital e o banco foi montado para testar isso.
-
-## Marcos (o que dá para mostrar em cada ponto)
-
-| Marco | Após | O que demonstrar |
-|---|---|---|
-| M1 — Base pronta | E04 | `pytest` verde: as armadilhas do banco estão cobertas sem usar IA |
-| M2 — Agente conversa | E06 | As 4 perguntas do edital no terminal, sobre o processo 3161 |
-| M3 — Agente confiável | E09 | Placar da bateria de avaliação com modelo local e com Gemini |
-| M4 — Pronto para banca | E12 | Demo completa no navegador + roteiro + respostas da arguição |
 
 ## Processos de referência (usados em várias tarefas)
 
