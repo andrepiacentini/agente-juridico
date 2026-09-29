@@ -7,7 +7,7 @@
 
 ---
 
-### T10.1 — Chat mínimo no navegador `[ ]`
+### T10.1 — Chat mínimo no navegador `[x]`
 - **Objetivo:** `app.py` que conversa usando o mesmo agente do terminal.
 - **Passos:** criar sessão ao abrir o chat; guardar histórico por usuário; chamar o agente a cada mensagem.
 - **Pronto quando:** `uv run chainlit run app.py` abre o chat e responde a duas perguntas seguidas.

@@ -447,6 +447,13 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** devolver o texto da sentença no próprio `find_case`, que pouparia a leitura, mas quebraria a regra de que só `read_document` devolve texto; disparar o guarda por palavras da pergunta ("decisão", "fundamentos"), porque o que indica o problema é a resposta citar uma sentença que não foi lida.
 - **Uso de IA:** o Claude Code testou primeiro as saídas mais baratas (o texto da ferramenta, depois a regra nas instruções) e só propôs o validador quando elas não bastaram; o autor escolheu o validador. Os testes vieram antes do código, com um modelo simulado que cita a sentença sem ler, e um contra-teste confirmou que, sem o validador, os testes principais falham.
 
+### D67 — Chat web: camada fina sobre o mesmo agente, com uma versão assíncrona das novas tentativas
+- **Decisão:** `app.py` (Chainlit) abre uma sessão por conversa ao iniciar o chat, guarda o histórico da conversa, chama o mesmo agente do terminal a cada mensagem e fecha a sessão no fim; mostra uma mensagem clara se o modelo falhar, sem derrubar a conversa. Não tem SQL nem regra de negócio. Para isso, `agent.py` ganhou `run_with_retries_async`, a versão assíncrona de `run_with_retries`; a decisão de tentar de novo, esperar e avisar ficou numa função só (`_retry_plan`), usada pelas duas. A T10.1 fica concluída.
+- **Por quê a versão assíncrona:** o [Chainlit](docs/glossario.md#chainlit) roda tudo num laço assíncrono, e ali não dá para chamar o `run_sync` do terminal. Jogar a chamada para outra thread também não serve: a conexão [SQLite](docs/glossario.md#sqlite) só funciona na thread que a abriu, e as ferramentas são `async` justamente para rodar nessa thread (docstring de `agent_tools.py`). Com `await agent.run(...)`, sessão, ferramentas e conexão ficam na mesma thread.
+- **Resultado:** no navegador, com o [modelo local](docs/glossario.md#modelo-local), "qual o assunto do processo 0000007-79.2023.8.99.9014?" → "Acidente de Trânsito"; em seguida "e quem é o juiz?", sem número, → "Luiz Bonetti Vasconcelos. [cadastro do processo]": o histórico e o processo em foco funcionam na web como no terminal. A resposta não repetiu o aviso de juiz aposentado (a mesma falha da bateria, D65).
+- **Descartado:** `cl.make_async(run_with_retries)`, que rodaria o agente em outra thread e quebraria a conexão; guardar o arquivo `chainlit.md` que o Chainlit cria sozinho na primeira execução, em inglês — o texto de abertura é da T10.4.
+- **Uso de IA:** o Claude Code conferiu no navegador as duas perguntas seguidas (na primeira tentativa, a extensão do Chrome não estava conectada; o autor ajustou e o teste foi refeito).
+
 ---
 
 ## Pendências de decisão
