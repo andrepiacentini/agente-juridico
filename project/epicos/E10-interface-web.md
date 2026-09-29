@@ -28,7 +28,7 @@
 - **Depende de:** T10.1.
 - **Para explicar à banca:** "Na demo mostro a mesma pergunta nos dois modelos, lado a lado."
 
-### T10.4 — Tela de boas-vindas com exemplos `[ ]`
+### T10.4 — Tela de boas-vindas com exemplos `[x]`
 - **Objetivo:** mensagem inicial com as 4 perguntas do edital prontas para clicar.
 - **Passos:** mensagem de abertura com botões de exemplo usando o processo 3161.
 - **Pronto quando:** clicar num exemplo envia a pergunta.

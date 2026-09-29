@@ -20,9 +20,37 @@ from case_assistant.session import Session, open_session
 from case_assistant.tool_display import tool_call_label, tool_result_text
 
 MODEL_FAILURE_MESSAGE = "Não consegui obter resposta do modelo: {error}"
-QUERIES_STEP_NAME = "Consultas ao banco"
+QUERIES_STEP_NAME = "o banco de dados"  # a interface mostra "Consultou o banco de dados"
 MODEL_SETTING = "model"
+# As 4 perguntas do edital sobre o processo de referência, com o mesmo texto da bateria de avaliação (T10.4).
+REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"
+WELCOME_STARTERS = [
+    cl.Starter(
+        label="Resumo do processo",
+        message=f"Resuma o processo {REFERENCE_CASE_NUMBER}, destacando os principais fatos e o andamento processual.",
+    ),
+    cl.Starter(
+        label="Partes, juiz e advogados",
+        message=f"Quem são as partes, o magistrado e os advogados do processo {REFERENCE_CASE_NUMBER}? "
+        "Quais são os pedidos apresentados?",
+    ),
+    cl.Starter(
+        label="Já foi julgado?",
+        message=f"O processo {REFERENCE_CASE_NUMBER} já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?",
+    ),
+    cl.Starter(
+        label="Minuta de sentença",
+        message=f"Elabore uma minuta de sentença para o processo {REFERENCE_CASE_NUMBER}, "
+        "com base nos fatos e documentos disponíveis.",
+    ),
+]
 MODEL_CHANGED_MESSAGE = "A partir de agora, respondo com o modelo `{model}`. A conversa e o processo em foco continuam."
+
+
+@cl.set_starters
+async def welcome_starters(user: cl.User | None = None, language: str | None = None) -> list[cl.Starter]:
+    """Tela de boas-vindas: quem nunca viu o sistema clica numa pergunta do edital e vê o agente trabalhar."""
+    return WELCOME_STARTERS
 
 
 @cl.on_chat_start
