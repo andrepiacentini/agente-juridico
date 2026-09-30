@@ -13,7 +13,7 @@
 - **Pronto quando:** a tela inicial mostra imagem, subtítulo e crédito com os links funcionando, nos dois temas, e a tela de conversa mostra a imagem no lugar do logotipo.
 - **Depende de:** E10.
 
-### T14.2 — README: instalação no Windows e no Linux `[ ]`
+### T14.2 — README: instalação no Windows e no Linux `[x]`
 - **Objetivo:** o `README.md` explica a instalação e a execução também no Windows e nas principais distribuições Linux, com o mesmo passo a passo do macOS.
 - **Passos:** Windows: `uv` pelo instalador oficial (PowerShell), Ollama para Windows, `.env` e comandos no PowerShell, as variáveis do servidor Ollama (`OLLAMA_CONTEXT_LENGTH`, `OLLAMA_KV_CACHE_TYPE`) como variáveis de ambiente do usuário; Linux: `uv` pelo instalador oficial, Ollama pelo script oficial, variáveis no serviço do `systemd` (`systemctl edit ollama`), cobrindo Ubuntu/Debian e Fedora; mencionar o WSL como alternativa no Windows; testar o caminho Linux num contêiner Ubuntu (instalação, `uv sync`, `pytest`); o Windows fica marcado como não testado, a menos que haja uma máquina disponível; a seção do Ollama no README perde a frase "não foi testado neste projeto" no que for testado.
 - **Pronto quando:** o README tem uma subseção por sistema, o caminho Linux foi seguido num ambiente limpo e o que não foi testado está dito.
