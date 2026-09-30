@@ -143,7 +143,7 @@ ACTIVE_UNIT_STATUS = "ativa"
 IMPLAUSIBLE_CLAIM_VALUE = 100_000_000
 STATUSES_WITHOUT_SENTENCE = ("em andamento", "suspenso")
 ROLE_BY_POLE = {"ativo": "autor", "passivo": "réu"}
-# Sem o pedido do autor e a defesa do réu não há base para propor uma decisão (edital; plan.md §7).
+# Sem o pedido do autor e a defesa do réu não há base para propor uma decisão (edital; plan.md §4, regras do system prompt).
 # 1.586 processos têm as duas peças; 2.105 só a petição inicial; nenhum só a contestação.
 DRAFT_REQUIRED_DOCUMENT_TYPES = ("Petição Inicial", "Contestação")
 DRAFT_REQUIRED_DOCUMENT_CONTENT = {"Petição Inicial": "o pedido do autor", "Contestação": "a defesa do réu"}

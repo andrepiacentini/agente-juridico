@@ -273,3 +273,14 @@ cases:
         must_call: [prepare_draft]               # em aberto (D59): lido como pedido da sentença existente
         must_contain: [petição inicial, contestação]
         must_not_contain: [PROPOSTA DE MINUTA, DISPOSITIVO]
+
+  # --- Pergunta que falha de propósito (T12.5): a consulta natural estoura o tempo limite; o agente tem que admitir.
+  - id: pergunta-que-falha
+    description: consulta SQL que estoura os 5 s; o agente lê o erro, bate no teto de tentativas e admite (T12.5)
+    turns:
+      - ask: Com uma única consulta SQL, conte quantos documentos mencionam no texto o nome de alguma parte de um processo diferente do seu.
+        must_call: [run_sql]
+        must_contain:
+          - ["não foi possível", "não é possível", "excedeu", "tempo limite"]
+        must_not_contain:
+          - Não consta no banco               # o modelo local deu "não consta" falso depois de um LIKE sem sentido

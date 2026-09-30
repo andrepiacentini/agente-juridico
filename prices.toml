@@ -30,6 +30,16 @@ output = 7.50
 cache_read = 0.15
 
 [[models]]
+model = "anthropic:claude-sonnet-5-5"
+source = "https://platform.claude.com/docs/en/about-claude/pricing — Claude Sonnet 5.5, consultada em 2026-09-30"
+
+[[models.prices]]
+valid_from = "2026-09-30"   # data da página consultada; antes disso o preço não foi conferido
+input = 2.00
+output = 10.00
+cache_read = 0.20
+
+[[models]]
 model = "ollama:qwen3:4b-instruct-2507-q4_K_M"
 source = "Modelo local (Ollama): nada é cobrado por token. Energia e máquina não entram nesta conta."
 

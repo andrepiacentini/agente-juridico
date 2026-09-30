@@ -22,7 +22,7 @@ Repositório recém-iniciado, sem commits e sem código. Existem o PDF, o banco,
 brew install uv                    # só na primeira vez
 uv sync                            # Python 3.12 pinado; o Python do sistema é 3.14
 ollama pull qwen3:4b-instruct-2507-q4_K_M   # modelo local padrão (D25)
-uv run case-assistant              # chat no terminal (cli.py) — plano B da demo; implementado no E05
+uv run case-assistant              # chat no terminal (cli.py); implementado no E05
 uv run chainlit run app.py -w      # UI web; implementada no E10
 uv run pytest                      # testes (não precisam de LLM); também rodam na CI em todo PR
 uv run pytest tests/test_tools.py -k "without_documents"   # um teste (nomes em inglês, D19)

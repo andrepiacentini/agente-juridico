@@ -20,7 +20,6 @@ Cada tarefa tem sempre os mesmos campos:
 | **Passos** | O "meio": o que fazer, na ordem |
 | **Pronto quando** | O "fim": como provar que terminou |
 | **Depende de** | O que precisa estar pronto antes |
-| **Para explicar à banca** | Uma frase para usar na apresentação |
 
 Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída · `[-]` cancelada (explicar no `DECISOES.md`).
 
@@ -28,7 +27,7 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 
 | # | Épico | Resultado visível | Tarefas | Situação |
 |---|---|---|---|---|
-| E01 | [Preparação do ambiente](epicos/E01-preparacao-ambiente.md) | Projeto instala e roda com um comando | 11 | `[~]` |
+| E01 | [Preparação do ambiente](epicos/E01-preparacao-ambiente.md) | Projeto instala e roda com um comando | 11 | `[x]` |
 | E02 | [Acesso seguro ao banco](epicos/E02-acesso-banco.md) | Conexão que só lê, provada por teste | 5 | `[x]` |
 | E03 | [Ferramentas de consulta](epicos/E03-ferramentas-consulta.md) | 8 funções que respondem sobre um processo, testadas sem IA | 11 | `[x]` |
 | E04 | [Consulta livre protegida](epicos/E04-consulta-livre.md) | "Válvula de escape" SQL que não consegue estragar nada | 5 | `[x]` |
@@ -39,10 +38,11 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E09 | [Bateria de perguntas de avaliação](epicos/E09-avaliacao.md) | Placar de acertos por modelo | 5 | `[x]` |
 | E10 | [Interface web](epicos/E10-interface-web.md) | Chat no navegador mostrando cada consulta feita | 4 | `[x]` |
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Tempo e memória do modelo local medidos, como plano B | 6 | `[x]` |
-| E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[ ]` |
+| E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[x]` |
 | E13 | [Consumo e custo](epicos/E13-consumo-custo.md) | Custo por resposta e painel de consumo no chat, com projeção | 5 | `[x]` |
+| E14 | [Melhorias de uso](epicos/E14-melhorias-de-uso.md) | Ajustes que o uso frequente levanta: identidade visual, instalação em outros sistemas | 2 | `[ ]` |
 
-**Total: 85 tarefas.**
+**Total: 87 tarefas.**
 
 ## Ordem e dependências
 
@@ -54,20 +54,11 @@ E01 ──> E02 ──> E03 ──┬──> E05 ──> E06 ──> E07 ──>
                              E10 (depois do E05) ─────────────┤
                              E13 (depois do E10) ─────────────┤
                              E11 (depois do E09) ─────────────┘
+                             E14 (depois do E12, contínuo)
 ```
 
 - **E01 a E04 não dependem de IA nenhuma.** São a base que justifica a arquitetura e podem ser testados e demonstrados sozinhos.
 - **Ordem a partir do E10 (D71):** E13 (a medição de consumo alimenta a decisão de custo), depois o E11 enxuto, depois o E12.
-- **Se faltar tempo:** cortar o painel (T13.4) e depois E11. **Nunca cortar E07** — "reconhecer limites" é requisito do edital e o banco foi montado para testar isso.
-
-## Marcos (o que dá para mostrar em cada ponto)
-
-| Marco | Após | O que demonstrar |
-|---|---|---|
-| M1 — Base pronta | E04 | `pytest` verde: as armadilhas do banco estão cobertas sem usar IA |
-| M2 — Agente conversa | E06 | As 4 perguntas do edital no terminal, sobre o processo 3161 |
-| M3 — Agente confiável | E09 | Placar da bateria de avaliação com modelo local e com Gemini |
-| M4 — Pronto para banca | E12 | Demo completa no navegador + roteiro + respostas da arguição |
 
 ## Processos de referência (usados em várias tarefas)
 
