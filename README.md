@@ -19,21 +19,61 @@ Toda resposta cita a fonte no formato `[doc 7878 — Sentença, 18/02/2026]`, `[
 
 ### Pré-requisitos
 
-- macOS ou Linux com **8 GB de RAM** (o projeto foi desenvolvido e medido num MacBook M1 de 8 GB).
-- [uv](https://docs.astral.sh/uv/) — instala o Python 3.12 e as dependências: `brew install uv` (ou `curl -LsSf https://astral.sh/uv/install.sh | sh`).
-- [Ollama](https://ollama.com/download) instalado e aberto, para o modelo local, **ou** uma chave do Google AI Studio para o Gemini na nuvem (ver [Trocar de modelo](#trocar-de-modelo)).
+- **8 GB de RAM** ou mais. O projeto foi desenvolvido e medido num MacBook M1 de 8 GB; o modelo local sozinho ocupa cerca de 3,9 GB.
+- **Git**, **[uv](https://docs.astral.sh/uv/)** (instala o Python 3.12 e as dependências; o Python do sistema não é usado) e, para o modelo local, o **[Ollama](https://ollama.com/download)** aberto. Com o Gemini ou o Claude na nuvem, basta a chave de API (ver [Trocar de modelo](#trocar-de-modelo)).
+
+Os comandos de instalação de cada sistema estão abaixo; depois deles, os passos são os mesmos.
+
+| Sistema | Situação |
+|---|---|
+| macOS (Apple Silicon) | é onde o projeto foi desenvolvido e medido |
+| Linux: Ubuntu 24.04, Debian 12, Fedora 42 | seguido do zero em contêineres limpos em 30/09/2026 (D86): instalação, 406 testes, chat web e Ollama com as duas variáveis |
+| Windows 10 e 11 | comandos das fontes oficiais do uv e do Ollama; **não testado** numa máquina Windows |
+
+#### macOS
+
+```bash
+brew install git uv                           # ou: curl -LsSf https://astral.sh/uv/install.sh | sh
+```
+
+O Ollama vem do instalador em <https://ollama.com/download>; depois de instalado, fica aberto na barra de menus.
+
+#### Linux (Ubuntu, Debian, Fedora)
+
+```bash
+sudo apt install git curl zstd                # Ubuntu e Debian
+sudo dnf install git curl zstd                # Fedora
+curl -LsSf https://astral.sh/uv/install.sh | sh     # uv; abra um terminal novo depois
+curl -fsSL https://ollama.com/install.sh | sh       # Ollama; já sobe como serviço do systemd
+```
+
+O `zstd` é exigido pelo instalador do Ollama, que falha sem ele. Sem placa de vídeo NVIDIA ou AMD, o Ollama roda o modelo no processador, bem mais devagar que num Mac com Apple Silicon; para esse caso, o Gemini na nuvem é o caminho.
+
+#### Windows
+
+No PowerShell:
+
+```powershell
+winget install --id Git.Git -e
+winget install --id astral-sh.uv -e           # ou: powershell -ExecutionPolicy ByPass -c "irm https://astral.sh/uv/install.ps1 | iex"
+winget install --id Ollama.Ollama -e          # ou o instalador em https://ollama.com/download/windows
+```
+
+Feche e abra o PowerShell depois, para ele encontrar os comandos novos. Alternativa: o [WSL 2](https://learn.microsoft.com/windows/wsl/install) com Ubuntu, seguindo os passos do Linux dentro dele.
 
 ### Instalação
+
+Em qualquer sistema (no Windows, no PowerShell):
 
 ```bash
 git clone https://github.com/andrepiacentini/desafio-tjsc.git
 cd desafio-tjsc
 uv sync                                       # cria o .venv com o Python 3.12 e tudo que está no uv.lock (alguns minutos na primeira vez)
-ollama pull qwen3:4b-instruct-2507-q4_K_M     # modelo local (~2,5 GB); pule se for usar só o Gemini
-cp .env.example .env                          # já vem com o modelo local como padrão
+ollama pull qwen3:4b-instruct-2507-q4_K_M     # modelo local (~2,5 GB); pule se for usar só a nuvem
+cp .env.example .env                          # no PowerShell: Copy-Item .env.example .env
 ```
 
-Com o modelo local, ajuste o Ollama uma vez — janela de contexto de 16 mil tokens e cache comprimido — conforme [Modelo local (Ollama)](#modelo-local-ollama-janela-de-contexto-e-cache). Sem isso, o resumo de um processo com peças lidas passa da janela padrão e o Ollama recusa o pedido.
+O `.env.example` já vem com o modelo local como padrão. Com o modelo local, ajuste o Ollama uma vez — janela de contexto de 16 mil tokens e cache comprimido — conforme [Modelo local (Ollama)](#modelo-local-ollama-janela-de-contexto-e-cache), para o seu sistema. Sem isso, o resumo de um processo com peças lidas passa da janela padrão e o Ollama recusa o pedido.
 
 O banco `desafio.sqlite` já está no repositório e é aberto **somente para leitura**; o projeto nunca o altera.
 
@@ -126,10 +166,12 @@ Camadas, de baixo para cima: `db.py` (acesso) → `tools.py` (domínio) → `age
 
 ## Modelo local (Ollama): janela de contexto e cache
 
-O agente fala com o Ollama pelo endpoint compatível com OpenAI, que ignora o tamanho de contexto pedido a cada chamada; por isso a janela e a compressão do cache são configuradas **no servidor, uma vez** ([D77](DECISOES.md)). Sem isso, um resumo com peças lidas passa de 8 mil tokens e o Ollama recusa o pedido.
+O agente fala com o Ollama pelo endpoint compatível com OpenAI, que ignora o tamanho de contexto pedido a cada chamada; por isso a janela e a compressão do cache são configuradas **no servidor, uma vez** ([D77](DECISOES.md)). Sem isso, um resumo com peças lidas passa de 8 mil tokens e o Ollama recusa o pedido. São dois ajustes: **janela de 16 mil tokens** e **cache comprimido (`q8_0`)**, que corta pela metade a memória da janela (1,2 GB em vez de 2,4 GB nos 16k).
 
-1. **Janela de 16 mil tokens:** no app do Ollama, abra *Settings* e ponha *Context length* em **16k**. É essa preferência que vale — ela sobrepõe a variável `OLLAMA_CONTEXT_LENGTH`.
-2. **Cache comprimido (`q8_0`)**, que corta pela metade a memória da janela (1,2 GB em vez de 2,4 GB nos 16k):
+### macOS
+
+1. **Janela:** no app do Ollama, abra *Settings* e ponha *Context length* em **16k**. É essa preferência que vale — ela sobrepõe a variável `OLLAMA_CONTEXT_LENGTH`.
+2. **Cache:**
 
    ```bash
    launchctl setenv OLLAMA_KV_CACHE_TYPE q8_0      # vale até reiniciar o Mac
@@ -139,9 +181,41 @@ O agente fala com o Ollama pelo endpoint compatível com OpenAI, que ignora o ta
 
    Depois, feche e abra o app do Ollama.
 
-No Linux, sem o app, as duas vão como variáveis de ambiente do serviço do Ollama (`OLLAMA_CONTEXT_LENGTH=16384` e `OLLAMA_KV_CACHE_TYPE=q8_0`); não foi testado neste projeto.
+### Linux
 
-Para conferir: depois de uma pergunta, `ollama ps` mostra `CONTEXT` em `16384` e o modelo em cerca de 3,9 GB. Com isso o modelo, a janela e o sistema cabem em cerca de 7 dos 8 GB; feche os demais programas.
+O Ollama roda como serviço do `systemd`, e as duas variáveis vão nele:
+
+```bash
+sudo systemctl edit ollama.service
+```
+
+No editor que abrir, acrescente e salve:
+
+```ini
+[Service]
+Environment="OLLAMA_CONTEXT_LENGTH=16384"
+Environment="OLLAMA_KV_CACHE_TYPE=q8_0"
+```
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl restart ollama
+```
+
+Sem `systemd` (contêiner, WSL sem `systemd`): `OLLAMA_CONTEXT_LENGTH=16384 OLLAMA_KV_CACHE_TYPE=q8_0 ollama serve`. Foi assim que as duas variáveis foram conferidas nos testes em contêiner.
+
+### Windows
+
+1. **Janela:** no app do Ollama, abra *Settings* e ponha *Context length* em **16k**, como no Mac.
+2. **Cache:** no PowerShell, grave a variável na sua conta e reinicie o Ollama (clique no ícone dele ao lado do relógio, *Quit Ollama*, e abra de novo pelo menu Iniciar):
+
+   ```powershell
+   [Environment]::SetEnvironmentVariable("OLLAMA_KV_CACHE_TYPE", "q8_0", "User")
+   ```
+
+### Para conferir
+
+Depois de uma pergunta, `ollama ps` mostra `CONTEXT` em `16384` e o modelo em cerca de 3,9 GB. Com isso o modelo, a janela e o sistema cabem em cerca de 7 dos 8 GB; feche os demais programas.
 
 ## Mapa das pastas
 
