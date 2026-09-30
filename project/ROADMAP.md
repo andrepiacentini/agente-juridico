@@ -40,8 +40,9 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Tempo e memória do modelo local medidos, como plano B | 6 | `[x]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[~]` |
 | E13 | [Consumo e custo](epicos/E13-consumo-custo.md) | Custo por resposta e painel de consumo no chat, com projeção | 5 | `[x]` |
+| E14 | [Melhorias de uso](epicos/E14-melhorias-de-uso.md) | Ajustes que o uso frequente levanta: identidade visual, instalação em outros sistemas | 2 | `[ ]` |
 
-**Total: 85 tarefas.**
+**Total: 87 tarefas.**
 
 ## Ordem e dependências
 
@@ -53,6 +54,7 @@ E01 ──> E02 ──> E03 ──┬──> E05 ──> E06 ──> E07 ──>
                              E10 (depois do E05) ─────────────┤
                              E13 (depois do E10) ─────────────┤
                              E11 (depois do E09) ─────────────┘
+                             E14 (depois do E12, contínuo)
 ```
 
 - **E01 a E04 não dependem de IA nenhuma.** São a base que justifica a arquitetura e podem ser testados e demonstrados sozinhos.

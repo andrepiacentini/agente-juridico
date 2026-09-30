@@ -595,6 +595,14 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** reescrever o histórico com `git filter-repo` e forçar o envio — apagaria de verdade, mas mudaria o identificador de todos os commits, desalinharia os PRs citados neste registro e o custo não compensa para material que não é sigiloso; um repositório de entrega separado, com a árvore final — resolveria o histórico, mas duplicaria o fluxo de trabalho na reta final.
 - **Uso de IA:** o Claude Code fez a varredura por termos ("banca", "demonstração", "plano B", "arguição") nos arquivos versionados, listou os candidatos em três grupos e esperou a decisão do autor sobre cada um; moveu os arquivos inteiros e as linhas escolhidas, ajustou as referências que ficariam quebradas (o épico E12, um comentário em `tools.py`, a bateria) e conferiu com a suíte de testes e com `git check-ignore`.
 
+## 30/09/2026
+
+### D83 — Épico contínuo de melhorias de uso (E14), alimentado pelo uso frequente da aplicação
+- **Decisão:** abre-se o **E14 — Melhorias de uso**, um épico sem fim previsto que recebe, como tarefas pequenas, os ajustes que o autor for encontrando ao usar a aplicação com frequência. Nasce com duas: a identidade visual do chat (imagem do TJSC no lugar do logotipo do Chainlit, subtítulo do desafio e crédito do autor com links) e a instalação no Windows e nas principais distribuições Linux no `README.md`. Cada tarefa segue o fluxo de sempre: [branch](docs/glossario.md#branch) a partir da branch do épico, [pull request](docs/glossario.md#pull-request) com a CI verde, épico para a `main` quando fizer sentido.
+- **Por quê:** os treze épicos anteriores terminam com um entregável; o uso do dia a dia levanta ajustes de tela, de instalação e de conforto que não pertencem a nenhum deles e que, sem um lugar, iriam parar em commits soltos na `main` ou em tarefas encaixadas em épicos já fechados. Um épico contínuo mantém a regra de uma tarefa por branch e o registro de decisões, sem reabrir o que já foi entregue.
+- **Descartado:** reabrir o E10 (interface) e o E12 (entrega) para essas tarefas, porque os dois já foram medidos e fechados como entregáveis; deixar as melhorias para depois da apresentação, porque a identidade visual e a instalação em outros sistemas interessam justamente a quem vai receber o repositório.
+- **Uso de IA:** o Claude Code escreveu o épico no formato dos demais e apontou, na primeira tarefa, que a imagem do TJSC precisa vir do autor e que o Chainlit serve logotipo e favicon a partir de uma pasta `public/`, com subtítulo e rodapé a conferir na documentação da versão em uso antes de escolher o caminho.
+
 ---
 
 ## Pendências de decisão
