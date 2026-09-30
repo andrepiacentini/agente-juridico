@@ -61,10 +61,10 @@
 - **Pronto quando:** o comparativo tem as colunas dos dois modelos locais e do Gemini preenchidas.
 - **Depende de:** T1.7.
 
-### T1.10 — Testar o Claude em nuvem (opcional) `[ ]`
+### T1.10 — Testar o Claude em nuvem (opcional) `[x]`
 - **Opcional (D30):** depende de haver crédito na conta da Anthropic; a API recusa chamadas sem saldo.
 - **Objetivo:** acrescentar o Claude ao comparativo e mostrar o mesmo agente com três fornecedores (local, Google, Anthropic).
-- **Passos:** colocar crédito na conta Anthropic; preencher `ANTHROPIC_API_KEY` no `.env`; rodar a mesma pergunta da T1.2 três vezes com o `claude-sonnet-5`; preencher a coluna "Claude (nuvem)" do comparativo.
+- **Passos:** colocar crédito na conta Anthropic; preencher `ANTHROPIC_API_KEY` no `.env`; rodar a mesma pergunta da T1.2 três vezes com o `claude-sonnet-5-5` (feito em 30/09/2026, D84); preencher a coluna "Claude (nuvem)" do comparativo.
 - **Pronto quando:** a coluna do Claude está preenchida, ou a tarefa é cancelada no fim do projeto por falta de crédito.
 - **Depende de:** T1.7.
 

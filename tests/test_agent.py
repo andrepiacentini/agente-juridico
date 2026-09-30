@@ -105,6 +105,8 @@ CLOUD_MODEL = "google:gemini-3.8-flash"
 
 def test_model_options_come_from_the_configuration_with_the_thinking_of_each_one(monkeypatch) -> None:
     # T10.3 (D69): a lista do seletor da tela vem do .env; o código não tem nome de modelo.
+    # O Chainlit carrega o .env de quem roda os testes ao ser importado (test_welcome): o teste não pode depender dele.
+    monkeypatch.delenv("LLM_THINKING", raising=False)
     monkeypatch.setenv("LLM_MODEL", LOCAL_MODEL)
     monkeypatch.setenv("LLM_MODEL_OPTIONS", f"{LOCAL_MODEL}, {CLOUD_MODEL}@low")
 

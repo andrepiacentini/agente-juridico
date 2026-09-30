@@ -72,12 +72,12 @@ O código não tem caminho especial por fornecedor: a troca é só no `.env`, na
 |---|---|---|
 | **Local (padrão):** Qwen3 4B no Ollama | `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` | nada sai da máquina; 45 s a 3,5 min por resposta ([D78](DECISOES.md)) |
 | **Nuvem, gratuito:** Gemini 3.8 Flash | `LLM_MODEL=google:gemini-3.8-flash`<br>`LLM_THINKING=low`<br>`GOOGLE_API_KEY=...` | chave em [Google AI Studio](https://aistudio.google.com/apikey); ~5 s por resposta; é o modelo da demonstração |
-| **Nuvem, opcional:** Claude | `LLM_MODEL=anthropic:claude-sonnet-5`<br>`ANTHROPIC_API_KEY=...` | exige crédito na conta Anthropic |
+| **Nuvem, opcional:** Claude Sonnet 5.5 | `LLM_MODEL=anthropic:claude-sonnet-5-5`<br>`LLM_THINKING=low`<br>`ANTHROPIC_API_KEY=...` | exige crédito na conta Anthropic; 3 a 10 s por resposta; mais capaz e mais caro que o Gemini ([D84](DECISOES.md)) |
 
 Para oferecer mais de um modelo no seletor da interface web, liste-os em `LLM_MODEL_OPTIONS` (o raciocínio de cada um vai depois de `@`):
 
 ```bash
-LLM_MODEL_OPTIONS=ollama:qwen3:4b-instruct-2507-q4_K_M,google:gemini-3.8-flash@low
+LLM_MODEL_OPTIONS=ollama:qwen3:4b-instruct-2507-q4_K_M,google:gemini-3.8-flash@low,anthropic:claude-sonnet-5-5@low
 ```
 
 Todas as variáveis estão comentadas em [`.env.example`](.env.example).
@@ -100,7 +100,7 @@ Os testes cobrem as armadilhas do banco (processos sem documento, situação com
 | **Linguagem** | Python 3.12, gerenciado pelo [uv](https://docs.astral.sh/uv/) |
 | **Frameworks** | [Pydantic AI](https://ai.pydantic.dev/) (laço do agente e ferramentas; pacote enxuto com os provedores Ollama, Google e Anthropic) · [Chainlit](https://chainlit.io/) (interface web de chat) |
 | **Bibliotecas** | `sqlite3` da biblioteca padrão, com [FTS5](https://www.sqlite.org/fts5.html) para busca textual · `python-dotenv` para ler o `.env` · `pytest` para os testes · `plotly` para os gráficos do painel de consumo |
-| **Provedor de modelo** | [Ollama](https://ollama.com/) com `qwen3:4b-instruct-2507-q4_K_M` (Qwen3 4B sem modo raciocínio), rodando localmente (padrão) · Google Gemini 3.8 Flash na nuvem, pelo plano gratuito (alternativa) · Anthropic Claude na nuvem (opcional, com crédito). A troca é feita pela variável de ambiente `LLM_MODEL`, sem alterar o código |
+| **Provedor de modelo** | [Ollama](https://ollama.com/) com `qwen3:4b-instruct-2507-q4_K_M` (Qwen3 4B sem modo raciocínio), rodando localmente (padrão) · Google Gemini 3.8 Flash na nuvem, pelo plano gratuito (alternativa) · Anthropic Claude Sonnet 5.5 na nuvem (opcional, com crédito). A troca é feita pela variável de ambiente `LLM_MODEL`, sem alterar o código |
 | **Arquitetura** | Agente com ferramentas tipadas sobre SQL, **sem RAG vetorial**. As ferramentas devolvem primeiro os metadados (ids, tipos, datas) e o texto de um documento só quando ele é pedido. Uma ferramenta de SQL livre, restrita a consultas de leitura, cobre perguntas imprevistas. O banco é aberto somente para leitura |
 
 As justificativas de cada escolha e as alternativas descartadas estão em [`DECISOES.md`](DECISOES.md); a análise do edital e do banco, em [`docs/plan.md`](docs/plan.md).
