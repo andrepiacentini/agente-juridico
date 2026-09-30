@@ -42,7 +42,7 @@
 - **Pronto quando:** as 5 respostas cabem em uma página e cada uma aponta uma evidência no projeto.
 - **Depende de:** T12.3.
 
-### T12.7 — Conceder acesso ao repositório `[ ]`
+### T12.7 — Conceder acesso ao repositório `[x]`
 - **Objetivo:** dar acesso aos e-mails indicados no convite.
 - **Passos:** publicar o repositório (privado); adicionar os e-mails; confirmar que o último commit está no servidor.
 - **Pronto quando:** convites enviados e confirmados.
