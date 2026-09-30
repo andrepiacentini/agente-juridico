@@ -1,0 +1,26 @@
+/* Identidade visual da tela inicial (T14.1). As cores vêm das variáveis do tema do Chainlit, então valem nos dois temas. */
+
+.tjsc-subtitle {
+  margin: -0.5rem 0 0.5rem;
+  font-size: 1rem;
+  font-weight: 500;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+
+.tjsc-credit {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+  text-align: center;
+  color: hsl(var(--muted-foreground));
+}
+
+.tjsc-credit a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.tjsc-credit a:hover {
+  color: hsl(var(--foreground));
+}

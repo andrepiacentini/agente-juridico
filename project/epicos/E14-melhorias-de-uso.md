@@ -7,7 +7,7 @@
 
 ---
 
-### T14.1 — Identidade visual do chat: imagem do TJSC, subtítulo e crédito `[ ]`
+### T14.1 — Identidade visual do chat: imagem do TJSC, subtítulo e crédito `[x]`
 - **Objetivo:** a tela do chat mostra a imagem do TJSC no lugar do logotipo do Chainlit, um subtítulo "Desafio técnico: Agente de IA para análise de processos" abaixo dela e, no rodapé da tela inicial, abaixo das quatro perguntas, o crédito "Desenvolvido por André Piacentini em setembro de 2026", com links para o site do autor (<https://andrepiacentini.com.br>) e o LinkedIn (<https://www.linkedin.com/in/andrepiacentini/>).
 - **Passos:** a imagem do TJSC é a da página do desafio, <https://desafio-ia.sandbox.tjsc.jus.br/assets/logo.png> (baixar e versionar em `public/`; se só houver uma versão, usá-la nos dois temas e conferir a legibilidade no escuro); criar a pasta `public/` com `logo_light.png`, `logo_dark.png` e o favicon, que o Chainlit serve sozinho; conferir na documentação do Chainlit 2.12 onde entram o subtítulo e o rodapé — `description` no `config.toml`, a tradução da marca d'água (`pt-BR.json`) ou `custom_css`/`custom_js` em `public/` — e escolher o caminho com menos código; versionar os arquivos novos (o `.gitignore` já mantém `config.toml` e a tradução); testar no Safari com tema claro e escuro; registrar a decisão.
 - **Pronto quando:** a tela inicial mostra imagem, subtítulo e crédito com os links funcionando, nos dois temas, e a tela de conversa mostra a imagem no lugar do logotipo.
