@@ -154,6 +154,7 @@ desafio-tjsc/
 ├── desafio_tecnico_detalhes.pdf   edital
 ├── app.py                    interface web (Chainlit)
 ├── chainlit.md               tela de boas-vindas do chat
+├── public/                   imagem do TJSC (temas claro e escuro), favicon e o subtítulo e o crédito da tela inicial
 ├── prices.toml               preços dos modelos e cenários da projeção de custo
 ├── .env.example              todas as variáveis de ambiente, comentadas
 ├── usage.sqlite              registro de consumo, criado na primeira resposta; fora do Git

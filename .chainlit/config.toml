@@ -136,21 +136,21 @@ language = "pt-BR"  # tradução própria em translations/pt-BR.json (D70)
 confirm_new_chat = true
 
 # Description of the assistant. This is used for HTML tags.
-# description = ""
+description = "Desafio técnico: Agente de IA para análise de processos"
 
 # Chain of Thought (CoT) display mode. Can be "hidden", "tool_call" or "full".
 cot = "full"
 
 # Specify a CSS file that can be used to customize the user interface.
 # The CSS file can be served from the public directory or via an external link.
-# custom_css = "/public/test.css"
+custom_css = "/public/identity.css"  # subtítulo e crédito da tela inicial (T14.1)
 
 # Specify additional attributes for a custom CSS file
 # custom_css_attributes = "media=\"print\""
 
 # Specify a JavaScript file that can be used to customize the user interface.
 # The JavaScript file can be served from the public directory.
-# custom_js = "/public/test.js"
+custom_js = "/public/identity.js"  # o Chainlit não tem lugar nativo para esses textos
 
 # The style of alert boxes. Can be "classic" or "modern".
 alert_style = "classic"
