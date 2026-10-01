@@ -19,7 +19,7 @@
 - **Pronto quando:** o README tem uma subseção por sistema, o caminho Linux foi seguido num ambiente limpo e o que não foi testado está dito.
 - **Depende de:** T12.1, T12.2.
 
-### T14.3 — Cache do prompt nos modelos da Anthropic `[ ]`
+### T14.3 — Cache do prompt nos modelos da Anthropic `[x]`
 - **Objetivo:** baixar o custo e o tempo de cada pergunta no Claude marcando para o cache da Anthropic a parte fixa de todo pedido — as descrições das dez ferramentas e as instruções, cerca de 3 mil tokens — e, numa conversa, o histórico já enviado. Hoje o registro de uso mostra zero tokens lidos do cache nos pedidos ao Claude (D84).
 - **Passos:** usar as configurações que o Pydantic AI 2.50 já tem para isso (`anthropic_cache_tool_definitions`, `anthropic_cache_instructions` e `anthropic_cache` para o histórico), passadas sempre nas configurações do modelo em `agent.py` — os outros provedores ignoram essas chaves, então o código continua sem caminho por fornecedor; conferir onde o Pydantic AI põe o lembrete do processo em foco, que muda a cada processo: a marca do cache não pode ficar depois dele, senão cada troca de processo invalida o trecho guardado, e, se preciso, marcar só as ferramentas e o texto fixo; teste sem IA de que as configurações chegam ao modelo; medir antes e depois, no registro de uso, a mesma sequência de perguntas numa conversa (as 4 do edital no 3161) — tokens lidos do cache, custo e tempo por resposta; conferir que o Gemini e o modelo local não mudam de comportamento.
 - **Pronto quando:** o registro de uso mostra tokens lidos do cache nos pedidos ao Claude a partir do segundo pedido de uma conversa, a redução de custo está medida no `DECISOES.md` e a suíte continua verde.

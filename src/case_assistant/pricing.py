@@ -25,6 +25,8 @@ class PricePeriod:
     input: float
     output: float
     cache_read: float
+    # Gravação no cache, quando o fornecedor a cobra à parte (a Anthropic: 1,25 × a entrada); sem ela, conta como entrada.
+    cache_write: float | None = None
 
 
 class PriceTable:
@@ -50,13 +52,17 @@ class PriceTable:
         return cls.load(Path(configured) if configured else DEFAULT_PRICES_PATH)
 
     def cost_usd(self, usage: UsageRecord) -> float | None:
-        # A entrada que veio do cache é cobrada à parte e mais barata; o fornecedor a conta dentro da entrada.
+        # A entrada total inclui o que foi lido do cache e o que foi gravado nele; cada parte tem o seu preço.
         price = self._price_in_force(usage.model, usage.recorded_at[:10])
         if price is None:
             return None
-        uncached_input = usage.input_tokens - usage.cache_read_tokens
+        write_price = price.input if price.cache_write is None else price.cache_write
+        uncached_input = usage.input_tokens - usage.cache_read_tokens - usage.cache_write_tokens
         return (
-            uncached_input * price.input + usage.cache_read_tokens * price.cache_read + usage.output_tokens * price.output
+            uncached_input * price.input
+            + usage.cache_read_tokens * price.cache_read
+            + usage.cache_write_tokens * write_price
+            + usage.output_tokens * price.output
         ) / TOKENS_PER_PRICE_UNIT
 
     def cost_brl(self, usage: UsageRecord) -> float | None:

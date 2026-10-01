@@ -7,6 +7,7 @@
 #   input       entrada que não veio do cache
 #   output      saída; no Gemini, inclui os tokens de raciocínio
 #   cache_read  entrada reaproveitada do cache (o fornecedor a conta dentro da entrada, cobrada à parte)
+#   cache_write entrada gravada no cache, quando o fornecedor a cobra à parte (opcional; sem ela, preço de entrada)
 
 [exchange]
 usd_brl = 5.2132
@@ -38,6 +39,7 @@ valid_from = "2026-09-30"   # data da página consultada; antes disso o preço n
 input = 2.00
 output = 10.00
 cache_read = 0.20
+cache_write = 2.50   # gravação com validade de 5 minutos, a usada pelo agente (1,25 × a entrada)
 
 [[models]]
 model = "ollama:qwen3:4b-instruct-2507-q4_K_M"
