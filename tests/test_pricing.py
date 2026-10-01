@@ -30,6 +30,17 @@ output = 7.50
 cache_read = 0.15
 
 [[models]]
+model = "anthropic:claude-sonnet-5-5"
+source = "https://platform.claude.com/docs/en/about-claude/pricing"
+
+[[models.prices]]
+valid_from = "2026-09-30"
+input = 2.00
+output = 10.00
+cache_read = 0.20
+cache_write = 2.50
+
+[[models]]
 model = "ollama:qwen3:4b-instruct-2507-q4_K_M"
 source = "modelo local"
 
@@ -48,10 +59,11 @@ def table(tmp_path) -> PriceTable:
     return PriceTable.load(path)
 
 
-def answer(model: str = GEMINI, recorded_at: str = "2026-09-29T10:00:00") -> UsageRecord:
+def answer(model: str = GEMINI, recorded_at: str = "2026-09-29T10:00:00", cache_write_tokens: int = 0) -> UsageRecord:
     return UsageRecord(
         recorded_at=recorded_at, channel="web", session_id="s1", model=model,
         input_tokens=7_000, output_tokens=100, cache_read_tokens=3_000, requests=2, tools=["find_case"], seconds=5.0,
+        cache_write_tokens=cache_write_tokens,
     )
 
 
@@ -88,3 +100,19 @@ def test_the_project_price_table_loads_and_prices_both_demo_models() -> None:
 
     assert project_table.cost_usd(answer(model=GEMINI)) > 0
     assert project_table.cost_usd(answer(model=LOCAL)) == 0
+
+
+CLAUDE = "anthropic:claude-sonnet-5-5"
+
+
+def test_tokens_written_to_the_cache_are_priced_at_the_write_price(table) -> None:
+    # A Anthropic cobra a gravação no cache (5 min) a 1,25 × a entrada; a entrada total já inclui lidos e gravados.
+    # (2.000 sem cache × 2,00 + 3.000 lidos × 0,20 + 2.000 gravados × 2,50 + 100 de saída × 10,00) / 1.000.000
+    usage = answer(model=CLAUDE, recorded_at="2026-09-30T10:00:00", cache_write_tokens=2_000)
+
+    assert table.cost_usd(usage) == pytest.approx(0.0106)
+
+
+def test_a_model_without_a_write_price_charges_written_tokens_as_input(table) -> None:
+    # O Gemini não cobra gravação à parte: gravado conta como entrada comum.
+    assert table.cost_usd(answer(cache_write_tokens=2_000)) == table.cost_usd(answer())

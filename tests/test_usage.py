@@ -96,3 +96,28 @@ def test_a_failure_to_record_never_breaks_the_answer(caplog) -> None:
     record_answer(BrokenLog(), sample_record())
 
     assert "disco cheio" in caplog.text
+
+
+def test_tokens_written_to_the_cache_are_recorded(usage_log) -> None:
+    usage_log.record(sample_record(cache_write_tokens=2_500))
+
+    assert usage_log.records()[0].cache_write_tokens == 2_500
+
+
+def test_a_log_created_before_the_cache_write_column_keeps_working(tmp_path) -> None:
+    # O usage.sqlite de quem já usava o chat não tem a coluna nova (T14.3); ela entra sozinha, com zero nas antigas.
+    import sqlite3
+
+    path = tmp_path / "antigo.sqlite"
+    with sqlite3.connect(path) as connection:
+        connection.execute(
+            "CREATE TABLE answer_usage (recorded_at TEXT NOT NULL, channel TEXT NOT NULL, session_id TEXT NOT NULL, "
+            "model TEXT NOT NULL, input_tokens INTEGER NOT NULL, output_tokens INTEGER NOT NULL, "
+            "cache_read_tokens INTEGER NOT NULL, requests INTEGER NOT NULL, tools TEXT NOT NULL, seconds REAL NOT NULL)"
+        )
+        connection.execute("INSERT INTO answer_usage VALUES ('2026-09-29T10:00:00', 'web', 's0', 'm', 1, 1, 0, 1, '[]', 1.0)")
+    old_log = UsageLog(path)
+
+    old_log.record(sample_record(cache_write_tokens=500))
+
+    assert [record.cache_write_tokens for record in old_log.records()] == [0, 500]

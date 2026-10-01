@@ -112,7 +112,7 @@ O código não tem caminho especial por fornecedor: a troca é só no `.env`, na
 |---|---|---|
 | **Local (padrão):** Qwen3 4B no Ollama | `LLM_MODEL=ollama:qwen3:4b-instruct-2507-q4_K_M` | nada sai da máquina; 45 s a 3,5 min por resposta ([D78](DECISOES.md)) |
 | **Nuvem, gratuito:** Gemini 3.8 Flash | `LLM_MODEL=google:gemini-3.8-flash`<br>`LLM_THINKING=low`<br>`GOOGLE_API_KEY=...` | chave em [Google AI Studio](https://aistudio.google.com/apikey); ~5 s por resposta; é o modelo da demonstração |
-| **Nuvem, opcional:** Claude Sonnet 5.5 | `LLM_MODEL=anthropic:claude-sonnet-5-5`<br>`LLM_THINKING=low`<br>`ANTHROPIC_API_KEY=...` | exige crédito na conta Anthropic; 3 a 10 s por resposta; mais capaz e mais caro que o Gemini ([D84](DECISOES.md)) |
+| **Nuvem, opcional:** Claude Sonnet 5.5 | `LLM_MODEL=anthropic:claude-sonnet-5-5`<br>`LLM_THINKING=low`<br>`ANTHROPIC_API_KEY=...` | exige crédito na conta Anthropic; 3 a 15 s por resposta; com o cache do prompt, as 4 perguntas do edital numa conversa custaram R$ 0,62, contra R$ 0,84 no Gemini ([D84 e D87](DECISOES.md)) |
 
 Para oferecer mais de um modelo no seletor da interface web, liste-os em `LLM_MODEL_OPTIONS` (o raciocínio de cada um vai depois de `@`):
 

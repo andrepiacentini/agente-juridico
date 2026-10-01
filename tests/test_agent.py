@@ -34,17 +34,34 @@ def test_missing_llm_model_is_a_clear_error(monkeypatch) -> None:
         build_agent()
 
 
+# T14.3 (D87): a parte fixa do pedido vai marcada para o cache da Anthropic; os outros provedores ignoram essas chaves.
+PROMPT_CACHE_SETTINGS = {
+    "anthropic_cache_tool_definitions": True,
+    "anthropic_cache_instructions": True,
+    "anthropic_cache": True,
+}
+
+
 @pytest.mark.parametrize(("configured", "expected"), [("low", "low"), ("false", False), ("true", True)])
 def test_thinking_comes_from_llm_thinking_variable(monkeypatch, configured: str, expected) -> None:
     monkeypatch.setenv("LLM_THINKING", configured)
 
-    assert build_agent(TestModel()).model_settings == {"thinking": expected}
+    assert build_agent(TestModel()).model_settings == {**PROMPT_CACHE_SETTINGS, "thinking": expected}
 
 
 def test_without_llm_thinking_the_model_keeps_its_default(monkeypatch) -> None:
     monkeypatch.delenv("LLM_THINKING", raising=False)
 
-    assert build_agent(TestModel()).model_settings is None
+    assert build_agent(TestModel()).model_settings == PROMPT_CACHE_SETTINGS
+
+
+def test_the_prompt_cache_settings_do_not_break_other_providers(monkeypatch) -> None:
+    # Um modelo que não é da Anthropic recebe as mesmas configurações e responde normalmente.
+    monkeypatch.delenv("LLM_THINKING", raising=False)
+    agent = build_agent(TestModel(custom_output_text="ok"))
+
+    with open_session() as session:
+        assert agent.run_sync("olá", deps=session).output == "ok"
 
 
 EXPECTED_TOOLS = {
@@ -132,5 +149,5 @@ def test_without_options_the_list_has_only_the_configured_model(monkeypatch) -> 
 def test_an_explicit_thinking_wins_over_the_environment(monkeypatch) -> None:
     monkeypatch.setenv("LLM_THINKING", "low")
 
-    assert build_agent(TestModel(), thinking="").model_settings is None
-    assert build_agent(TestModel(), thinking="high").model_settings == {"thinking": "high"}
+    assert build_agent(TestModel(), thinking="").model_settings == PROMPT_CACHE_SETTINGS
+    assert build_agent(TestModel(), thinking="high").model_settings == {**PROMPT_CACHE_SETTINGS, "thinking": "high"}
