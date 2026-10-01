@@ -27,9 +27,12 @@ CREATE_TABLE = """
     CREATE TABLE IF NOT EXISTS answer_usage (
         recorded_at TEXT NOT NULL, channel TEXT NOT NULL, session_id TEXT NOT NULL, model TEXT NOT NULL,
         input_tokens INTEGER NOT NULL, output_tokens INTEGER NOT NULL, cache_read_tokens INTEGER NOT NULL,
-        requests INTEGER NOT NULL, tools TEXT NOT NULL, seconds REAL NOT NULL
+        requests INTEGER NOT NULL, tools TEXT NOT NULL, seconds REAL NOT NULL,
+        cache_write_tokens INTEGER NOT NULL DEFAULT 0
     )
 """
+# Registros gravados antes da T14.3 não têm a coluna: ela entra com zero, que é o que eles gravaram no cache.
+ADD_CACHE_WRITE_COLUMN = "ALTER TABLE answer_usage ADD COLUMN cache_write_tokens INTEGER NOT NULL DEFAULT 0"
 
 
 class UsageLogPathError(ValueError):
@@ -50,6 +53,7 @@ class UsageRecord:
     requests: int
     tools: list[str] = field(default_factory=list)
     seconds: float = 0.0
+    cache_write_tokens: int = 0
 
 
 class UsageLog:
@@ -81,6 +85,9 @@ class UsageLog:
     def _connect(self) -> sqlite3.Connection:
         connection = sqlite3.connect(self.path)
         connection.execute(CREATE_TABLE)
+        columns = {row[1] for row in connection.execute("PRAGMA table_info(answer_usage)")}
+        if "cache_write_tokens" not in columns:
+            connection.execute(ADD_CACHE_WRITE_COLUMN)
         return connection
 
 
@@ -101,6 +108,7 @@ def usage_record(result: Any, channel: str, session: Session, model: str, second
         requests=usage.requests,
         tools=[part.tool_name for message in result.new_messages() for part in message.parts if isinstance(part, ToolCallPart)],
         seconds=seconds,
+        cache_write_tokens=usage.cache_write_tokens,
     )
 
 

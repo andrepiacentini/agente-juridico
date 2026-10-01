@@ -29,6 +29,14 @@ THINKING_VARIABLE = "LLM_THINKING"
 MODEL_OPTIONS_VARIABLE = "LLM_MODEL_OPTIONS"
 THINKING_SEPARATOR = "@"
 BOOLEAN_SETTINGS = {"true": True, "false": False}
+# Cache do prompt nos modelos da Anthropic (T14.3, D87): ferramentas e instruções fixas (~3 mil tokens em todo pedido)
+# e o histórico da conversa. O lembrete do processo em foco é instrução dinâmica e o Pydantic AI põe a marca antes dele.
+# Os outros provedores ignoram estas chaves, então elas vão sempre: o código não tem caminho por fornecedor.
+PROMPT_CACHE_SETTINGS: ModelSettings = {
+    "anthropic_cache_tool_definitions": True,
+    "anthropic_cache_instructions": True,
+    "anthropic_cache": True,
+}
 # Recusas temporárias do serviço do modelo (D41): tentar de novo, avisando o usuário, antes de desistir.
 MAX_ATTEMPTS = 3
 RETRY_WAIT_SECONDS = 5  # 5 s antes da 2ª tentativa, 10 s antes da 3ª
@@ -154,10 +162,10 @@ def _configured_thinking() -> str:
     return os.environ.get(THINKING_VARIABLE, "").strip().lower()
 
 
-def _model_settings(thinking: str) -> ModelSettings | None:
+def _model_settings(thinking: str) -> ModelSettings:
     if not thinking:
-        return None
-    return {"thinking": BOOLEAN_SETTINGS.get(thinking, thinking)}
+        return dict(PROMPT_CACHE_SETTINGS)
+    return {**PROMPT_CACHE_SETTINGS, "thinking": BOOLEAN_SETTINGS.get(thinking, thinking)}
 
 
 def run_with_retries(
