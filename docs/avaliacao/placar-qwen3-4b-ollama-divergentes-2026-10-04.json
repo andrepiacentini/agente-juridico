@@ -1,0 +1,116 @@
+{
+  "date": "2026-10-04",
+  "model": "ollama:qwen3:4b-instruct-2507-q4_K_M",
+  "score": "3/5",
+  "cases": [
+    {
+      "id": "edital-1-resumo-3161",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "Resuma o processo 0000007-79.2023.8.99.9014, destacando os principais fatos e o andamento processual.",
+          "answer": "**Processo: 0000007-79.2023.8.99.9014**  \n**Classe:** Procedimento Comum Cível  \n**Assunto:** Acidente de Trânsito  \n**Comarca:** São Bento do Sul  \n**Vara:** 1ª Vara Cível  \n**Juiz:** Luiz Bonetti Vasconcelos (aposentado)  \n**Data de autuação:** 13/12/2023  \n**Data da sentença:** 18/02/2026  \n**Valor da causa:** R$ 3.796,73  \n**Situação:** Julgado  \n\n---\n\n### **Principais Fatos:**  \n- O veículo conduzido pela parte autora (João Ziegler Rocha) trafegava regularmente pela via pública, respeitando sinalização e velocidade permitida.  \n- O condutor do veículo da requerida (Operadora de Saúde Cambirela Ltda) realizou manobra de conversão sem sinalização, interceptando a trajetória do automóvel da autora e provocando colisão.  \n- O boletim de ocorrência e fotografias anexas comprovam a dinâmica do acidente.  \n- A autora sofreu danos materiais, com reparos e perda do uso do bem durante o período de conserto.  \n\n---\n\n### **Andamento Processual:**  \n1. **13/12/2023** – Distribuição por sorteio.  \n2. **22/01/2024** – Despacho de admissibilidade (autor).  \n3. **02/04/2024** – Citação positiva (certidão).  \n4. **05/06/2024** – Juntada da contestação (réu).  \n5. **08/08/2024** – Réplica do autor.  \n6. **11/10/2024** – Decisão de saneamento.  \n7. **28/11/2024** – Despacho de análise.  \n8. **30/01/2025** – Manifestação sobre provas (autor).  \n9. **03/03/2025** – Manifestação sobre provas (autor).  \n10. **21/04/2025** – Despacho (juiz).  \n11. **25/07/2025** – Ata de audiência.  \n12. **29/09/2025** – Despacho de conclusão.  \n13. **18/02/2026** – Sentença com resolução do mérito.  \n14. **20/03/2026** – Embargos de declaração (autor).  \n15. **03/04/2026** – Decisão interlocutória.  \n16. **29/04/2026** – Apelação (autor).  \n17. **21/05/2026** – Contrarrazões de apelação (réu).  \n18. **28/05/2026** – Despacho de conclusão.  \n19. **23/03/2026** – Trânsito em julgado.  \n20. **07/04/2026** – Juntada de petição (autor).  \n21. **21/04/2026** – Remessa à instância superior.  \n\n---\n\n### **Pedido Inicial (petição inicial):**  \n- Citação da parte ré.  \n- Condenação da requerida ao pagamento de indenização (em valor arbitrado).  \n- Condenação ao pagamento de custas e honorários advocatícios.  \n- Produção de meios de prova (documental e testemunhal).  \n**Valor:** R$ 3.796,73  \n\n---\n\n### **Defesa (contestação):**  \n- Alega inépcia da petição inicial por falta de clareza e nexo lógico.  \n- Requer improcedência do pedido por valor excessivo e desproporcional.  \n- Rejeita o valor postulado por descumprir princípios da razoabilidade e proporcionalidade.  \n- Requer produção de prova suplementar e depoimento pessoal da parte adversa.  \n\n---\n\n### **Resultado (sentença):**  \n- A preliminar de inépcia da inicial **não prospera**, pois a documentação acostada comprova os fatos.  \n- O pedido é **parcialmente procedente**:  \n  - Condenação da operadora ao pagamento de **R$ 1.523,18**.  \n  - Valor fixado com base em razoabilidade, proporcionalidade e capacidade econômica.  \n- **Custas** rateadas em partes iguais.  \n- **Honorários** de advogados – cada parte arca por seus próprios.  \n\n**Fonte da sentença:** [doc 7878 — Sentença, 18/02/2026]  \n**Movimento de sentença:** [mov. 9219 — Sentença com Resolução do Mérito, 18/02/2026]  \n\n**Aviso:** O magistrado Luiz Bonetti Vasconcelos está aposentado.  \n**Aviso:** Documentos 7872 e 7877 apresentam inconsistência de assinatura (OAB/SC 99.170 vs. 99.854).  \n\nProcesso encerrado com trânsito em julgado.",
+          "tools_called": [
+            "find_case",
+            "list_movements",
+            "list_documents",
+            "read_document",
+            "read_document",
+            "read_document"
+          ],
+          "failures": [],
+          "seconds": 264.32353216599995,
+          "input_tokens": 42528,
+          "output_tokens": 1545
+        }
+      ]
+    },
+    {
+      "id": "magistrado-ausente",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "quem é o juiz do processo 0000005-75.2025.8.99.9035?",
+          "answer": "Não consta o nome do juiz no banco. O processo 0000005-75.2025.8.99.9035 não possui magistrado cadastrado. [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 13.906847000000198,
+          "input_tokens": 7000,
+          "output_tokens": 99
+        }
+      ]
+    },
+    {
+      "id": "homonimo",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "quais os processos de Adriana Bittencourt?",
+          "answer": "Encontrei 4 pessoas diferentes com esse nome (CPF/CNPJ distintos). De qual delas se trata?  \n\nAs opções são:  \n- Adriana Ehlke Bittencourt (CPF: 999.094.178-25) – autor no processo 0000005-41.2025.8.99.9014  \n- Adriana Bittencourt (CPF: 999.125.243-15) – autor no processo 0000018-16.2024.8.99.9001  \n- Adriana Bittencourt (CPF: 999.332.735-33) – réu no processo 0000027-05.2020.8.99.9005  \n- Adriana Stahl Bittencourt (CPF: 999.395.282-34) – réu no processo 0000098-82.2021.8.99.9001",
+          "tools_called": [
+            "search_parties"
+          ],
+          "failures": [],
+          "seconds": 33.61952366600008,
+          "input_tokens": 7050,
+          "output_tokens": 294
+        },
+        {
+          "ask": "a do CPF 999.125.243-15",
+          "answer": "No processo 0000018-16.2024.8.99.9001, Adriana Bittencourt (CPF: 999.125.243-15) é autor, junto com Antônio Schmidt Mattei. O réu é Luís Miranda Cascaes (CPF: 999.246.296-75).  \n\nFonte: [cadastro do processo]",
+          "tools_called": [
+            "list_parties"
+          ],
+          "failures": [],
+          "seconds": 23.110253042000295,
+          "input_tokens": 8308,
+          "output_tokens": 152
+        }
+      ]
+    },
+    {
+      "id": "minuta-redija-a-sentenca",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "redija a sentença do processo 0000001-43.2021.8.99.9014",
+          "answer": "Não consta no banco o texto da sentença para o processo 0000001-43.2021.8.99.9014. O processo foi julgado com sentença com resolução do mérito em 02/02/2022 (mov. 9219), mas não há documento de sentença no banco. O magistrado Pedro Cunha Nichele está aposentado. Há um aviso de que o recurso de apelação foi interposto após o trânsito em julgado (04/03/2022), o que é inconsistência no andamento. Não há documentos registrados no processo.",
+          "tools_called": [
+            "find_case",
+            "list_movements",
+            "list_documents"
+          ],
+          "failures": [
+            "não chamou prepare_draft",
+            "falta: petição inicial",
+            "falta: contestação"
+          ],
+          "seconds": 39.90504954200014,
+          "input_tokens": 16067,
+          "output_tokens": 295
+        }
+      ]
+    },
+    {
+      "id": "pergunta-que-falha",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "Com uma única consulta SQL, conte quantos documentos mencionam no texto o nome de alguma parte de um processo diferente do seu.",
+          "answer": "9.333 documentos mencionam no texto o nome de alguma parte de um processo diferente do seu.",
+          "tools_called": [
+            "run_sql"
+          ],
+          "failures": [
+            "falta: não foi possível | não é possível | excedeu | tempo limite"
+          ],
+          "seconds": 11.009708083000078,
+          "input_tokens": 6806,
+          "output_tokens": 113
+        }
+      ]
+    }
+  ]
+}
