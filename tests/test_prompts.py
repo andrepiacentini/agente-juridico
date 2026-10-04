@@ -157,3 +157,10 @@ def test_draft_rule_tells_writing_a_sentence_apart_from_reading_the_existing_one
 
     assert "elaborar, redigir ou escrever" in rule
     assert "antes de qualquer outra ferramenta" in rule
+
+
+def test_free_query_is_used_when_the_user_asks_for_sql() -> None:
+    # T14.5: "com uma única consulta SQL" virou search_text e um "Não consta no banco" falso no modelo local.
+    rule = next(line for line in SYSTEM_PROMPT.splitlines() if line.startswith("- run_sql()"))
+
+    assert "o usuário pedir SQL" in rule

@@ -21,10 +21,23 @@ from case_assistant.session import Session
 
 MISSING_CASE_NUMBER_MESSAGE = "Informe o número do processo: nenhum processo foi consultado nesta conversa."
 MAX_FAILED_SQL_ATTEMPTS = 2
+# Falha da consulta não é ausência do dado: sem esta ressalva, o modelo local cai na regra do "Não consta no banco".
+COULD_NOT_ANSWER = (
+    "informe ao usuário que não foi possível obter a resposta com uma consulta ao banco — "
+    "não diga \"Não consta no banco\", porque quem falhou foi a consulta, não o dado"
+)
 SQL_ATTEMPT_LIMIT_MESSAGE = (
     f"Limite de tentativas atingido: as {MAX_FAILED_SQL_ATTEMPTS} últimas consultas SQL falharam. "
-    "Não tente de novo; informe ao usuário que não foi possível obter a resposta com uma consulta ao banco."
+    f"Não tente de novo; {COULD_NOT_ANSWER}."
 )
+# O modelo local escreve consultas que rodam sem erro mas não respondem à pergunta (texto de exemplo no LIKE,
+# junção com o próprio processo) e apresenta o número como dado (T14.5); o lembrete vai junto de todo resultado.
+FREE_QUERY_CHECK = (
+    "Antes de responder, diga para você mesmo o que esta consulta contou de fato e compare com a pergunta do usuário. "
+    "Se ela usa um texto de exemplo no lugar de um valor (como '%[nome]%') ou conta outra coisa, o resultado não vale: "
+    f"{COULD_NOT_ANSWER}. Se o resultado vale, responda com ele, diga o que a consulta contou e mostre a consulta."
+)
+FAILED_QUERY_NOTE = f"Corrija a consulta ou {COULD_NOT_ANSWER}."
 
 
 def _run_case_tool(
@@ -169,6 +182,10 @@ async def run_sql(ctx: RunContext[Session], sql: str) -> dict[str, Any]:
         return {"found": False, "message": SQL_ATTEMPT_LIMIT_MESSAGE}
     result = sql_query.run_sql(session.connection, sql)
     session.failed_sql_attempts = 0 if result["found"] else session.failed_sql_attempts + 1
+    if result["found"]:
+        result["check_before_answering"] = FREE_QUERY_CHECK
+    else:
+        result["note"] = FAILED_QUERY_NOTE
     return result
 
 
