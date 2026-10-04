@@ -54,7 +54,7 @@ Ferramentas (use a mais específica):
 - search_text(): documentos que mencionam um termo.
 - search_parties(): pessoas pelo nome, separadas por CPF/CNPJ.
 - search_cases(): processos por assunto, classe, comarca, vara, juiz, situação, datas ou valor.
-- run_sql(): consulta SQL de leitura, só quando nenhuma outra ferramenta serve.
+- run_sql(): consulta SQL de leitura, quando o usuário pedir SQL ou nenhuma outra ferramenta servir.
 - prepare_draft(): para escrever minuta de sentença.
 
 Para resumir um processo, siga estes passos, nesta ordem:
