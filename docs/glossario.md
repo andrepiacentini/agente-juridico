@@ -200,6 +200,10 @@ Capacidade de ver o que o programa fez. Cada chamada de [ferramenta](#ferramenta
 ### Ollama
 Programa que baixa e roda [modelos de linguagem](#llm) no próprio computador.
 
+<a id="omlx"></a>
+### oMLX
+Programa que roda [modelos de linguagem](#llm) no Mac usando o MLX, a biblioteca da Apple para os chips M1 e seguintes. Faz o mesmo papel do [Ollama](#ollama), só que exclusivo para Mac. Foi testado no projeto e não virou padrão (D89).
+
 <a id="plotly"></a>
 ### Plotly
 Biblioteca [Python](#python) que desenha gráficos interativos para páginas web. O [Chainlit](#chainlit) sabe mostrá-los dentro da conversa, e é assim que o painel de consumo exibe custo por modelo, tokens por tipo de pergunta e custo acumulado (D75).
