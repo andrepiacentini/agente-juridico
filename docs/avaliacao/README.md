@@ -40,3 +40,11 @@ Falhas novas do Gemini nesta rodada: no resumo do processo 1, uma "citação" in
 
 A demonstração 100% local continua com o Qwen3 4B no Ollama, que tem o melhor placar. No M5, o oMLX não é mais rápido que o Ollama. O Gemma falhou no resumo do 3161 sem ler nenhuma peça. O gpt-oss escreve números com hífen Unicode (U+2011), que não funciona numa busca. Análise: [`DECISOES.md`](../../DECISOES.md) D91.
 
+## 05/10/2026 — trava da petição inicial (T14.7)
+
+| Modelo | Placar | Edital | Tempo total | Arquivo |
+|---|---|---|---|---|
+| `qwen3:4b-instruct-2507-q4_K_M` (Ollama, M5) | 19/20 | 8/8 | 279 s | [`placar-qwen3-4b-ollama-t14.7-2026-10-05.json`](placar-qwen3-4b-ollama-t14.7-2026-10-05.json) |
+
+A partir daqui, o caso `edital-2-partes-3161` exige `read_document`: antes, ele passava quando a palavra "indenização" aparecia por acaso, com pedidos inventados. Análise: [`DECISOES.md`](../../DECISOES.md) D92.
+

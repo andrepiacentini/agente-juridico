@@ -162,6 +162,11 @@ DRAFT_DOCUMENTS_QUERY = f"""
     WHERE processo_id = ? AND tipo IN ({", ".join("?" * len(DRAFT_DOCUMENT_TYPES))})
     ORDER BY dt_juntada, id
 """
+# Os pedidos do autor estão na petição inicial; o índice dos documentos não traz o conteúdo (T14.7).
+INITIAL_PETITION_TYPE = "Petição Inicial"
+INITIAL_PETITIONS_QUERY = """
+    SELECT id FROM documento WHERE processo_id = ? AND tipo = ? ORDER BY dt_juntada, id
+"""
 EXISTING_SENTENCES_QUERY = f"""
     SELECT id, tipo, dt_juntada FROM documento
     WHERE processo_id = ? AND tipo IN ({", ".join("?" * len(SENTENCE_DOCUMENT_TYPES))})
@@ -444,6 +449,12 @@ def read_document(connection: sqlite3.Connection, document_id: int) -> dict[str,
         "warnings": _cited_case_number_warnings(row["texto"], row["numero"]),
         "source": document_source(row["id"], row["tipo"], row["dt_juntada"]),
     }
+
+
+def initial_petition_ids(connection: sqlite3.Connection, case_number: str) -> list[int]:
+    """Ids das petições iniciais do processo, em ordem de juntada; vazio se o processo não tem nenhuma."""
+    case_id = _resolve_case_id(connection, case_number)
+    return [row["id"] for row in connection.execute(INITIAL_PETITIONS_QUERY, (case_id, INITIAL_PETITION_TYPE))]
 
 
 @_reports_not_found

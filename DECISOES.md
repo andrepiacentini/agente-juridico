@@ -724,6 +724,29 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
     - Depois, um teste rápido no Ollama passou mesmo com o oMLX aberto. Antes de confiar nele, o assistente conferiu a memória, viu o swap em 10,5 GB e não rodou a bateria nessas condições.
   - Custo: zero, tudo local.
 
+### D92 — Pedidos do autor: uma trava em código obriga a ler a petição inicial, porque o modelo local inventava os pedidos desde o início
+- **Decisão:** quando a pergunta fala em "pedido" ou "pedidos" e o processo perguntado (pelo número na pergunta ou pelo processo em foco) tem uma petição inicial que ainda não foi lida na conversa, a resposta volta ao [modelo](docs/glossario.md#llm) com a ordem de chamar `read_document` para aquela peça e responder de novo a pergunta inteira. É o mesmo molde das travas da D51 e da D66 (um [validador da resposta](docs/glossario.md#validador-de-resposta) em `agent.py`). Processo sem petição, pergunta que não fala em pedidos e minuta (D57) não passam pela trava. O número de devoluções por resposta subiu de 2 para 3, uma por trava. A busca da petição é uma função de domínio nova (`initial_petition_ids`, em `tools.py`). O caso `edital-2-partes-3161` passa a exigir `read_document`. A T14.7 fica concluída.
+- **O que a investigação mostrou:** a falha não começou em 04/10. Em **todas** as rodadas guardadas desde 28/09 (Ollama e oMLX), o Qwen3 4B respondeu à pergunta 2 do edital sem abrir a petição inicial, e em todas ele inventou os pedidos: "atendimento médico e tratamentos", "atestados médicos e perícia", "danos morais", "art. 379 do Código Civil" e uma data de acidente. Nada disso está em nenhuma das 19 peças do 3161. O doc 7865 pede indenização por danos materiais "em valor a ser arbitrado", com base no art. 28 do Código de Trânsito, e R$ 3.796,73 é o valor da causa. O teste exigia só a palavra "indenização" e aprovava quando ela saía por acaso. Por isso a hipótese da D90, de que a falha vinha de uma atualização do Ollama, não se confirmou, e não foi preciso comparar com o código de 29/09. O Gemini e o gpt-oss leem a peça e acertam. Era uma [alucinação](docs/glossario.md#alucinacao) numa pergunta do edital, escondida por um teste fraco.
+- **Medido** ([Ollama](docs/glossario.md#ollama), `qwen3:4b`, no M5; placar em `docs/avaliacao/placar-qwen3-4b-ollama-t14.7-2026-10-05.json`):
+
+  | | Antes | Só a regra no prompt | Regra + trava | Só a trava (final) |
+  |---|---:|---:|---:|---:|
+  | Partes do 3161, com `read_document` exigido | 0/3 | 0/3 | 3/3 | **3/3** |
+  | Partes do processo 1 (sem documentos) | — | — | falhou na bateria | **3/3** |
+  | Bateria inteira | 18/20 (05/10, régua antiga) | — | 17/20 | **19/20** |
+  | Perguntas do edital | 7/8 | — | 7/8 | **8/8** |
+
+  A única falha da bateria final é o resumo depois do foco sem `list_movements`, em aberto desde a D51. O "redija a sentença" (D59) falhou em 1 de 3 rodadas avulsas e passou na bateria. Essa pergunta não passa pela trava e oscilava antes desta tarefa (D91).
+- **Por que em código, e não no prompt:** a regra "Para os pedidos do autor, leia a petição inicial com read_document()" foi testada antes e deu 0 de 3. Pior: duas respostas afirmaram que "a petição inicial (doc 7865) foi lida" sem que ela tivesse sido lida. Somada à trava, a mesma regra fez estrago no processo 1, que não tem documento nenhum: o modelo chamou `read_document` com um id inventado (1), leu a petição de **outro processo** e apresentou os pedidos e o valor da causa dela como se fossem do processo 1. A regra foi retirada, e o prompt voltou a ser exatamente o de antes. A trava age só quando existe uma petição a ler, então não empurra o modelo a procurar o que não existe.
+- **Detalhes de implementação:** a trava é assíncrona, como as ferramentas. O Pydantic AI roda um validador síncrono em outra thread, e a conexão do SQLite só funciona na thread que a abriu. A primeira versão da mensagem de devolução dizia "responda com os pedidos que estão no texto", e o modelo passou a responder **só** os pedidos, sem partes, juiz e advogados (3 rodadas reprovadas). Com "responda de novo a pergunta inteira do usuário", a resposta voltou a ser completa.
+- **Achado fora do escopo:** o `read_document` devolve qualquer documento pelo id, mesmo de outro processo. A resposta traz o número do processo dono, mas o modelo de 4B não confere. Hoje isso só aconteceu por causa da regra retirada, mas a porta continua aberta. Fica sem tarefa até alguém decidir se vale uma trava, por exemplo um aviso quando o documento lido não é do processo em foco.
+- **Descartado:** só endurecer o teste, que transformaria um acerto por acaso numa falha sem corrigir nada; a regra no prompt, pelo motivo acima; rodar o caso no Gemini, que já lia a peça antes e não passa por nada que a trava mude (o autor pediu Gemini só quando o local falhar).
+- **Uso de IA:** o Claude Code conferiu o texto da peça antes de qualquer hipótese, e foi assim que viu que a resposta "reprovada por falta de uma palavra" era invenção. Depois, olhou as ferramentas chamadas em todos os placares guardados, o que derrubou a hipótese da atualização do Ollama sem precisar do experimento previsto. **Erros do assistente:**
+  - Acrescentou a regra no prompt e, para caber no limite de tamanho, cortou duas frases ("Serve para resumir processos sem documentos." e "Leia só o necessário."). A regra não funcionou sozinha e, com a trava, causou a leitura de um documento de outro processo. Só a bateria inteira mostrou isso, e tudo foi desfeito.
+  - A primeira mensagem da trava fez o modelo responder só parte da pergunta.
+  - Os testes vieram antes do código. A trava síncrona quebrou nos testes pela thread do SQLite, não no modelo real, e foi corrigida antes de qualquer rodada.
+  - Custo: zero, tudo local.
+
 ---
 
 ## Pendências de decisão
