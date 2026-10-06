@@ -685,6 +685,45 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** recusar na validação padrões que nunca fazem sentido, como colchetes dentro de `LIKE`. Não foi preciso, e viraria uma lista de casos que o modelo contornaria com outro texto de exemplo. Também descartado tentar fazer o modelo local escrever a consulta certa, que cruza todos os textos com todos os nomes e estoura o tempo: não é o que a pergunta testa, e um 4B não chega lá de forma confiável.
 - **Uso de IA:** o Claude Code rastreou o SQL antes de mexer em qualquer coisa, e foi assim que viu que não havia erro nenhum para o teto pegar. Também procurou controles com consultas legítimas para medir o risco inverso, o de o modelo passar a duvidar de resultado certo. **Erro do assistente:** escreveu o lembrete antes dos testes, como experimento para ver se um modelo de 4B reagia. Depois tirou o código, escreveu os 5 testes (4 falharam e 1, o que protege os dados, passou desde o início) e reaplicou: o resultado final é o mesmo, mas a ordem do [TDD](docs/glossario.md#tdd) foi quebrada na primeira passada. A mudança no prompt seguiu a ordem certa: teste falhando primeiro. A primeira bateria completa caiu no meio porque o app do Ollama fechou sozinho, sem erro no log. Foi reaberto e a bateria rodou de novo do zero. Custo do Gemini: 1 rodada, em torno de R$ 0,05.
 
+## 05/10/2026
+
+### D91 — Num Mac de 24 GB, modelos locais maiores não superam o Qwen3 4B, e o Ollama continua sendo o servidor: a demonstração 100% local segue como está
+- **Decisão:** a opção de demonstração sem nenhum modelo em nuvem continua sendo o Qwen3 4B Instruct no [Ollama](docs/glossario.md#ollama), como na D25 e na D89. No Mac novo do autor (M5, 24 GB), foram medidos dois [modelos locais](docs/glossario.md#modelo-local) maiores no [oMLX](docs/glossario.md#omlx), os dois [MoE](docs/glossario.md#moe): o **gpt-oss 20B** (`gpt-oss-20b-MXFP4-Q8`, 11,4 GB) e o **Gemma 4 26B-A4B** (`gemma-4-26b-a4b-it-4bit`, 12,7 a 14,7 GB). Nenhum dos dois superou o 4B. O 4B também foi medido nos dois servidores, e o Ollama fez o melhor placar do dia. Nada muda em README, `.env.example` ou código. Os dois modelos novos chamaram as [ferramentas](docs/glossario.md#ferramenta) sem ajuste nenhum, só com o `.env` trocado (`LLM_MODEL=openai-chat:<nome em /v1/models>`). A T14.6 fica concluída.
+- **Medido** (bateria inteira, 20 casos e 28 respostas, uma rodada de cada, tudo no M5; placares em `docs/avaliacao/placar-*-2026-10-05.json`):
+
+  | | Qwen3 4B, Ollama | Qwen3 4B, oMLX | gpt-oss 20B, oMLX | Gemma 4 26B-A4B, oMLX |
+  |---|---:|---:|---:|---:|
+  | Casos certos | **18/20** | 15/20 | 14/20 | 15/20 |
+  | Perguntas do edital (4 × 2 processos) | 7/8 | **8/8** | 7/8 | 5/8 |
+  | Tempo da bateria | 280 s | 304 s | 485 s | **256 s** |
+  | Tempo médio por resposta | 10,0 s | 10,9 s | 17,3 s | **9,2 s** |
+  | Memória do modelo carregado | 4,0 GB (janela de 16k, D77) | **2,2 GB** | 11,4 GB | 12,7 a 14,7 GB |
+
+  Nos 14 casos que o 4B acerta nos dois servidores, o tempo é praticamente igual: 221 s no Ollama e 214 s no oMLX. A vantagem de 27% do oMLX no M1 (D89) sumiu no M5. O 4B no Ollama levou 1.260 s no M1 (29/09, D78) e 280 s aqui: o hardware novo, sozinho, deixou a bateria 4,5 vezes mais rápida.
+- **Onde cada um errou:**
+  - **Qwen3 4B, Ollama:** em partes do 3161, faltou "indenização". É a mesma falha que começou em 04/10 e que a D90 deixou sem tarefa, então agora ela se repete em outro Mac e em outra versão do Ollama (0.35.1, Homebrew). No resumo depois do foco, não chamou `list_movements` (D51). Passou em todos os outros, inclusive a `pergunta-que-falha` (D90).
+  - **Qwen3 4B, oMLX:** acertou partes do 3161, mas errou quatro casos que passam no Ollama: "não está cadastrado" sem a palavra "magistrado" e homônimo sem citar a fonte (os dois já vistos na D89), "redija a sentença" sem a ferramenta da minuta (D59), e a `pergunta-que-falha`. Nesta última, contou 19.307 documentos, mas mostrou o que a consulta calculou, o que deixa o erro conferível (D90). Também falhou no resumo depois do foco, como no Ollama.
+  - **Gemma:** no resumo do 3161, a primeira pergunta do edital, não leu nenhuma peça (`read_document`) e resumiu só pelo cadastro e pelas movimentações. No resumo do processo 1, escreveu "Warnings" e `[warnings]` no texto (pendência da D53). Em partes do 3161, faltou "indenização", como no Ollama. No resumo depois do foco, não chamou `list_movements` (D51). Na `pergunta-que-falha`, não chamou o `run_sql` e devolveu a consulta escrita como resposta. Acertou o homônimo, o magistrado ausente e o "redija a sentença".
+  - **gpt-oss:** escreve número de processo e CPF com o hífen não separável do Unicode (`‑`, U+2011) em vez do hífen comum. No homônimo, a resposta certa reprovou por isso. Para o usuário, o efeito é real: o número copiado da resposta não encontra o processo numa busca. Também repetiu o juiz pelo histórico sem o aviso de aposentado (troca de processo), não apontou o provável erro de digitação no dígito verificador, citou `[list_movements]` e `[movements warnings]` como fonte e, na `pergunta-que-falha`, devolveu o SQL em vez de admitir a falha. No resumo do processo 1, também vazou "warnings".
+- **Memória:**
+  - O teto do oMLX tinha vindo do Mac de 8 GB fixo em 5 GB (D89) e foi subido para 16 GB. Com 16 GB, o Gemma carregou como modelo de imagem e texto (15 GB), e a proteção de memória recusou o primeiro pedido porque faltavam 300 MB para o contexto. O macOS deixa a [GPU](docs/glossario.md#gpu) deste Mac usar até 17,76 GB, então o teto ficou em **17,5 GB**, e assim o Gemma rodou. Ressalva: o maior pedido dele teve 6,2 mil tokens, porque não leu as peças do 3161, então não ficou provado que o caso mais pesado (16 mil tokens, D77) cabe nesse teto.
+  - A variante `gemma-4-26B-A4B-it-qat-OptiQ-4bit` (20,25 GB) não foi medida: para caber, seria preciso liberar ~22 GB para a GPU com `sysctl`, o que deixaria o sistema com ~2 GB.
+  - **Os dois servidores não convivem com modelo grande carregado.** O oMLX segura o último modelo na memória sem prazo. Com o Gemma ainda carregado nele, a primeira bateria do Ollama falhou em 20 de 20 casos com um erro 500 genérico ("Compute error"), e só o log do servidor mostrava a causa: falta de memória na GPU. O macOS chegou a jogar os 15 GB do oMLX para o disco, com 10,5 GB de swap. A bateria só valeu depois de fechar o oMLX. No dia da demonstração, só um servidor de modelos fica aberto.
+  - Ao contrário da D89, os erros de memória do oMLX chegaram ao agente com a mensagem legível (507 e 400), não escondidos numa resposta de sucesso.
+- **Por quê:** o Qwen3 4B no Ollama tem o melhor placar (18/20) e é o padrão documentado, sem nenhum ajuste de memória. O oMLX acertou uma pergunta do edital a mais, mas errou três casos a mais no total, e no M5 não é mais rápido. Os modelos maiores perdem para o 4B no total, e o Gemma falha justamente no resumo do 3161, que abre a demonstração. O 4B ainda ocupa um quarto da memória do Gemma, o que deixa o Mac folgado durante a apresentação.
+- **Descartado:**
+  - Forçar a variante OptiQ do Gemma com `sysctl`, pelo motivo acima.
+  - Trocar o servidor para o oMLX pela pergunta do edital a mais: a falha de "indenização" no Ollama vem de 04/10 e merece uma tarefa própria, não uma troca de servidor.
+  - Repetir as baterias para separar variação de diferença real: as diferenças entre os modelos novos e o 4B não dependem de um caso só.
+  - Corrigir o hífen do gpt-oss no código: não há motivo para usá-lo, e uma normalização da resposta só valeria se ele virasse opção. Fica o registro para o caso de alguém usá-lo.
+- **Uso de IA:** o Claude Code recomendou os dois modelos a partir de páginas de comparação publicadas depois do seu conhecimento. Avisou que alguns números delas eram fisicamente impossíveis (um 27B denso a 85 tok/s num M5 base).
+  - **Erros do assistente:**
+    - Estimou o Gemma 4 em "~15 GB, cabe com folga" e não previu que a variante baixada (OptiQ) teria 20 GB, nem que o oMLX carrega o Gemma como modelo de imagem, com 1 GB a mais.
+    - Tentou medir o pico de memória pelo RSS do processo, que deu 0,9 GB porque não conta a memória da GPU do MLX. O número foi descartado e trocado pelo tamanho carregado que o log do oMLX informa.
+    - Disparou a bateria do Ollama sem conferir se o oMLX ainda segurava o Gemma, e a rodada inteira se perdeu.
+    - Depois, um teste rápido no Ollama passou mesmo com o oMLX aberto. Antes de confiar nele, o assistente conferiu a memória, viu o swap em 10,5 GB e não rodou a bateria nessas condições.
+  - Custo: zero, tudo local.
+
 ---
 
 ## Pendências de decisão

@@ -1,0 +1,464 @@
+{
+  "date": "2026-10-05",
+  "model": "openai-chat:gpt-oss-20b-MXFP4-Q8",
+  "score": "14/20",
+  "cases": [
+    {
+      "id": "inexistente-depois-de-foco",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "qual o assunto do processo 0000007-79.2023.8.99.9014?",
+          "answer": "Assunto: Acidente de Trânsito. [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 3.492356582999946,
+          "input_tokens": 5314,
+          "output_tokens": 116
+        },
+        {
+          "ask": "resuma o processo 0000999-40.2023.8.99.9014",
+          "answer": "Não consta no banco. Foi consultado: find_case.",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 3.5575404169999274,
+          "input_tokens": 5939,
+          "output_tokens": 122
+        }
+      ]
+    },
+    {
+      "id": "edital-1-resumo-3161",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "Resuma o processo 0000007-79.2023.8.99.9014, destacando os principais fatos e o andamento processual.",
+          "answer": "**Processo 0000007‑79.2023.8.99.9014**  \n*Procedimento Comum Cível – Acidente de Trânsito – 1ª Vara Cível de São Bento do Sul – Juiz Luiz Bonetti Vasconcelos (aposentado).*  \n\n**Fatos (Petição Inicial – doc 7865)**  \nJoão Ziegler Rocha alegou colisão entre seu veículo e o da Operadora de Saúde Cambirela Ltda. O boletim de ocorrência e fotografias comprovaram a infração ao art. 28 do Código de Trânsito Brasileiro e o dano material. O autor pediu indenização, custas e honorários, e a produção de provas. [doc 7865 — Petição Inicial, 08/01/2024]  \n\n**Defesa (Contestação – doc 7868)**  \nA ré contestou, alegando inépcia da inicial e requerendo a improcedência. [doc 7868 — Contestação, 05/06/2024]  \n\n**Andamento**  \nDistribuição 13/12/23; despachos 22/01/24 e 29/01/24; mandado 22/02/24; citação 02/04/24; petições 05/06/24 e 08/08/24; decisão de saneamento 11/10/24; despacho 28/11/24; despacho 03/02/25; petições 19/03/25, 06/05/25 e 23/06/25; audiência 11/08/25; instrução 29/10/25; despacho 07/01/26; sentença 18/02/26; apelação 20/03/26; trânsito em julgado 23/03/26; juntada 07/04/26; remessa 21/04/26. [mov. 9926 – 23/03/26]  \n\n**Sentença (doc 7878, 18/02/2026)**  \nRejeita a preliminar de inépcia. Julga parcialmente procedente, condenando a ré a pagar R$ 1.523,18, custas rateadas igualmente e honorários recíprocos. Sentença: 18/02/2026, código 9219. [doc 7878 — Sentença, 18/02/2026]  \n\n**Resultado**  \nProcesso julgado (status “julgado”). A apelação foi interposta e transitou em julgado em 23/03/2026.  \n\n**Avisos**  \n- Magistrado Luiz Bonetti Vasconcelos está aposentado. [cadastro do processo]  \n- Documentos 7872 e 7877 apresentam assinatura divergente do advogado do autor. [lista de documentos]  \n\n---  \n*(Todas as informações foram extraídas diretamente do banco e citadas com a fonte indicada.)*",
+          "tools_called": [
+            "find_case",
+            "list_movements",
+            "list_documents",
+            "read_document",
+            "read_document"
+          ],
+          "failures": [],
+          "seconds": 56.510246499999994,
+          "input_tokens": 26697,
+          "output_tokens": 1906
+        }
+      ]
+    },
+    {
+      "id": "edital-1-resumo-processo-1",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "Resuma o processo 0000001-43.2021.8.99.9014, destacando os principais fatos e o andamento processual.",
+          "answer": "**Processo 0000001‑43.2021.8.99.9014 – Resumo**\n\n- **Objeto e valor**: Rescisão contratual com pedido de perdas e danos, valor da causa R$ 21 495,98.  \n  *Fonte: [cadastro do processo]*  \n\n- **Autuação**: 09/01/2021, 2ª Vara Cível de São Bento do Sul.  \n  *Fonte: [cadastro do processo]*  \n\n- **Juízo**: Magistrado Pedro Cunha Nichele, atualmente aposentado.  \n  *Fonte: [cadastro do processo]*  \n\n- **Situação**: Julgado, sentença proferida em 02/02/2022.  \n  *Fonte: [cadastro do processo] (judgment)*  \n\n- **Andamento (16 movimentações)**  \n  1. Distribuição por Sorteio – 11/01/2021. *[mov. 9926]*  \n  2. Despacho Proferido – 28/01/2021. *[mov. 9911]*  \n  3. Expedição de Mandado – 16/02/2021. *[mov. 9060]*  \n  4. Citação Positiva – 22/03/2021. *[mov. 9123]*  \n  5. Juntada de Petição – 20/04/2021. *[mov. 9581]*  \n  6. Juntada de Petição – 31/05/2021. *[mov. 9581]*  \n  7. Decisão Interlocutória – 06/07/2021. *[mov. 9912]*  \n  8. Despacho Proferido – 16/08/2021. *[mov. 9911]*  \n  9. Despacho Proferido – 30/08/2021. *[mov. 9911]*  \n 10. Conclusão para Despacho – 09/12/2021. *[mov. 9951]*  \n 11. Sentença com Resolução do Mérito – 02/02/2022. *[mov. 9219]*  \n 12. Trânsito em Julgado – 21/02/2022. *[mov. 9848]*  \n 13. Recurso de Apelação Interposto – 04/03/2022. *[mov. 9246]*  \n 14. Arquivamento Definitivo – 16/03/2022. *[mov. 9849]*  \n 15. Juntada de Petição – 22/03/2022. *[mov. 9581]*  \n 16. Remessa à Instância Superior – 05/04/2022. *[mov. 9247]*  \n\n- **Observações**  \n  - Não há documentos no banco referentes a esta causa.  \n  - *Aviso do cadastro*: Magistrado aposentado. *[cadastro do processo]*  \n  - *Aviso de movimentação*: Recurso de apelação registrado após trânsito em julgado, sequê̂ncia incomum que merece conferência. *[movements warnings]*",
+          "tools_called": [
+            "find_case",
+            "list_movements"
+          ],
+          "failures": [
+            "não devia ter: warning"
+          ],
+          "seconds": 35.73594145900006,
+          "input_tokens": 8609,
+          "output_tokens": 1287
+        }
+      ]
+    },
+    {
+      "id": "edital-2-partes-3161",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "Quem são as partes, o magistrado e os advogados do processo 0000007-79.2023.8.99.9014? Quais são os pedidos apresentados?",
+          "answer": "**Partes**  \n- Autor: João Ziegler Rocha – CPF 999.539.988‑87 [cadastro do processo]  \n- Réu: Operadora de Saúde Cambirela Ltda – CNPJ 99.193.997/0001‑35 [cadastro do processo]  \n\n**Magistrado**  \n- Luiz Bonetti Vasconcelos, aposentado (aviso) [cadastro do processo]  \n\n**Advogados**  \n- Dr. Carlos Gava Reis – OAB/SC 99.170 (autor) – documentações 7865, 7869, 7872, 7873, 7877, 7879, 7881 [lista de documentos]  \n- Dra. Sônia Weber Azevedo – OAB/SC 99.854 (réu) – documentações 7868, 7882 [lista de documentos]  \n\n**Pedidos da petição inicial**  \n1. Citação da requerida para apresentar defesa, sob pena de revelia.  \n2. Procedência integral dos pedidos, condenando a requerida a pagar indenização a ser arbitrada pelo juízo.  \n3. Condenação da requerida ao pagamento das custas processuais e honorários advocatícios.  \n4. Produção de todos os meios de prova em direito admitidos, especialmente documental e testemunhal.  \n5. Valor da causa de R$ 3.796,73.  \n\nFonte: texto da petição inicial (doc 7865) e cadastro de partes e juiz.",
+          "tools_called": [
+            "find_case",
+            "list_parties",
+            "list_documents",
+            "read_document"
+          ],
+          "failures": [],
+          "seconds": 29.55465737500026,
+          "input_tokens": 18836,
+          "output_tokens": 967
+        }
+      ]
+    },
+    {
+      "id": "edital-2-partes-processo-1",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "Quem são as partes, o magistrado e os advogados do processo 0000001-43.2021.8.99.9014? Quais são os pedidos apresentados?",
+          "answer": "Partes:  \n- Autor(a): Carlos Bertoldi Boeing – CPF 999.808.166‑59  \n- Autor(a): Pedro Vieceli – CPF 999.622.015‑20  \n- Réu: Banco Meridional S.A. – CNPJ 99.549.809/0001‑93  \nFonte: [cadastro do processo]  \n\nMagistrado: Pedro Cunha Nichele (situado aposentado).  \nAviso: “Magistrado Pedro Cunha Nichele está aposentado.”  \nFonte: [cadastro do processo]  \n\nAdvogados: não há documentos no banco, portanto não há registro de advogados.  \nFonte: [list_documents]  \n\nPedidos apresentados: não há petição inicial registrada no banco; portanto, não há registro de pedidos.  \nFonte: [search_text] (nenhum documento menciona “pedido”).",
+          "tools_called": [
+            "find_case",
+            "list_parties",
+            "list_documents",
+            "search_text"
+          ],
+          "failures": [],
+          "seconds": 31.077307541999744,
+          "input_tokens": 14664,
+          "output_tokens": 1108
+        }
+      ]
+    },
+    {
+      "id": "edital-3-julgamento-3161",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "O processo 0000007-79.2023.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?",
+          "answer": "Sim. O processo 0000007‑79.2023.8.99.9014 já foi julgado.  \nA sentença (doc 7878, 18/02/2026) declarou **parcialmente procedente** o pedido de João Ziegler Rocha contra Operadora de Saúde Cambirela Ltda, condenando a requerida a pagar **R$ 1.523,18** (redução do valor solicitado) [doc 7878 — Sentença, 18/02/2026].\n\n**Fundamentos**:  \n- Rejeitou a preliminar de inépcia da petição inicial, pois a documentação comprova a conduta do réu conforme art. 28 do Código de Trânsito Brasileiro;  \n- Considerou o montante pedido excessivo diante das circunstâncias, aplicando os princípios da razoabilidade e da proporcionalidade [doc 7878 — Sentença, 18/02/2026].  \n\n**Aviso**: Magistrado Luiz Bonetti Vasconcelos está aposentado [find_case].",
+          "tools_called": [
+            "find_case",
+            "read_document"
+          ],
+          "failures": [],
+          "seconds": 20.24034379099976,
+          "input_tokens": 9052,
+          "output_tokens": 683
+        }
+      ]
+    },
+    {
+      "id": "edital-3-julgamento-processo-1",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "O processo 0000001-43.2021.8.99.9014 já foi julgado? Se sim, qual foi a decisão e quais foram seus fundamentos?",
+          "answer": "Sim. O processo já foi julgado (status “julgado” – data de sentença 02/02/2022).  \n\n**Decisão**: a sentença está registrada no movimento 9219 — “Sentença com Resolução do Mérito”, mas o texto da sentença não consta no banco.  \n\n**Fundamentos**: não há documentação disponível no banco, portanto não é possível indicar os fundamentos.  \n\nAviso: Magistrado Pedro Cunha Nichele está aposentado.  \n\nSources: [cadastro do processo], [mov. 9219 — Sentença com Resolução do Mérito, 02/02/2022].",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 17.205458207999982,
+          "input_tokens": 5285,
+          "output_tokens": 622
+        }
+      ]
+    },
+    {
+      "id": "edital-4-minuta-3161",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "Elabore uma minuta de sentença para o processo 0000007-79.2023.8.99.9014, com base nos fatos e documentos disponíveis.",
+          "answer": "PROPOSTA DE MINUTA — texto não proferido  \n\n**RELATÓRIO**  \nPelo exposto na petição inicial, João Ziegler Rocha, por seu advogado, ajuizou ação de conhecimento contra a Operadora de Saúde Cambirela Ltda., alegando que o veículo conduzido pelo réu colidiu com o seu em decorrência de manobra de conversão sem sinalização adequada, causando danos materiais e perda de uso do bem. O autor requer a citação do réu, a procedência integral da demanda, condenação ao pagamento de indenização a ser arbitrada pelo Juízo, custas e honorários, e a produção de prova documental e testemunhal [doc 7865 — Petição Inicial, 08/01/2024].  \n\nA contestação apresentada pela réu alega que a petição inicial é inépcia, pois não descreve claramente os fatos e o nexo causal, e que o valor pleiteado é excessivo e desproporcional, pedindo o reconhecimento da inépcia e a total improcedência dos pedidos, com condenação da autora ao pagamento de custas [doc 7868 — Contestação, 05/06/2024].  \n\nEm réplica, a autora refuta a alegação de inépcia, argumentando que a documentação acostada à inicial comprova os fatos e o nexo causal, requerendo a rejeição integral das teses defensivas e a procedência dos pedidos [doc 7869 — Réplica, 08/08/2024].  \n\nO juiz, na decisão de saneamento, afastou a preliminar de inépcia da petição inicial, defiro a produção de prova documental e testemunhal e indicou as partes para apresentarem rol de testemunhas, declarando o processo “saneado” e estabelecendo os pontos controvertidos: ocorrência dos fatos, existência do dano e nexo de causalidade [doc 7870 — Decisão de Saneamento, 11/10/2024].  \n\nNa audiência de instrução e julgamento, foi colhido depoimento pessoal das partes e testemunhas, encerrada a instrução e apresentadas alegações finais remissivas, levando o processo a conclusão para sentença [doc 7875 — Ata de Audiência, 25/07/2025].  \n\nO processo está catalogado como “julgado” com sentença prevista para 18/02/2026 [cadastro do processo].  \n\n**FUNDAMENTAÇÃO**  \n1. **Ocorrência dos fatos** – A narrativa do autor na petição inicial apresenta, com base no boletim de ocorrência e nas fotografias anexas, a colisão decorrente da manobra de conversão do réu, comprovada nos autos, e não há contestação concreta que afaste essa descrição [doc 7865 — Petição Inicial, 08/01/2024; doc 7868 — Contestação, 05/06/2024].  \n\n2. **Existência do dano** – O autor indica que suportou os custos de reparo do veículo e a perda de uso durante o conserto, valorar um prejuízo de R$ 3.796,73, que está documentado nos autos; não há impugnação específica dos valores apresentados na contestação [doc 7868 — Contestação, 05/06/2024].  \n\n3. **Nexo causal** – A decisão de saneamento fixou este ponto como controvertido, mas não há impugnação sistemática da causalidade apresentada pelo autor, apenas a alegação de inépcia, que já foi afastada [doc 7870 — Decisão de Saneamento, 11/10/2024].  \n\n4. **Prova** – A produção de prova documental e testemunhal foi deferida e, segundo a ata de audiência, ambos os lados apresentaram alegações finais remissivas, indicando que a prova produzida ainda não foi julgada em sua totalidade. Assim, não há conclusão probatória definitiva que permita a sentença em definitivo, mas a materialidade dos danos e a ocorrência dos fatos parecem suficientemente sustentados.  \n\n**DISPOSITIVO**  \nSUGESTÃO DE DECISÃO:  \n\n- Em face da documentação comprobatória dos autos e da ausência de contestação eficaz quanto à ocorrência dos fatos, à existência do dano e ao nexo causal, admite-se a procedência dos pedidos de indenização.  \n- Condena-se a Operadora de Saúde Cambirela Ltda. a pagar ao autor a quantia de R$ 3.796,73, em custeio de reparos, com correção monetária e juros de mora a partir da data de requerimento da indenização, conforme jurisprudência comum de aplicação de art. 927, §1º, do CPC.  \n- Determina-se o pagamento das custas processuais e honorários advocatícios, a serem fixados de acordo com o artigo 85 do CPC, em razão da sucumbência do réu.  \n- Fica facultado ao juízo, caso verifique a necessidade, de reavaliação do valor da indenização ou da condenação a fim de observar a razoabilidade e proporcionalidade, de modo a evitar enriquecimento sem causa.  \n\nCaso a análise das provas testemunhais e documentais revele contradições ou lacunas significativas, o juízo deverá ampliar os atos processuais, conforme previsto no art. 381 do CPC.  \n\n[doc 7865 — Petição Inicial, 08/01/2024]  \n[doc 7868 — Contestação, 05/06/2024]  \n[doc 7869 — Réplica, 08/08/2024]  \n[doc 7870 — Decisão de Saneamento, 11/10/2024]  \n[doc 7875 — Ata de Audiência, 25/07/2025]  \n[cadastro do processo]",
+          "tools_called": [
+            "prepare_draft",
+            "read_document",
+            "read_document",
+            "read_documentcommentary",
+            "read_document",
+            "read_document",
+            "read_document",
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 73.4459798339999,
+          "input_tokens": 44297,
+          "output_tokens": 2486
+        }
+      ]
+    },
+    {
+      "id": "edital-4-minuta-processo-1",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "Elabore uma minuta de sentença para o processo 0000001-43.2021.8.99.9014, com base nos fatos e documentos disponíveis.",
+          "answer": "Não é possível elaborar a minuta de sentença para o processo 0000001-43.2021.8.99.9014: faltam no banco a Petição Inicial e a Contestação. Sem elas, não há o pedido do autor nem a defesa do réu. [prepare_draft]",
+          "tools_called": [
+            "prepare_draft"
+          ],
+          "failures": [],
+          "seconds": 8.478206458000386,
+          "input_tokens": 5075,
+          "output_tokens": 292
+        }
+      ]
+    },
+    {
+      "id": "troca-de-processo",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "Qual o assunto do processo 0000007-79.2023.8.99.9014?",
+          "answer": "Assunto: Acidente de Trânsito. [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 7.25969483300014,
+          "input_tokens": 5314,
+          "output_tokens": 219
+        },
+        {
+          "ask": "Quem é o juiz?",
+          "answer": "Juiz: Luiz Bonetti Vasconcelos. [cadastro do processo]",
+          "tools_called": [],
+          "failures": [
+            "falta: aposentado"
+          ],
+          "seconds": 1.6180327080001007,
+          "input_tokens": 2915,
+          "output_tokens": 48
+        },
+        {
+          "ask": "E o processo 0000001-43.2021.8.99.9014, qual o assunto?",
+          "answer": "Assunto: Rescisão Contratual c/c Perdas e Danos. [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 3.1879877910000687,
+          "input_tokens": 6297,
+          "output_tokens": 74
+        },
+        {
+          "ask": "e as partes?",
+          "answer": "Autor: Carlos Bertoldi Boeing (999.808.166‑59); Pedro Vieceli (999.622.015‑20).  \nRéu: Banco Meridional S.A. (99.549.809/0001‑93).  \n[cadastro do processo]",
+          "tools_called": [
+            "list_parties"
+          ],
+          "failures": [],
+          "seconds": 10.611764249999851,
+          "input_tokens": 6927,
+          "output_tokens": 366
+        },
+        {
+          "ask": "qual o valor da causa?",
+          "answer": "Valor da causa: R$ 21.495,98. [cadastro do processo]",
+          "tools_called": [],
+          "failures": [],
+          "seconds": 1.8573555410002882,
+          "input_tokens": 3647,
+          "output_tokens": 51
+        },
+        {
+          "ask": "Voltando ao 0000007-79.2023.8.99.9014: quem são as partes?",
+          "answer": "Autor: João Ziegler Rocha (999.539.988‑87).  \nRéu: Operadora de Saúde Cambirela Ltd. (99.193.997/0001‑35).  \n[cadastro do processo]",
+          "tools_called": [
+            "list_parties"
+          ],
+          "failures": [],
+          "seconds": 6.844348582999828,
+          "input_tokens": 7571,
+          "output_tokens": 214
+        }
+      ]
+    },
+    {
+      "id": "processo-inexistente",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "resuma o processo 0000999-40.2023.8.99.9014",
+          "answer": "Não consta no banco. Consultado: find_case (processo 0000999-40.2023.8.99.9014).",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 4.710277583000334,
+          "input_tokens": 4933,
+          "output_tokens": 153
+        }
+      ]
+    },
+    {
+      "id": "processo-existente-depois-de-foco",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "qual o assunto do processo 0000007-79.2023.8.99.9014?",
+          "answer": "Acidente de Trânsito [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 6.268305000000055,
+          "input_tokens": 5314,
+          "output_tokens": 203
+        },
+        {
+          "ask": "resuma o processo 0000001-43.2021.8.99.9014",
+          "answer": "**Resumo do processo 0000001‑43.2021.8.99.9014**\n\n- **Tipo**: Procedimento Comum Cível – Rescisão Contratual c/c Perdas e Danos  \n- **Partes**: não listadas (sem documentos).  \n- **Julgado** em 02/02/2022 por sentença (mov. 9219) [list_movements].  \n- **Andamento**: distribuição por sorteio, despachos, expedição de mandado, citação, petições, decisões interlocutórias, sentença, trânsito em julgado, recurso de apelação interposto (incomum, já após trânsito em julgado) e arquivamento definitivo [list_movements].  \n- **Resultado**: sentença de mérito concluída, porém o texto da sentença não está no banco de dados, portanto não há detalhes do fundamento ou das decisões; apenas a existência de sentença e trânsito em julgado são registradas.  \n\n**Observações**  \n- Não há documentos disponíveis para análise de petição inicial, contestação ou sentença.  \n- Aviso: recurso de apelação registrado em 04/03/2022, depois do trânsito em julgado (21/02/2022); sequência incomum [list_movements].  \n\n[find_case]",
+          "tools_called": [
+            "find_case",
+            "list_movements"
+          ],
+          "failures": [
+            "falta: [cadastro do processo] | [mov."
+          ],
+          "seconds": 19.621166417000495,
+          "input_tokens": 9994,
+          "output_tokens": 658
+        }
+      ]
+    },
+    {
+      "id": "digito-verificador-errado",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "resuma o 0000007-78.2023.8.99.9014",
+          "answer": "Não consta no banco. Foi consultado o número **0000007-78.2023.8.99.9014**.",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [
+            "falta: dígito verificador",
+            "falta: digitação"
+          ],
+          "seconds": 6.330096666999452,
+          "input_tokens": 4962,
+          "output_tokens": 216
+        }
+      ]
+    },
+    {
+      "id": "magistrado-aposentado",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "quem é o juiz do processo 0000007-79.2023.8.99.9014?",
+          "answer": "Juiz: Luiz Bonetti Vasconcelos.  \nAviso: Magistrado Luiz Bonetti Vasconcelos está aposentado.  \n[source: [cadastro do processo]]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 11.329625041999861,
+          "input_tokens": 5316,
+          "output_tokens": 396
+        }
+      ]
+    },
+    {
+      "id": "magistrado-ausente",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "quem é o juiz do processo 0000005-75.2025.8.99.9035?",
+          "answer": "Não há magistrado cadastrado para esse processo. [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [],
+          "seconds": 5.084093082999971,
+          "input_tokens": 5146,
+          "output_tokens": 132
+        }
+      ]
+    },
+    {
+      "id": "homonimo",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "quais os processos de Adriana Bittencourt?",
+          "answer": "Encontrei 4 pessoas diferentes com esse nome (CPF/CNPJ distintos). De qual delas se trata?",
+          "tools_called": [
+            "search_parties"
+          ],
+          "failures": [
+            "falta: 999.125.243-15",
+            "falta: 999.332.735-33"
+          ],
+          "seconds": 5.592607958000372,
+          "input_tokens": 5221,
+          "output_tokens": 183
+        },
+        {
+          "ask": "a do CPF 999.125.243-15",
+          "answer": "Processo em que a Adriana Bittencourt (CPF 999.125.243‑15) é autor:  \n- **0000018‑16.2024.8.99.9001** – Divórcio Litigioso, Partilha de Bens, 2ª Vara da Família e Sucessões, Florianópolis. [cadastro do processo]",
+          "tools_called": [
+            "find_case"
+          ],
+          "failures": [
+            "falta: 0000018-16.2024.8.99.9001"
+          ],
+          "seconds": 13.107579250000526,
+          "input_tokens": 6078,
+          "output_tokens": 432
+        }
+      ]
+    },
+    {
+      "id": "pergunta-impossivel",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "qual a idade média das partes dos processos autuados em 2024?",
+          "answer": "Não consta no banco.  \n(Consultado: banco de dados de processos; não há informação sobre data de nascimento ou idade das partes.)",
+          "tools_called": [],
+          "failures": [],
+          "seconds": 8.04325125000014,
+          "input_tokens": 2423,
+          "output_tokens": 290
+        }
+      ]
+    },
+    {
+      "id": "filtro-sem-valor",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "qual o percentil 90 do valor da causa por classe processual?",
+          "answer": "Não consta no banco. A consulta para obter o percentil 90 dos valores da causa por classe processual não pode ser executada com as ferramentas disponíveis.",
+          "tools_called": [],
+          "failures": [],
+          "seconds": 11.854578417000084,
+          "input_tokens": 2422,
+          "output_tokens": 423
+        }
+      ]
+    },
+    {
+      "id": "minuta-redija-a-sentenca",
+      "passed": true,
+      "turns": [
+        {
+          "ask": "redija a sentença do processo 0000001-43.2021.8.99.9014",
+          "answer": "Não é possível propor uma minuta de sentença para o processo 0000001‑43.2021.8.99.9014: faltam no banco a petição inicial e a contestação. Sem elas, não há o pedido do autor nem a defesa do réu.",
+          "tools_called": [
+            "prepare_draft"
+          ],
+          "failures": [],
+          "seconds": 10.339009041999816,
+          "input_tokens": 5049,
+          "output_tokens": 342
+        }
+      ]
+    },
+    {
+      "id": "pergunta-que-falha",
+      "passed": false,
+      "turns": [
+        {
+          "ask": "Com uma única consulta SQL, conte quantos documentos mencionam no texto o nome de alguma parte de um processo diferente do seu.",
+          "answer": "```sql\nSELECT COUNT(DISTINCT d.id) AS docs\nFROM documento d\nJOIN parte p ON instr(d.texto, p.nome) > 0\nWHERE EXISTS (\n    SELECT 1\n    FROM processo_parte pp\n    WHERE pp.parte_id = p.id\n      AND pp.processo_id <> d.processo_id\n);\n```",
+          "tools_called": [
+            "run_sql",
+            "run_sql"
+          ],
+          "failures": [
+            "falta: não foi possível | não é possível | excedeu | tempo limite"
+          ],
+          "seconds": 71.6363400829996,
+          "input_tokens": 7986,
+          "output_tokens": 2125
+        }
+      ]
+    }
+  ]
+}
