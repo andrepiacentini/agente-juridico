@@ -250,6 +250,22 @@ def test_list_parties_covers_every_case(connection) -> None:
     assert sum(len(parties["warnings"]) for parties in all_parties) == 99
 
 
+def test_the_role_in_the_case_comes_from_the_pole_even_when_the_registry_type_contradicts_it(connection) -> None:
+    # parte.tipo é do cadastro da pessoa, não do processo (D35): em 1.633 vínculos ele contradiz o polo.
+    contradicting_links = connection.execute("""
+        SELECT p.numero, pa.documento, pp.polo
+        FROM processo_parte pp JOIN parte pa ON pa.id = pp.parte_id JOIN processo p ON p.id = pp.processo_id
+        WHERE (pp.polo = 'ativo' AND pa.tipo <> 'autor') OR (pp.polo = 'passivo' AND pa.tipo <> 'réu')
+    """).fetchall()
+
+    def side_documents(case_number: str, pole: str) -> set[str]:
+        parties = list_parties(connection, case_number)
+        return {party["document"] for party in parties["plaintiffs" if pole == "ativo" else "defendants"]}
+
+    assert len(contradicting_links) == 1_633
+    assert all(link["documento"] in side_documents(link["numero"], link["polo"]) for link in contradicting_links)
+
+
 def test_list_movements_returns_timeline_in_date_order(connection) -> None:
     result = list_movements(connection, LOWERCASE_STATUS_CASE_NUMBER)
     movements = result["movements"]
@@ -598,6 +614,26 @@ def test_search_parties_flags_every_homonym_in_database(indexed_connection) -> N
 
     assert len(homonym_names) == 643
     assert all("homonym_notice" in search_parties(indexed_connection, name) for name in homonym_names)
+
+
+def test_every_document_with_more_than_one_name_is_reported(indexed_connection) -> None:
+    # A pessoa é o documento (D38): 332 CPFs/CNPJs aparecem com mais de um nome. Buscando por uma das grafias, o
+    # aviso sai; numa grafia comum ("Maria Martins", 29 pessoas), quem tem um processo só pode ficar fora das 10
+    # pessoas mostradas e, com ela, o aviso (T14.8).
+    names_by_document: dict[str, list[str]] = {}
+    for row in indexed_connection.execute("SELECT DISTINCT documento, nome FROM parte ORDER BY documento, nome"):
+        names_by_document.setdefault(row["documento"], []).append(row["nome"])
+    documents_with_several_names = {document: names for document, names in names_by_document.items() if len(names) > 1}
+
+    def reported(document: str, names: list[str]) -> bool:
+        return any(
+            any(f"O documento {document} aparece no cadastro com nomes diferentes" in warning
+                for warning in search_parties(indexed_connection, name).get("warnings", []))
+            for name in names
+        )
+
+    assert len(documents_with_several_names) == 332
+    assert all(reported(document, names) for document, names in documents_with_several_names.items())
 
 
 def case_numbers(result) -> set[str]:

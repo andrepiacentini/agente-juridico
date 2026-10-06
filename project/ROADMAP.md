@@ -40,9 +40,9 @@ Legenda de situação: `[ ]` a fazer · `[~]` em andamento · `[x]` concluída �
 | E11 | [Ajuste do modelo local](epicos/E11-ajuste-modelo-local.md) | Tempo e memória do modelo local medidos, como plano B | 6 | `[x]` |
 | E12 | [Entrega e apresentação](epicos/E12-entrega-apresentacao.md) | README, roteiro da demo e respostas da arguição | 7 | `[x]` |
 | E13 | [Consumo e custo](epicos/E13-consumo-custo.md) | Custo por resposta e painel de consumo no chat, com projeção | 5 | `[x]` |
-| E14 | [Melhorias de uso](epicos/E14-melhorias-de-uso.md) | Ajustes que o uso frequente levanta: identidade visual, instalação em outros sistemas, cache do Claude, modelo local no oMLX, consulta livre que inventa número, modelos locais maiores num Mac de 24 GB, pedidos do 3161 sem ler a petição | 7 | `[~]` |
+| E14 | [Melhorias de uso](epicos/E14-melhorias-de-uso.md) | Ajustes que o uso frequente levanta: identidade visual, instalação em outros sistemas, cache do Claude, modelo local no oMLX, consulta livre que inventa número, modelos locais maiores num Mac de 24 GB, pedidos do 3161 sem ler a petição, testes de tipo × polo e de nomes por documento | 8 | `[~]` |
 
-**Total: 92 tarefas.**
+**Total: 93 tarefas.**
 
 ## Ordem e dependências
 

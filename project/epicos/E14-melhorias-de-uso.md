@@ -48,3 +48,10 @@
 - **Passos:** conferir no texto do doc 7865 se o valor, o artigo e os pedidos citados existem (se não existirem, registrar como alucinação); rodar o caso 3 vezes no Ollama com o rastreio de cada chamada (ferramenta, argumentos e tamanho da resposta), como na T14.5, e comparar com o placar de 29/09 para achar a primeira diferença: se o modelo deixou de ler a peça ou se leu e resumiu sem o termo; levantar o que mudou entre 29/09 e 04/10 que possa explicar a diferença (commits do agente, das descrições das ferramentas e do system prompt nesse intervalo, e a atualização do Ollama de 04/10, hipótese da D90), testando o código de 29/09 no Ollama de hoje para separar as duas causas; corrigir pela causa encontrada, de preferência na descrição da ferramenta ou na regra do prompt que diz que pedidos vêm da petição inicial, e não afrouxando o teste; teste sem IA primeiro, se a correção for no código; rodar a bateria inteira no Ollama e o caso no Gemini; registrar a decisão citando a D90 e a D91.
 - **Pronto quando:** a origem da falha está explicada no `DECISOES.md` (incluindo se o conteúdo descrito era inventado); o caso passa no Ollama em 3 de 3 rodadas, com `read_document` do doc 7865 chamado; a bateria no Ollama não perde nenhum caso em relação ao placar de 05/10 (18/20); a suíte continua verde.
 - **Depende de:** D90, D91.
+
+### T14.8 — Testes no banco inteiro para tipo × polo e para documentos com mais de um nome `[x]`
+- **Objetivo:** as duas armadilhas do cadastro sem conferência no banco inteiro passam a ter teste: os 1.633 vínculos em que `parte.tipo` contradiz o polo (D35) e os 332 CPFs/CNPJs com mais de um nome (D38).
+- **Passos:** conferir os dois números no banco; escrever os testes em `tests/test_tools.py`, ao lado dos testes de contagem das outras armadilhas; fazer uma contraprova (os testes têm que falhar contra uma ferramenta sabotada) fora do projeto; registrar o que aparecer.
+- **Pronto quando:** os dois testes passam, a contraprova falha e a suíte continua verde.
+- **Depende de:** D35, D38.
+
