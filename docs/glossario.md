@@ -180,6 +180,10 @@ Variante de um modelo de linguagem treinada para responder direto a instruções
 ### Modo raciocínio (thinking)
 Recurso de alguns modelos (como o Qwen3) de "pensar em voz alta" antes de responder. Melhora tarefas difíceis, mas deixa a resposta bem mais lenta.
 
+<a id="moe"></a>
+### MoE (mistura de especialistas)
+Arquitetura de [modelo de linguagem](#llm) dividida em muitos blocos ("especialistas"), dos quais só alguns trabalham em cada [token](#token). Um MoE de 26B com 4B ativos ocupa a [RAM](#ram) de um modelo de 26B, mas gera texto com a velocidade de um de 4B. Por isso é a opção natural para modelos maiores num Mac (D91).
+
 <a id="movimentacao"></a>
 ### Movimentação processual
 Cada registro do andamento do processo (distribuição, citação, sentença…), com código e data. Existe mesmo nos processos sem documentos.

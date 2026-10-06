@@ -28,3 +28,15 @@ Falhas do modelo local:
 | `qwen3:4b-instruct-2507-q4_K_M` (local) | 16/19 | 1.260 s | 46,7 s | R$ 0 | [`placar-qwen3-4b-2026-09-29.json`](placar-qwen3-4b-2026-09-29.json) |
 
 Falhas novas do Gemini nesta rodada: no resumo do processo 1, uma "citação" inventada (`[doc. — list_documents]`, nome de ferramenta no lugar de documento); no número com dígito errado, disse que o dígito não confere, mas procurou números parecidos com `run_sql` e sugeriu o 3161, em vez de avisar do provável erro de digitação. O placar dele oscila entre rodadas (19/19 na anterior). Análise de custo: [`DECISOES.md`](../../DECISOES.md) D76.
+
+## 05/10/2026 — 20 casos, Mac M5 de 24 GB (T14.6)
+
+| Modelo e servidor | Placar | Edital | Tempo total | Tempo médio por resposta | Memória do modelo | Arquivo |
+|---|---|---|---|---|---|---|
+| `qwen3:4b-instruct-2507-q4_K_M`, Ollama | 18/20 | 7/8 | 280 s | 10,0 s | 4,0 GB | [`placar-qwen3-4b-ollama-m5-2026-10-05.json`](placar-qwen3-4b-ollama-m5-2026-10-05.json) |
+| Qwen3 4B Instruct 2507, 4 bits, oMLX | 15/20 | 8/8 | 304 s | 10,9 s | 2,2 GB | [`placar-qwen3-4b-omlx-m5-2026-10-05.json`](placar-qwen3-4b-omlx-m5-2026-10-05.json) |
+| gpt-oss 20B, MXFP4, oMLX | 14/20 | 7/8 | 485 s | 17,3 s | 11,4 GB | [`placar-gpt-oss-20b-omlx-2026-10-05.json`](placar-gpt-oss-20b-omlx-2026-10-05.json) |
+| Gemma 4 26B-A4B, 4 bits, oMLX | 15/20 | 5/8 | 256 s | 9,2 s | 12,7 a 14,7 GB | [`placar-gemma-4-26b-a4b-omlx-2026-10-05.json`](placar-gemma-4-26b-a4b-omlx-2026-10-05.json) |
+
+A demonstração 100% local continua com o Qwen3 4B no Ollama, que tem o melhor placar. No M5, o oMLX não é mais rápido que o Ollama. O Gemma falhou no resumo do 3161 sem ler nenhuma peça. O gpt-oss escreve números com hífen Unicode (U+2011), que não funciona numa busca. Análise: [`DECISOES.md`](../../DECISOES.md) D91.
+
