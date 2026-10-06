@@ -747,6 +747,20 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
   - Os testes vieram antes do código. A trava síncrona quebrou nos testes pela thread do SQLite, não no modelo real, e foi corrigida antes de qualquer rodada.
   - Custo: zero, tudo local.
 
+## 06/10/2026
+
+### D93 — Duas armadilhas do cadastro ganham teste no banco inteiro, e um aviso pode sumir atrás do limite de 10 pessoas
+- **Decisão:** duas armadilhas já tratadas no código passam a ter um [teste automatizado](docs/glossario.md#teste-automatizado) que confere o banco inteiro, como as outras já tinham. São elas: os **1.633 vínculos** em que o tipo da parte no cadastro contradiz o polo no processo (D35) e os **332 CPFs/CNPJs com mais de um nome** (D38). Antes, a primeira só era testada pelo processo de referência, e a segunda por um exemplo (Mendes/Mendez). O código não mudou. A T14.8 fica concluída.
+- **O que os testes conferem:**
+  - **Tipo × polo:** cada um dos 1.633 vínculos aparece no lado certo da lista de partes, o do polo, e não o do cadastro.
+  - **Nomes diferentes:** para cada um dos 332 documentos, buscar a pessoa por alguma das grafias do nome traz o aviso de nomes diferentes.
+  - Uma contraprova confirmou que os testes pegam o erro que dizem pegar. Contra uma versão da ferramenta que usa o tipo do cadastro, ou que desliga o aviso, os dois falham. A contraprova rodou num script fora do projeto, sem mexer no código nem no modo somente leitura (D31).
+- **Achado:** a busca de partes mostra no máximo 10 pessoas, as com mais processos primeiro, e só gera o aviso para as que mostra. Em 2 dos 332 casos, a grafia comum do nome traz pessoas demais: "Maria Martins" traz 29 e "José Vieceli" traz 13. A pessoa com dois nomes tem um processo só, fica fora das 10 e o aviso some. Pela outra grafia ("Maria Martinz", "Jozé Vieceli"), ela aparece e o aviso sai. O [homônimo](docs/glossario.md#homonimo) continua sendo avisado, porque a busca diz "Encontrei 29 pessoas… De qual delas se trata?". O que se perde é a pessoa que não foi mostrada. Por isso o teste exige o aviso por alguma grafia, e não por todas. Mudar o limite ou a ordem é decisão de produto e fica sem tarefa até alguém decidir.
+- **Descartado:**
+  - Exigir o aviso em todas as grafias: o teste nasceria falhando por causa de um limite que foi escolhido de propósito para caber no contexto do modelo local.
+  - Subir o limite de 10 pessoas sem medir o custo em contexto.
+- **Uso de IA:** o Claude Code mapeou onde cada armadilha era testada, apontou as duas sem conferência no banco inteiro e rodou um protótipo antes de escrever os testes. Foi o protótipo que achou os 2 casos escondidos pelo limite. **Erro do assistente:** a primeira tentativa de contraprova usou um plugin do pytest que não carregou. Ela foi refeita com um script fora do projeto, sem deixar arquivo no repositório.
+
 ---
 
 ## Pendências de decisão
