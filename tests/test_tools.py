@@ -8,7 +8,7 @@ import sqlite3
 import pytest
 
 from case_assistant.db import connect, create_search_index
-from case_assistant.tools import check_draft_basis, find_case, prepare_draft, list_documents, list_movements, list_parties, read_document, search_cases, search_parties, search_text
+from case_assistant.tools import CaseNotFoundError, check_draft_basis, find_case, initial_petition_ids, prepare_draft, list_documents, list_movements, list_parties, read_document, search_cases, search_parties, search_text
 
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"  # processo 3161: 19 documentos, juiz aposentado
 CASE_WITHOUT_JUDGE_NUMBER = "0000001-63.2025.8.99.9059"  # processo 4: magistrado_id NULL
@@ -369,6 +369,19 @@ def test_list_documents_counts_match_database_profile(connection) -> None:
     assert sum("difere da assinatura no texto" in warning for warning in warnings) == 309
     assert sum("assina peças dos dois lados" in warning for warning in warnings) == 8
     assert not any("O texto cita o processo" in warning for warning in warnings)
+
+
+def test_initial_petition_ids_of_the_reference_case(connection) -> None:
+    assert initial_petition_ids(connection, REFERENCE_CASE_NUMBER) == [7865]
+
+
+def test_initial_petition_ids_is_empty_for_a_case_without_documents(connection) -> None:
+    assert initial_petition_ids(connection, LOWERCASE_STATUS_CASE_NUMBER) == []
+
+
+def test_initial_petition_ids_of_a_missing_case_raises(connection) -> None:
+    with pytest.raises(CaseNotFoundError):
+        initial_petition_ids(connection, MISSING_CASE_NUMBER)
 
 
 def test_read_document_returns_full_text_with_citation_data(connection) -> None:

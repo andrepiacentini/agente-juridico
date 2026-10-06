@@ -2,6 +2,8 @@
 
 import asyncio
 import os
+import re
+import sqlite3
 import time
 from collections.abc import Awaitable, Callable
 from dataclasses import dataclass
@@ -19,7 +21,7 @@ from case_assistant.case_number import extract_case_numbers
 from case_assistant.citations import cited_document_ids
 from case_assistant.prompts import SYSTEM_PROMPT, focus_reminder, with_draft_notice
 from case_assistant.session import Session
-from case_assistant.tools import SENTENCE_DOCUMENT_TYPES
+from case_assistant.tools import SENTENCE_DOCUMENT_TYPES, CaseNotFoundError, initial_petition_ids
 
 MODEL_VARIABLE = "LLM_MODEL"
 # Opcional: nível de raciocínio ("low", "true", "false"…). O Gemini precisa de "low" (D30); o modelo local, de nada.
@@ -45,8 +47,15 @@ UNREAD_SENTENCE_MESSAGE = (
     "Você citou a sentença [doc {document_id}] sem ler o texto dela. Chame read_document(document_id={document_id}) "
     "e responda com a decisão e os fundamentos que estão no documento."
 )
-# Cada guarda da resposta (número não consultado, sentença não lida) pode devolver a resposta ao modelo uma vez.
-OUTPUT_RETRIES = 2
+UNREAD_INITIAL_PETITION_MESSAGE = (
+    "Os pedidos do autor estão na petição inicial [doc {document_id}], que você ainda não leu. "
+    "Chame read_document(document_id={document_id}) e responda de novo a pergunta inteira do usuário, "
+    "agora com os pedidos que estão no texto."
+)
+RELIEF_QUESTION_PATTERN = re.compile(r"\bpedidos?\b", re.IGNORECASE)
+# Cada guarda da resposta (número não consultado, sentença não lida, petição não lida) pode devolver a resposta ao
+# modelo uma vez.
+OUTPUT_RETRIES = 3
 UNQUERIED_CASE_MESSAGE = (
     "Você ainda não consultou o processo {case_number} nesta conversa. "
     "Chame find_case(case_number='{case_number}') antes de responder."
@@ -97,6 +106,7 @@ def build_agent(model: Model | str | None = None, thinking: str | None = None) -
     )
     agent.output_validator(_require_cited_cases_queried)
     agent.output_validator(_require_cited_sentences_read)
+    agent.output_validator(_require_initial_petition_read_for_relief)
     agent.output_validator(_ensure_draft_notice)
     return agent
 
@@ -128,6 +138,37 @@ def _require_cited_sentences_read(ctx: RunContext[Session], output: str) -> str:
     if unread:
         raise ModelRetry(UNREAD_SENTENCE_MESSAGE.format(document_id=unread[0]))
     return output
+
+
+async def _require_initial_petition_read_for_relief(ctx: RunContext[Session], output: str) -> str:
+    # Regra nas instruções não bastou (T14.7): perguntado sobre os pedidos, o modelo local respondia pelo índice
+    # dos documentos, sem abrir a petição inicial, e inventava o conteúdo. Na minuta, quem guia a leitura é ela (D57).
+    # Assíncrono como as ferramentas: o Pydantic AI roda validador síncrono noutra thread, e a conexão é desta.
+    question = ctx.prompt if isinstance(ctx.prompt, str) else ""
+    if ctx.deps.draft_run_id == ctx.run_id or not RELIEF_QUESTION_PATTERN.search(question):
+        return output
+    read = _read_document_ids(ctx.messages)
+    unread = [
+        document_id
+        for case_number in _asked_case_numbers(question, ctx.deps.focused_case_number)
+        for document_id in _initial_petitions(ctx.deps.connection, case_number)
+        if document_id not in read
+    ]
+    if unread:
+        raise ModelRetry(UNREAD_INITIAL_PETITION_MESSAGE.format(document_id=unread[0]))
+    return output
+
+
+def _asked_case_numbers(question: str, focused_case_number: str | None) -> list[str]:
+    return extract_case_numbers(question) or ([focused_case_number] if focused_case_number else [])
+
+
+def _initial_petitions(connection: sqlite3.Connection, case_number: str) -> list[int]:
+    try:
+        return initial_petition_ids(connection, case_number)
+    except CaseNotFoundError:
+        # Processo inexistente: a ferramenta já disse isso ao modelo, e não há petição a ler.
+        return []
 
 
 def _read_document_ids(messages: list[ModelMessage]) -> set[int]:

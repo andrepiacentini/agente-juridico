@@ -71,7 +71,7 @@ cases:
     description: pergunta 2 do edital no processo com documentos
     turns:
       - ask: Quem são as partes, o magistrado e os advogados do processo 0000007-79.2023.8.99.9014? Quais são os pedidos apresentados?
-        must_call: [list_parties]
+        must_call: [list_parties, read_document]   # pedidos só vêm da petição inicial lida (T14.7)
         must_contain:
           - João Ziegler Rocha
           - Operadora de Saúde Cambirela
