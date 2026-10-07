@@ -99,8 +99,8 @@
         },
         "messages": {
             "status": {
-                "using": "Consultando",
-                "used": "Consultou"
+                "using": "",
+                "used": ""
             },
             "actions": {
                 "copy": {

@@ -12,6 +12,7 @@ from contextlib import ExitStack
 
 import chainlit as cl
 from chainlit.input_widget import Select
+from chainlit.utils import utc_now
 from dotenv import load_dotenv
 from pydantic_ai import RunContext
 from pydantic_ai.agent import EventStreamHandler
@@ -19,7 +20,7 @@ from pydantic_ai.messages import AgentStreamEvent, FunctionToolCallEvent, Functi
 
 from case_assistant.agent import ModelNotConfiguredError, ModelOption, build_agent, model_options, run_with_retries_async
 from case_assistant.session import Session, open_session
-from case_assistant.tool_display import tool_call_label, tool_result_text
+from case_assistant.tool_display import STARTING_PHASE, answer_phase, finished_label, tool_call_label, tool_result_text
 from case_assistant.cost_projection import ProjectionConfig
 from case_assistant.pricing import PriceTable
 from case_assistant.usage import UsageLog, record_answer, usage_record
@@ -37,7 +38,6 @@ USAGE_ACTION = "usage_panel"
 USAGE_COMMANDS = [
     {"id": USAGE_COMMAND, "icon": "chart-column", "description": "Tokens e custo: histórico, por modelo e por conversa", "button": True}
 ]
-QUERIES_STEP_NAME = "o banco de dados"  # a interface mostra "Consultou o banco de dados"
 MODEL_SETTING = "model"
 # As 4 perguntas do edital sobre o processo de referência, com o mesmo texto da bateria de avaliação (T10.4).
 REFERENCE_CASE_NUMBER = "0000007-79.2023.8.99.9014"
@@ -107,9 +107,11 @@ async def answer(message: cl.Message) -> None:
     if agent is None:
         return  # modelo não configurado: o aviso já foi mostrado ao abrir o chat
     # As consultas ficam agrupadas num passo aberto antes de o agente começar: a resposta, enviada depois,
-    # aparece abaixo delas, e cada consulta pode ser aberta para conferir o que o agente leu.
-    queries = cl.Step(name=QUERIES_STEP_NAME, type="run", default_open=True)
-    await queries.send()
+    # aparece abaixo delas, e cada consulta pode ser aberta para conferir o que o agente leu. O nome do passo é a
+    # fase atual, e com o início marcado o Chainlit o anima até o fim: a espera nunca fica sem sinal (T14.9).
+    progress = cl.Step(name=STARTING_PHASE, type="run", default_open=True)
+    progress.start = utc_now()
+    await progress.send()
     start = time.monotonic()
     try:
         result = await run_with_retries_async(
@@ -118,17 +120,17 @@ async def answer(message: cl.Message) -> None:
             cl.user_session.get("history"),
             cl.user_session.get("session"),
             on_retry=_notify,
-            event_stream_handler=_tool_steps_under(queries),
+            event_stream_handler=_tool_steps_under(progress),
         )
     except Exception as error:  # fronteira da interface: a conversa continua mesmo se o modelo falhar
-        await queries.remove()
+        await progress.remove()
         await cl.Message(content=MODEL_FAILURE_MESSAGE.format(error=error)).send()
         return
     usage = usage_record(result, WEB_CHANNEL, cl.user_session.get("session"), cl.user_session.get("model"), time.monotonic() - start)
-    if usage.tools:
-        await queries.update()
-    else:
-        await queries.remove()  # respondeu pelo histórico: um bloco "Consultou o banco de dados" vazio seria falso
+    # Sem ferramentas, o bloco diz que a resposta veio da conversa: "Consultou o banco de dados" seria falso.
+    progress.name = finished_label(tools_called=bool(usage.tools))
+    progress.end = utc_now()
+    await progress.update()
     record_answer(cl.user_session.get("usage_log"), usage)
     cl.user_session.set("history", result.all_messages())
     await cl.Message(content=result.output + _footer(usage), actions=_usage_actions()).send()
@@ -212,7 +214,8 @@ async def _notify(text: str) -> None:
 
 def _tool_steps_under(parent: cl.Step) -> EventStreamHandler[Session]:
     """Cada chamada de ferramenta vira um passo dentro de `parent`, aberto quando começa, preenchido quando termina e
-    recolhido em seguida: quem usa vê o agente decidir e pode conferir o que ele leu (fundamentação visível)."""
+    recolhido em seguida: quem usa vê o agente decidir e pode conferir o que ele leu (fundamentação visível).
+    O nome de `parent` acompanha a fase da resposta (T14.9)."""
 
     async def show_tool_steps(ctx: RunContext[Session], events: AsyncIterable[AgentStreamEvent]) -> None:
         await _show_tool_steps(parent, events)
@@ -223,15 +226,24 @@ def _tool_steps_under(parent: cl.Step) -> EventStreamHandler[Session]:
 async def _show_tool_steps(parent: cl.Step, events: AsyncIterable[AgentStreamEvent]) -> None:
     open_steps: dict[str, cl.Step] = {}
     async for event in events:
+        await _show_phase(parent, answer_phase(event))
         if isinstance(event, FunctionToolCallEvent):
             step = cl.Step(
                 name=tool_call_label(event.part), type="tool", language="json", parent_id=parent.id, auto_collapse=True
             )
             step.input = tool_result_text(event.part.args_as_dict())
+            step.start = utc_now()
             await step.send()
             open_steps[event.part.tool_call_id] = step
         elif isinstance(event, FunctionToolResultEvent):
             step = open_steps.pop(event.part.tool_call_id, None)
             if step is not None:
                 step.output = tool_result_text(event.part.content)
+                step.end = utc_now()
                 await step.update()
+
+
+async def _show_phase(step: cl.Step, phase: str | None) -> None:
+    if phase is not None and phase != step.name:
+        step.name = phase
+        await step.update()

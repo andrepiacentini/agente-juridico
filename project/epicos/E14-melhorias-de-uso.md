@@ -55,3 +55,9 @@
 - **Pronto quando:** os dois testes passam, a contraprova falha e a suíte continua verde.
 - **Depende de:** D35, D38.
 
+### T14.9 — Indicador da fase da resposta no chat `[x]`
+- **Objetivo:** enquanto o agente trabalha, a tela mostra o que está acontecendo, com animação: lendo a pergunta, pensando, consultando o banco, analisando o resultado, escrevendo a resposta. Quando não há consulta, o bloco diz que a resposta veio da conversa, em vez de sumir. Hoje, no modelo local, há esperas de até ~30 s sem nenhum sinal na tela.
+- **Passos:** medir fora da tela quando os eventos do agente chegam; escrever primeiro os testes sem IA da regra evento → fase e do rótulo final; pôr a regra em `tool_display.py` e aplicar no `app.py`, marcando início e fim dos passos para o Chainlit animar; ajustar a tradução; conferir no navegador com o modelo local, com e sem consulta ao banco; registrar a decisão.
+- **Pronto quando:** as fases aparecem na tela na ordem, o bloco sem consulta fica com o rótulo próprio e a suíte continua verde.
+- **Depende de:** T10.2, D68.
+
