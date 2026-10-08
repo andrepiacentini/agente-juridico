@@ -649,6 +649,8 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** uma tag na `main` e continuar mergeando nela — a tag marca o ponto, mas quem abre o repositório veria as mudanças novas; um repositório separado para o trabalho novo, que duplicaria o fluxo e a CI; trocar a branch padrão do GitHub para a `develop`, que mostraria à banca uma versão posterior ao prazo. O bloqueio automático de merge na `main` não existe no plano do GitHub (D33); a regra é do fluxo, como a da CI.
 - **Uso de IA:** o Claude Code alinhou a `main`, a branch do E14 e a `develop` no mesmo commit antes de mudar qualquer regra, e aplicou a regra nova a esta própria mudança: ela entra pela `develop`, não pela `main`.
 
+<<<<<<< Updated upstream
+=======
 ## 04/10/2026
 
 ### D89 — O oMLX é 27% mais rápido, mas erra mais e estoura a memória no resumo: o Ollama continua como modelo local padrão no Mac
@@ -772,6 +774,16 @@ Também ficam registrados aqui os pontos em que o assistente de IA usado no dese
 - **Descartado:** mostrar o texto da resposta aparecendo aos poucos (streaming). Resolveria melhor a espera da escrita, mas as travas da resposta (D51, D66, D92) podem devolvê-la ao modelo, e o texto já mostrado teria que ser apagado e reescrito. Fica como trabalho futuro, como já estava no slide de próximos passos.
 - **Uso de IA:** o Claude Code conferiu no registro de uso o que o Qwen tinha feito antes de tratar o caso como defeito do streaming. Depois, mediu os eventos fora da tela, achou no código do Chainlit a regra da animação e conferiu cada fase no navegador. **Erro do assistente:** a primeira sonda no navegador não enviou a pergunta, porque o Enter não submete o texto preenchido. Ela foi refeita clicando no botão de envio.
 
+## 08/10/2026
+
+### D95 — Gemini medido nos 20 casos da bateria: 20/20, para comparar com o modelo local em pé de igualdade
+- **Decisão:** a [bateria](docs/glossario.md#golden-set) rodou de novo no `gemini-3.8-flash` (raciocínio "low"), agora com os 20 casos. Placar 20/20, 8/8 no edital, 258 s no total, 9,2 s e R$ 0,051 por resposta (28 respostas, R$ 1,42). O placar está em [`docs/avaliacao/placar-gemini-3.8-flash-2026-10-08.json`](docs/avaliacao/placar-gemini-3.8-flash-2026-10-08.json) e o slide do comparativo passou a mostrar os 20 casos para os dois modelos.
+- **Por quê:** o slide dizia "20 conversas" na bateria, mas o Gemini aparecia com 19. O 20º caso (`pergunta-que-falha`, T12.5) entrou em 29/09, depois das duas rodadas do Gemini (D65 e D76), e só o [modelo local](docs/glossario.md#modelo-local) tinha sido medido com ele. Comparar 19/19 com 19/20 misturava bases diferentes.
+- **Medido:** o caso novo passou no Gemini: a consulta estourou os 5 s, ele leu o erro, bateu no teto de tentativas e admitiu que não conseguiu, sem o "não consta" falso. O tempo médio por resposta subiu de 5,3 s (29/09) para 9,2 s, com o mesmo modelo e os mesmos critérios; a diferença é latência da API no dia, não mudança no agente. O custo por resposta ficou igual (R$ 0,049 → R$ 0,051).
+- **Descartado:** reaproveitar as respostas de 29/09 e rodar só o caso novo. Daria 18/20 ou 20/20 dependendo da rodada escolhida, e o Gemini já tinha oscilado entre 19/19 e 17/19; uma rodada inteira é a única medida comparável.
+- **Uso de IA:** o autor suspeitou da discrepância ao ler o slide; o Claude Code confirmou no histórico do `tests/golden.yaml` a data de entrada do 20º caso, rodou a bateria e calculou o custo com a tabela de preços do projeto.
+
+>>>>>>> Stashed changes
 ---
 
 ## Pendências de decisão
