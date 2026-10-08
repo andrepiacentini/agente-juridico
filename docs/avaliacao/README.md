@@ -28,6 +28,8 @@ Falhas do modelo local:
 | `qwen3:4b-instruct-2507-q4_K_M` (local) | 16/19 | 1.260 s | 46,7 s | R$ 0 | [`placar-qwen3-4b-2026-09-29.json`](placar-qwen3-4b-2026-09-29.json) |
 
 Falhas novas do Gemini nesta rodada: no resumo do processo 1, uma "citação" inventada (`[doc. — list_documents]`, nome de ferramenta no lugar de documento); no número com dígito errado, disse que o dígito não confere, mas procurou números parecidos com `run_sql` e sugeriu o 3161, em vez de avisar do provável erro de digitação. O placar dele oscila entre rodadas (19/19 na anterior). Análise de custo: [`DECISOES.md`](../../DECISOES.md) D76.
+<<<<<<< Updated upstream
+=======
 
 ## 05/10/2026 — 20 casos, Mac M5 de 24 GB (T14.6)
 
@@ -40,6 +42,14 @@ Falhas novas do Gemini nesta rodada: no resumo do processo 1, uma "citação" in
 
 A demonstração 100% local continua com o Qwen3 4B no Ollama, que tem o melhor placar. No M5, o oMLX não é mais rápido que o Ollama. O Gemma falhou no resumo do 3161 sem ler nenhuma peça. O gpt-oss escreve números com hífen Unicode (U+2011), que não funciona numa busca. Análise: [`DECISOES.md`](../../DECISOES.md) D91.
 
+## 08/10/2026 — Gemini nos 20 casos
+
+| Modelo | Placar | Edital | Tempo total | Tempo médio por resposta | Custo da bateria | Arquivo |
+|---|---|---|---|---|---|---|
+| `gemini-3.8-flash`, raciocínio "low" (nuvem) | 20/20 | 8/8 | 258 s | 9,2 s | R$ 1,42 (28 respostas; R$ 0,051 cada, em média) | [`placar-gemini-3.8-flash-2026-10-08.json`](placar-gemini-3.8-flash-2026-10-08.json) |
+
+As rodadas anteriores do Gemini (28/09 e 29/09) tinham 19 casos: `pergunta-que-falha` entrou em 29/09, depois delas (T12.5), e o Gemini nunca tinha sido medido com ele. Esta rodada normaliza a comparação com o modelo local, que já rodava os 20. Análise: [`DECISOES.md`](../../DECISOES.md) D95.
+
 ## 05/10/2026 — trava da petição inicial (T14.7)
 
 | Modelo | Placar | Edital | Tempo total | Arquivo |
@@ -48,3 +58,4 @@ A demonstração 100% local continua com o Qwen3 4B no Ollama, que tem o melhor 
 
 A partir daqui, o caso `edital-2-partes-3161` exige `read_document`: antes, ele passava quando a palavra "indenização" aparecia por acaso, com pedidos inventados. Análise: [`DECISOES.md`](../../DECISOES.md) D92.
 
+>>>>>>> Stashed changes
