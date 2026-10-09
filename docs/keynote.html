@@ -1,0 +1,889 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agente de IA sobre dados estruturados</title>
+<style>
+  :root {
+    --bg: #eef0ee;
+    --paper: #ffffff;
+    --ink: #17201c;
+    --muted: #5d6a63;
+    --faint: #8b968f;
+    --line: #dde3df;
+    --soft: #f4f7f5;
+    --green: #0b6b4a;
+    --green-soft: #e3f1ea;
+    --amber: #a15c07;
+    --amber-soft: #fbf0df;
+    --red: #b42318;
+    --red-soft: #fdecea;
+    --blue: #1f5fa8;
+    --blue-soft: #e6eef8;
+    --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    --sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Inter, Roboto, "Helvetica Neue", Arial, sans-serif;
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; }
+  body { background: var(--bg); color: var(--ink); font-family: var(--sans); overflow: hidden; }
+
+  /* Palco fixo de 1280×720, escalado para caber na janela. */
+  #stage { position: absolute; left: 50%; top: 50%; width: 1280px; height: 720px; transform-origin: center center; }
+  .slide {
+    position: absolute; inset: 0; background: var(--paper); border-radius: 6px;
+    box-shadow: 0 10px 40px rgba(20, 40, 30, .12);
+    padding: 56px 72px 64px; display: none; flex-direction: column;
+  }
+  .slide.active { display: flex; }
+  .kicker { font-size: 14px; letter-spacing: .14em; text-transform: uppercase; color: var(--green); font-weight: 600; margin: 0 0 10px; }
+  h1 { font-size: 44px; line-height: 1.12; margin: 0 0 18px; font-weight: 650; letter-spacing: -.01em; }
+  h2 { font-size: 34px; line-height: 1.15; margin: 0 0 22px; font-weight: 650; letter-spacing: -.01em; }
+  h3 { font-size: 19px; margin: 0 0 8px; font-weight: 650; }
+  p, li { font-size: 19px; line-height: 1.45; }
+  p { margin: 0 0 12px; }
+  ul { margin: 0; padding-left: 22px; }
+  li { margin-bottom: 7px; }
+  .lead { font-size: 22px; color: var(--muted); max-width: 980px; }
+  .muted { color: var(--muted); }
+  .small { font-size: 15px; }
+  .tiny { font-size: 13px; color: var(--faint); }
+  code, .mono { font-family: var(--mono); font-size: .88em; }
+  .accent { color: var(--green); }
+  .footer {
+    position: absolute; left: 72px; right: 72px; bottom: 24px; display: flex; justify-content: space-between;
+    font-size: 13px; color: var(--faint); border-top: 1px solid var(--line); padding-top: 10px;
+  }
+  .grow { flex: 1; min-height: 0; }
+
+  /* Grades e cartões */
+  .cols-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 28px; }
+  .cols-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+  .cols-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .cols-5 { display: grid; grid-template-columns: repeat(5, 1fr); gap: 14px; }
+  .card { border: 1px solid var(--line); border-radius: 8px; padding: 16px 18px; background: var(--paper); }
+  .card.soft { background: var(--soft); border-color: transparent; }
+  .card.green { background: var(--green-soft); border-color: transparent; }
+  .card p, .card li { font-size: 16.5px; }
+  .card h3 { font-size: 17.5px; }
+  .compact .card { padding: 11px 16px; }
+  .compact .card p { margin: 0; }
+  .num { font-size: 13px; font-weight: 700; color: var(--green); letter-spacing: .08em; margin-bottom: 6px; }
+
+  .stat { padding: 14px 16px; border-left: 3px solid var(--green); background: var(--soft); border-radius: 0 6px 6px 0; }
+  .stat b { display: block; font-size: 30px; font-weight: 700; letter-spacing: -.01em; }
+  .stat span { font-size: 14.5px; color: var(--muted); }
+
+  table { border-collapse: collapse; width: 100%; }
+  th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--line); font-size: 15.5px; vertical-align: top; }
+  th { font-size: 12.5px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); font-weight: 600; }
+  td.n, th.n { text-align: right; font-variant-numeric: tabular-nums; white-space: nowrap; }
+  tr.total td { font-weight: 700; border-bottom: none; border-top: 2px solid var(--ink); }
+
+  .pill { display: inline-block; font-size: 12.5px; font-weight: 600; padding: 2px 9px; border-radius: 99px; background: var(--soft); color: var(--muted); white-space: nowrap; }
+  .pill.green { background: var(--green-soft); color: var(--green); }
+  .pill.amber { background: var(--amber-soft); color: var(--amber); }
+  .pill.red { background: var(--red-soft); color: var(--red); }
+  .pill.blue { background: var(--blue-soft); color: var(--blue); }
+
+  /* Capa */
+  .cover { justify-content: center; background: linear-gradient(135deg, #ffffff 0%, #ffffff 58%, var(--green-soft) 100%); }
+  .cover h1 { font-size: 64px; margin-bottom: 8px; }
+  .cover h1 span { color: var(--green); }
+  .cover .bar { width: 72px; height: 4px; background: var(--green); margin: 26px 0 22px; }
+
+  /* Diagramas em HTML: caixas e setas */
+  .layer { border-radius: 8px; padding: 8px 14px; border: 1px solid var(--line); }
+  .layer .tag { font-size: 12px; font-weight: 700; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); }
+  .layer h3 { margin: 2px 0 4px; font-size: 17px; }
+  .layer p { font-size: 14.5px; margin: 0; color: var(--muted); line-height: 1.35; }
+  .down { text-align: center; color: var(--faint); font-size: 11px; line-height: 1; margin: 2px 0; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { font-family: var(--mono); font-size: 12.5px; padding: 3px 8px; border-radius: 5px; background: var(--paper); border: 1px solid var(--line); }
+
+  .flow { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px 34px; position: relative; }
+  .step { position: relative; border: 1px solid var(--line); border-radius: 8px; padding: 11px 13px; background: var(--paper); min-height: 112px; }
+  .step .k { font-size: 12px; font-weight: 700; color: var(--green); letter-spacing: .08em; }
+  .step h3 { font-size: 15.5px; margin: 2px 0 4px; }
+  .step p { font-size: 13.5px; line-height: 1.35; margin: 0; color: var(--muted); }
+  .step p.mod { margin-top: 5px; font-size: 12px; color: var(--green); font-weight: 600; }
+  .step p.mod code { font-size: 11.5px; }
+  .step.hl { border-color: var(--green); box-shadow: inset 3px 0 0 var(--green); }
+  .step.warn { border-color: var(--amber); box-shadow: inset 3px 0 0 var(--amber); }
+  .step::after { content: "→"; position: absolute; right: -25px; top: 42%; color: var(--faint); font-size: 20px; }
+  .step.last::after, .step.nolink::after { content: ""; }
+  .turn { grid-column: 1 / -1; text-align: right; color: var(--faint); font-size: 13px; margin: -2px 0 0; }
+
+  pre.json {
+    margin: 0; font-family: var(--mono); font-size: 12.5px; line-height: 1.45; background: #10231b; color: #d5efe2;
+    padding: 12px 14px; border-radius: 8px; overflow: hidden; white-space: pre;
+  }
+  pre.json .k { color: #8fd3b4; }
+  pre.json .s { color: #f4d58d; }
+  pre.json .c { color: #7f9a8d; }
+
+  .pipe { display: flex; flex-direction: column; gap: 0; }
+  .pipe .box { border: 1px solid var(--line); border-radius: 7px; padding: 8px 12px; font-size: 14.5px; background: var(--paper); }
+  .pipe .box b { font-size: 14.5px; }
+  .pipe .box.ok { background: var(--green-soft); border-color: transparent; }
+  .pipe .box.bad { background: var(--red-soft); border-color: transparent; }
+  .pipe .box.amb { background: var(--amber-soft); border-color: transparent; }
+  .pipe .arr { text-align: center; color: var(--faint); font-size: 13px; line-height: 1.1; padding: 2px 0; }
+  .split { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+
+  /* Barras do comparativo */
+  .bars { display: grid; grid-template-columns: 150px 1fr; gap: 6px 12px; align-items: center; }
+  .bars .lbl { font-size: 14px; color: var(--muted); text-align: right; }
+  .bars .row { display: flex; flex-direction: column; gap: 3px; }
+  .bar { height: 13px; border-radius: 3px; display: flex; align-items: center; }
+  .bar span { font-size: 12px; margin-left: calc(100% + 6px); white-space: nowrap; color: var(--ink); font-variant-numeric: tabular-nums; }
+  .bar.g { background: var(--green); }
+  .bar.c { background: var(--blue); }
+  .bar.l { background: #b8c2bc; }
+  .legend { display: flex; gap: 18px; font-size: 13.5px; color: var(--muted); }
+  .legend i { display: inline-block; width: 11px; height: 11px; border-radius: 2px; margin-right: 6px; vertical-align: -1px; }
+
+  /* Arguição */
+  .q { font-size: 25px; line-height: 1.3; font-weight: 600; margin: 0 0 20px; max-width: 1080px; }
+  .answer-lead { font-size: 20px; line-height: 1.45; border-left: 3px solid var(--green); padding-left: 16px; margin-bottom: 18px; }
+  .ev { font-size: 13px; color: var(--faint); }
+
+  /* Tabela das armadilhas (slide 4): duas colunas a mais, letra menor */
+  table.traps th, table.traps td { font-size: 13.5px; padding: 6px 8px; }
+  table.traps th { font-size: 11.5px; }
+  table.validators th, table.validators td { font-size: 13px; padding: 4px 6px; line-height: 1.3; }
+  table.validators th { font-size: 11px; }
+  table.session td { padding: 4px 8px; font-size: 14px; }
+  table.validators td:first-child { font-weight: 600; white-space: nowrap; }
+  table.traps .mono { font-size: 12px; white-space: nowrap; }
+
+  /* Módulo do código atendido por cada peça da stack (slide 8) */
+  .card p.mod { margin-top: 6px; font-size: 13px; color: var(--green); font-weight: 600; }
+  .card p.mod code { font-size: 12.5px; }
+
+  /* Navegação */
+  #progress { position: fixed; left: 0; bottom: 0; height: 3px; background: var(--green); transition: width .2s; z-index: 10; }
+  #hint { position: fixed; right: 14px; bottom: 10px; font-size: 12px; color: var(--faint); font-family: var(--sans); z-index: 10; }
+  #counter { position: fixed; left: 14px; bottom: 10px; font-size: 12px; color: var(--faint); font-family: var(--sans); font-variant-numeric: tabular-nums; z-index: 10; }
+
+  @media print {
+    @page { size: 1280px 720px; margin: 0; }
+    html, body { overflow: visible; background: #fff; }
+    #stage { position: static; transform: none !important; width: 1280px; height: auto; }
+    .slide { position: relative; display: flex !important; width: 1280px; height: 720px; box-shadow: none; border-radius: 0; page-break-after: always; break-after: page; }
+    #progress, #hint, #counter { display: none; }
+  }
+</style>
+</head>
+<body>
+<div id="stage">
+
+<!-- 1. Capa -->
+<section class="slide cover">
+  <p class="kicker">Processo seletivo TJSC · Líder de Produtos de IA</p>
+  <h1>Agente de IA sobre<br><span>dados estruturados</span></h1>
+  <div class="bar"></div>
+  <p class="lead">Um chat em português que consulta sozinho um banco de processos judiciais, cita os dados que usou e declara quando eles não permitem responder.</p>
+  <p class="muted" style="margin-top:28px">André Piacentini</p>
+</section>
+
+<!-- 2. O desafio -->
+<section class="slide">
+  <p class="kicker">01 · O desafio</p>
+  <h2>Um chat que consulta o banco, fundamenta e reconhece limites</h2>
+  <div class="cols-5" style="margin-bottom:26px">
+    <div class="card soft"><div class="num">01</div><h3>Entender</h3><p>Perguntas em português natural</p></div>
+    <div class="card soft"><div class="num">02</div><h3>Consultar</h3><p>Buscar no banco de forma autônoma</p></div>
+    <div class="card soft"><div class="num">03</div><h3>Fundamentar</h3><p>Indicar em quais dados se baseou</p></div>
+    <div class="card soft"><div class="num">04</div><h3>Conversar</h3><p>Manter o contexto entre os turnos</p></div>
+    <div class="card soft"><div class="num">05</div><h3>Reconhecer limites</h3><p>Dizer quando não há dado</p></div>
+  </div>
+  <div class="cols-2">
+    <div>
+      <h3>As 4 perguntas do edital, sobre um processo</h3>
+      <ul class="small" style="font-size:17px">
+        <li>Resumo com os principais fatos e o andamento</li>
+        <li>Partes, magistrado, advogados e pedidos</li>
+        <li>Já foi julgado? Decisão e fundamentos</li>
+        <li>Minuta de sentença, <b>identificada como proposta</b>, nunca como sentença proferida</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Entregáveis</h3>
+      <ul style="font-size:17px">
+        <li>Repositório Git, README e <code>DECISOES.md</code> (93 decisões registradas)</li>
+        <li>Demonstração ao vivo nesta sessão</li>
+        <li>Livre escolha de linguagem, frameworks, modelo e arquitetura, com a obrigação de justificar</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>O desafio</span></div>
+</section>
+
+<!-- 3. O banco -->
+<section class="slide">
+  <p class="kicker">02 · Análise dos dados</p>
+  <h2>O banco: 7 tabelas, o processo no centro</h2>
+  <div class="cols-4" style="margin-bottom:24px">
+    <div class="stat"><b>10.000</b><span>processos</span></div>
+    <div class="stat"><b>25.582</b><span>documentos (~21 MB de texto íntegro)</span></div>
+    <div class="stat"><b>134.046</b><span>movimentações</span></div>
+    <div class="stat"><b>14.966</b><span>partes, em 25.086 vínculos</span></div>
+  </div>
+  <div class="cols-2 grow">
+    <div>
+      <h3>O que a estrutura mostrou</h3>
+      <ul style="font-size:17.5px">
+        <li>Toda pergunta do edital parte de um <b>número de processo</b>: uma chave exata</li>
+        <li>Partes, juiz, datas e valores estão em <b>colunas</b>, não no meio de texto</li>
+        <li>Um processo tem de 3 a 19 documentos e cabe inteiro no contexto de um modelo pequeno: o pior caso tem <b>~15 mil tokens</b></li>
+        <li>Datas em texto ISO, poucos índices, e a <code>movimentacao</code> não tem chave estrangeira</li>
+      </ul>
+    </div>
+    <div class="card soft">
+      <h3>Tabelas</h3>
+      <table>
+        <tr><td><code>processo</code></td><td class="n">10.000</td><td class="muted small">número CNJ, classe, situação, datas, valor</td></tr>
+        <tr><td><code>documento</code></td><td class="n">25.582</td><td class="muted small">tipo, autor (advogado), texto</td></tr>
+        <tr><td><code>movimentacao</code></td><td class="n">134.046</td><td class="muted small">código e data do andamento</td></tr>
+        <tr><td><code>processo_parte</code></td><td class="n">25.086</td><td class="muted small">polo: ativo ou passivo</td></tr>
+        <tr><td><code>parte</code></td><td class="n">14.966</td><td class="muted small">nome, CPF/CNPJ</td></tr>
+        <tr><td><code>magistrado</code></td><td class="n">200</td><td class="muted small">situação: ativo, aposentado, removido</td></tr>
+        <tr><td><code>unidade</code></td><td class="n">118</td><td class="muted small">comarca e vara</td></tr>
+      </table>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Análise dos dados</span></div>
+</section>
+
+<!-- 4. Armadilhas -->
+<section class="slide">
+  <p class="kicker">02 · Análise dos dados</p>
+  <h2>Um banco adversarial: integridade e normalização</h2>
+  <table class="traps">
+    <tr><th>Problema</th><th>Tipo</th><th class="n">Medido</th><th>Como o agente trata</th><th class="n">Teste</th></tr>
+    <tr><td><b>Processos sem nenhum documento</b></td><td><span class="pill amber">Completude</span></td><td class="n">6.309 (63%)</td><td>Resume pelo andamento e declara que não há peças; recusa a minuta</td><td class="n"><span class="mono">test_tools.py:378</span></td></tr>
+    <tr><td><code>situacao</code> com caixa misturada</td><td><span class="pill blue">Normalização</span></td><td class="n">Julgado / JULGADO / julgado</td><td>Sempre comparado com <code>LOWER()</code></td><td class="n"><span class="mono">test_tools.py:104</span></td></tr>
+    <tr><td>Data de sentença sem o documento da sentença</td><td><span class="pill red">Integridade</span></td><td class="n">4.426 com data sem peça;<br>37 com peça sem data</td><td>"Já foi julgado?" cruza três sinais: data, movimentação (cód. 9219 ou 9221) e documento</td><td class="n"><span class="mono">test_tools.py:153</span></td></tr>
+    <tr><td>Processo sem magistrado</td><td><span class="pill red">Integridade</span></td><td class="n">1.044</td><td>Informa "não consta", sem inferir o juiz pela vara</td><td class="n"><span class="mono">test_tools.py:64</span></td></tr>
+    <tr><td>Juiz aposentado ou removido</td><td><span class="pill red">Integridade</span></td><td class="n">2.022</td><td>Mostra o nome do cadastro e avisa a situação do juiz</td><td class="n"><span class="mono">test_tools.py:171</span></td></tr>
+    <tr><td>Comarca do processo ≠ comarca da unidade</td><td><span class="pill blue">Normalização</span></td><td class="n">1.024</td><td>Mesma cidade, grafia diferente: reporta, não "corrige"</td><td class="n"><span class="mono">test_tools.py:196</span></td></tr>
+    <tr><td>Movimentações de processo inexistente (sem chave estrangeira)</td><td><span class="pill red">Integridade</span></td><td class="n">402</td><td>Ficam fora por JOIN</td><td class="n"><span class="mono">test_tools.py:293</span></td></tr>
+    <tr><td>Nomes homônimos com CPF diferente</td><td><span class="pill green">Identidade</span></td><td class="n">643 nomes</td><td>Pergunta de qual pessoa se trata</td><td class="n"><span class="mono">test_tools.py:607</span></td></tr>
+    <tr><td>CPF/CNPJ com mais de um nome</td><td><span class="pill green">Identidade</span></td><td class="n">332 documentos</td><td>A pessoa é o documento; avisa a divergência</td><td class="n"><span class="mono">test_tools.py:619</span></td></tr>
+    <tr><td>Tipo da parte contradiz o polo no processo</td><td><span class="pill red">Integridade</span></td><td class="n">1.633 vínculos</td><td>O papel no processo vem sempre do <code>polo</code></td><td class="n"><span class="mono">test_tools.py:253</span></td></tr>
+    <tr><td><b>Advogados sem tabela</b>; OAB do cadastro ausente nas assinaturas</td><td><span class="pill">Modelagem</span></td><td class="n">309 documentos</td><td>Extraídos das assinaturas; o lado vem da peça; divergência avisada</td><td class="n"><span class="mono">test_tools.py:341 · :378</span></td></tr>
+  </table>
+  <p class="tiny" style="margin-top:10px">Cada armadilha tem um teste automatizado escrito antes do código que a trata, em <span class="mono">tests/test_tools.py</span>, conferindo o banco inteiro. Além de integridade e normalização: <b>completude</b> (o dado não existe), <b>identidade</b> (quem é a pessoa) e <b>modelagem</b> (o dado não tem tabela).</p>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Análise dos dados</span></div>
+</section>
+
+<!-- 5. Da análise à proposta -->
+<section class="slide">
+  <p class="kicker">02 · Da análise à proposta</p>
+  <h2>Os dados pediam SQL, não busca por semelhança</h2>
+  <div class="cols-2 grow">
+    <div class="card">
+      <span class="pill red">Descartado</span>
+      <h3 style="margin-top:10px">RAG vetorial (fatiar textos e buscar trechos parecidos)</h3>
+      <ul style="font-size:16.5px">
+        <li>Busca por semelhança é ruim para chave exata: o número <code>0000007-79.2023.8.99.9014</code> não tem "vizinhos"</li>
+        <li>Partes, juiz e datas já estão em colunas: não precisam ser achados num texto</li>
+        <li>Fatiar (chunk) só serviria para cortar uma sentença no meio, e o processo cabe inteiro no contexto</li>
+        <li>Sempre devolve algum trecho "parecido" (embedding): é mais difícil dizer <b>"não consta"</b> com honestidade</li>
+      </ul>
+      <p class="tiny">Era a minha ideia inicial (RAG com Qdrant). A análise do banco a derrubou antes de qualquer código (D02).</p>
+    </div>
+    <div class="card green">
+      <span class="pill green">Escolhido</span>
+      <h3 style="margin-top:10px">Text-to-SQL: da pergunta em português à consulta no banco</h3>
+      <ul style="font-size:16.5px">
+        <li>A chave exata vira <code>WHERE numero = ?</code>, sem ambiguidade</li>
+        <li>Consulta vazia é resposta: <b>"Não consta no banco"</b></li>
+        <li>Toda linha devolvida tem origem: documento, movimentação ou cadastro, o que permite <b>citar a fonte</b></li>
+        <li>As armadilhas ficam resolvidas no SQL e no código, não dependem do modelo lembrar</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Da análise à proposta</span></div>
+</section>
+
+<!-- 6. Caminho arquitetural -->
+<section class="slide">
+  <p class="kicker">03 · Caminho arquitetural</p>
+  <h2>Text-to-SQL em duas camadas</h2>
+  <div class="cols-2" style="gap:24px">
+    <div class="card green">
+      <div class="num">Camada 1 · caminho principal</div>
+      <h3>O modelo escolhe consultas SQL prontas (10 ferramentas tipadas)</h3>
+      <p>O modelo traduz a pergunta em <b>chamadas de ferramenta</b> com parâmetros validados. O SQL de cada uma foi escrito e testado com as armadilhas do banco.</p>
+      <div class="chips">
+        <span class="chip">find_case</span><span class="chip">list_parties</span><span class="chip">list_movements</span>
+        <span class="chip">list_documents</span><span class="chip">read_document</span><span class="chip">search_text</span>
+        <span class="chip">search_parties</span><span class="chip">search_cases</span><span class="chip">prepare_draft</span>
+      </div>
+    </div>
+    <div class="card" style="border-color:var(--amber)">
+      <div class="num" style="color:var(--amber)">Camada 2 · válvula de escape</div>
+      <h3>O modelo escreve SQL livre, só quando nenhuma ferramenta serve</h3>
+      <p><code>run_sql</code>: somente leitura em três camadas, com 5 segundos, 50 linhas, no máximo 2 falhas por pergunta e um lembrete para conferir se a consulta responde ao que foi perguntado.</p>
+      <div class="chips"><span class="chip">run_sql</span></div>
+    </div>
+  </div>
+  <p class="tiny" style="margin-top:10px"><b>Onde fica no código:</b> SQL da Camada 1 em <code>tools.py</code>, da Camada 2 em <code>sql_query.py</code>. As 10 ferramentas são declaradas ao modelo em <code>agent_tools.py</code> (a docstring é o texto que ele lê; lista <code>AGENT_TOOLS</code>) e registradas no agente em <code>agent.py</code>.</p>
+  <h3 style="margin-top:12px">Princípios que atravessam o código</h3>
+  <div class="cols-4">
+    <div class="card soft"><h3>Metadados primeiro</h3><p>As listagens devolvem ids, tipos e datas; só <code>read_document</code> devolve texto</p></div>
+    <div class="card soft"><h3>Banco somente leitura</h3><p><code>mode=ro</code>; índice de busca em tabela temporária, nunca no arquivo</p></div>
+    <div class="card soft"><h3>Processo em foco</h3><p>Estado da sessão, lembrado ao modelo a cada pedido</p></div>
+    <div class="card soft"><h3>Toda resposta cita</h3><p><code>[doc 7878 — Sentença, 18/02/2026]</code></p></div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Caminho arquitetural</span></div>
+</section>
+
+<!-- 7. Vantagens -->
+<section class="slide">
+  <p class="kicker">03 · Caminho arquitetural</p>
+  <h2>Vantagens da arquitetura</h2>
+  <div class="cols-3 grow" style="align-content:start">
+    <div class="card"><div class="num">Precisão</div><h3>Chave exata, sem adivinhação</h3><p>O processo é encontrado pelo número CNJ, com o dígito verificador conferido. Digitação errada é diferente de processo inexistente.</p></div>
+    <div class="card"><div class="num">Fundamentação</div><h3>Cada fato tem fonte</h3><p>As ferramentas já devolvem a citação pronta (<code>source</code>); a tela mostra cada consulta como um passo.</p></div>
+    <div class="card"><div class="num">Honestidade</div><h3>Vazio é "não consta"</h3><p>Ausência de dado vira resposta. Validadores devolvem ao modelo as respostas que citam o que ele não consultou.</p></div>
+    <div class="card"><div class="num">Cabe em 8 GB</div><h3>Pouco texto por pedido</h3><p>Metadados primeiro e texto sob demanda: o mesmo agente roda com um modelo de 4B num notebook.</p></div>
+    <div class="card"><div class="num">Troca de modelo</div><h3>Uma variável no <code>.env</code></h3><p>Local (Ollama), Gemini ou Claude: o código não tem caminho especial por fornecedor.</p></div>
+    <div class="card"><div class="num">Testável sem IA</div><h3>427 testes automatizados</h3><p>Ferramentas, safe guards e regras de domínio testadas sem chamar modelo, na CI a cada PR. Bateria de 20 conversas com o modelo real.</p></div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Vantagens</span></div>
+</section>
+
+<!-- 8. Stack -->
+<section class="slide">
+  <p class="kicker">04 · Stack: cada peça com o seu módulo</p>
+  <h2>Modularizado: responsabilidades bem definidas e contidas</h2>
+  <div class="cols-3 compact" style="gap:12px">
+    <div class="card green"><h3>Python 3.12 + uv</h3><p>O ecossistema de IA mais maduro e SQLite embutido. O <code>uv</code> fixa a versão e instala tudo com um comando.</p><p class="mod">→ <code>pyproject.toml</code> · <code>uv.lock</code></p></div>
+    <div class="card"><h3>Pydantic AI</h3><p>Transforma funções Python em ferramentas e troca de fornecedor por texto (<code>ollama:</code>, <code>google:</code>, <code>anthropic:</code>). Validadores de saída e novas tentativas nativos.</p><p class="mod">→ <code>agent.py</code> · <code>agent_tools.py</code></p></div>
+    <div class="card"><h3>Pydantic</h3><p>Usado pelo Pydantic AI, sem import direto: gera o esquema de cada ferramenta a partir da assinatura tipada e valida os argumentos que o modelo envia antes de tocar o banco.</p><p class="mod">→ <code>agent_tools.py</code> · assinaturas tipadas</p></div>
+    <div class="card"><h3>SQLite + FTS5</h3><p>O próprio banco do desafio, somente leitura. A busca por palavras usa o FTS5 do SQLite, em tabela temporária, sem servidor extra.</p><p class="mod">→ <code>db.py</code> · <code>tools.py</code> · <code>sql_query.py</code></p></div>
+    <div class="card"><h3>Chainlit</h3><p>Interface de chat que mostra cada chamada de ferramenta como um passo: o "fundamentar" do edital visível na tela.</p><p class="mod">→ <code>app.py</code> · <code>tool_display.py</code></p></div>
+    <div class="card"><h3>Modelos</h3><p><b>Gemini 3.8 Flash</b> (demonstração), <b>Claude Sonnet 5.5</b> (opção) e <b>Qwen3 4B</b> local no Ollama (plano B, sem internet).</p><p class="mod">→ <code>.env</code> · nenhum módulo conhece o fornecedor</p></div>
+    <div class="card soft"><h3>pytest + GitHub Actions</h3><p>Testes sem IA em todo PR. A bateria com modelo real é um comando à parte.</p><p class="mod">→ <code>tests/</code> · <code>evaluation.py</code></p></div>
+    <div class="card soft"><h3>Plotly</h3><p>Gráficos do painel de consumo: custo por modelo e projeção mensal.</p><p class="mod">→ <code>usage_panel.py</code></p></div>
+    <div class="card soft"><h3>python-dotenv · PyYAML</h3><p>Configuração só por variável de ambiente; bateria de avaliação em YAML.</p><p class="mod">→ <code>app.py</code> · <code>cli.py</code> · <code>golden.yaml</code></p></div>
+  </div>
+  <p class="tiny" style="margin-top:14px">Descartados: LangChain, LlamaIndex e CrewAI (camadas demais, centrados em RAG ou multiagente); Streamlit, Gradio e React (não mostram os passos do agente sem código extra).</p>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Stack</span></div>
+</section>
+
+<!-- 9. Fluxo no código (BPMN) -->
+<section class="slide">
+  <p class="kicker">05 · Fluxo no código</p>
+  <h2 style="margin-bottom:14px">Do prompt à resposta: quem faz o quê</h2>
+  <div style="flex:1; min-height:0">
+<svg viewBox="0 0 1136 470" width="1136" height="470" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Diagrama BPMN do fluxo de uma pergunta no código">
+<defs>
+  <marker id="bp-seq" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" style="fill:var(--ink)"/></marker>
+  <marker id="bp-msg" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="8" markerHeight="8" orient="auto-start-reverse"><path d="M0,0 L10,5 L0,10 Z" style="fill:var(--paper);stroke:var(--blue);stroke-width:1.2"/></marker>
+  <marker id="bp-msg-start" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="6" markerHeight="6"><circle cx="5" cy="5" r="3.5" style="fill:var(--paper);stroke:var(--blue);stroke-width:1.4"/></marker>
+</defs>
+<rect x="0" y="0" width="1136" height="60" rx="4" style="fill:var(--blue-soft);stroke:var(--blue);stroke-width:1"/>
+<line x1="132" y1="0" x2="132" y2="60" style="stroke:var(--blue);stroke-width:1"/>
+<text x="12" y="26" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--blue)">Modelo de</text>
+<text x="12" y="41" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--blue)">linguagem</text>
+<text x="12" y="54" text-anchor="start" style="font-family:var(--mono);font-size:9.5px;font-weight:400;fill:var(--blue)">LLM_MODEL</text>
+<rect x="410" y="8" width="330" height="44" rx="8" style="fill:var(--paper);stroke:var(--muted);stroke-width:1.1"/>
+<text x="575.0" y="27.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">Escolhe uma ferramenta ou redige a resposta</text>
+<text x="575.0" y="41.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">Ollama · Gemini · Claude — o código não sabe qual</text>
+<rect x="0" y="74" width="1136" height="396" rx="4" style="fill:var(--paper);stroke:var(--muted);stroke-width:1"/>
+<line x1="24" y1="74" x2="24" y2="470" style="stroke:var(--muted);stroke-width:1"/>
+<text transform="translate(16,272.0) rotate(-90)" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)">Assistente de processos</text>
+<rect x="24" y="74" width="108" height="60" style="fill:var(--soft)"/>
+<text x="32" y="103.0" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)">Usuário</text>
+<text x="32" y="117.0" text-anchor="start" style="font-family:var(--mono);font-size:9.5px;font-weight:400;fill:var(--muted)">navegador</text>
+<line x1="24" y1="134" x2="1136" y2="134" style="stroke:var(--line);stroke-width:1"/>
+<rect x="24" y="134" width="108" height="88" style="fill:var(--soft)"/>
+<text x="32" y="177.0" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)">Chainlit</text>
+<text x="32" y="191.0" text-anchor="start" style="font-family:var(--mono);font-size:9.5px;font-weight:400;fill:var(--muted)">app.py</text>
+<line x1="24" y1="222" x2="1136" y2="222" style="stroke:var(--line);stroke-width:1"/>
+<rect x="24" y="222" width="108" height="108" style="fill:var(--soft)"/>
+<text x="32" y="269.0" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)">Agente</text>
+<text x="32" y="283.0" text-anchor="start" style="font-family:var(--mono);font-size:9.5px;font-weight:400;fill:var(--muted)">agent.py</text>
+<text x="32" y="295.0" text-anchor="start" style="font-family:var(--sans);font-size:9.5px;font-weight:400;fill:var(--muted)">Pydantic AI</text>
+<line x1="24" y1="330" x2="1136" y2="330" style="stroke:var(--line);stroke-width:1"/>
+<rect x="24" y="330" width="108" height="76" style="fill:var(--soft)"/>
+<text x="32" y="361.0" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)">Ferramentas</text>
+<text x="32" y="375.0" text-anchor="start" style="font-family:var(--mono);font-size:9.5px;font-weight:400;fill:var(--muted)">agent_tools.py</text>
+<text x="32" y="387.0" text-anchor="start" style="font-family:var(--mono);font-size:9.5px;font-weight:400;fill:var(--muted)">tools.py</text>
+<line x1="24" y1="406" x2="1136" y2="406" style="stroke:var(--line);stroke-width:1"/>
+<rect x="24" y="406" width="108" height="64" style="fill:var(--soft)"/>
+<text x="32" y="437.0" text-anchor="start" style="font-family:var(--sans);font-size:12px;font-weight:700;fill:var(--ink)">Dados</text>
+<text x="32" y="451.0" text-anchor="start" style="font-family:var(--sans);font-size:9.5px;font-weight:400;fill:var(--muted)">SQLite</text>
+<line x1="132" y1="74" x2="132" y2="470" style="stroke:var(--line);stroke-width:1"/>
+<circle cx="168" cy="104.0" r="12" style="fill:var(--green-soft);stroke:var(--green);stroke-width:1.5"/>
+<text x="188" y="108.0" text-anchor="start" style="font-family:var(--sans);font-size:11px;font-weight:600;fill:var(--ink)">Digita a pergunta</text>
+<rect x="142" y="155" width="128" height="48" rx="8" style="fill:var(--paper);stroke:var(--muted);stroke-width:1.1"/>
+<text x="206.0" y="169.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">Recebe a pergunta</text>
+<text x="206.0" y="183.0" text-anchor="middle" style="font-family:var(--mono);font-size:10.5px;font-weight:400;fill:var(--muted)">@cl.on_message</text>
+<text x="206.0" y="197.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">abre o passo na tela</text>
+<rect x="284" y="155" width="152" height="48" rx="8" style="fill:var(--paper);stroke:var(--muted);stroke-width:1.1"/>
+<text x="360.0" y="169.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">Roda o agente</text>
+<text x="360.0" y="183.0" text-anchor="middle" style="font-family:var(--mono);font-size:10.5px;font-weight:400;fill:var(--muted)">run_with_retries_async</text>
+<text x="360.0" y="197.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">histórico + sessão</text>
+<circle cx="426" cy="203" r="9" style="fill:var(--paper);stroke:var(--red);stroke-width:1.2"/><circle cx="426" cy="203" r="6.5" style="fill:none;stroke:var(--red);stroke-width:1"/>
+<text x="426" y="207" text-anchor="middle" style="font-family:var(--sans);font-size:10px;font-weight:700;fill:var(--red)">!</text>
+<path d="M418,208 L338,214" style="fill:none;stroke:var(--faint);stroke-width:1.1;stroke-dasharray:2 3"/>
+<text x="146" y="218" text-anchor="start" style="font-family:var(--sans);font-size:10px;font-weight:400;fill:var(--red);font-style:italic">429/503: tenta de novo (até 3×)</text>
+<rect x="930" y="152" width="140" height="54" rx="8" style="fill:var(--paper);stroke:var(--muted);stroke-width:1.1"/>
+<text x="1000.0" y="169.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">Envia a resposta</text>
+<text x="1000.0" y="183.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">com as citações</text>
+<text x="1000.0" y="197.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">+ rodapé: tokens, custo</text>
+<rect x="420" y="248" width="132" height="60" rx="8" style="fill:var(--paper);stroke:var(--green);stroke-width:1.6"/>
+<text x="486.0" y="268.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">Monta o pedido</text>
+<text x="486.0" y="282.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">instruções + histórico</text>
+<text x="486.0" y="296.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">+ lembrete do foco</text>
+<path d="M612,259 L631,278 L612,297 L593,278 Z" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.3"/>
+<text x="612" y="284" text-anchor="middle" style="font-family:var(--sans);font-size:17px;font-weight:700;fill:var(--amber)">×</text>
+<text x="612" y="250" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--amber)">pediu ferramenta?</text>
+<rect x="680" y="248" width="156" height="60" rx="8" style="fill:var(--paper);stroke:var(--green);stroke-width:1.6"/>
+<text x="758.0" y="268.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">4 validadores</text>
+<text x="758.0" y="282.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">processo consultado?</text>
+<text x="758.0" y="296.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">sentença e petição lidas?</text>
+<path d="M880,259 L899,278 L880,297 L861,278 Z" style="fill:var(--amber-soft);stroke:var(--amber);stroke-width:1.3"/>
+<text x="880" y="284" text-anchor="middle" style="font-family:var(--sans);font-size:17px;font-weight:700;fill:var(--amber)">×</text>
+<text x="904" y="262" text-anchor="start" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--amber)">passou?</text>
+<rect x="522" y="342" width="180" height="54" rx="8" style="fill:var(--paper);stroke:var(--muted);stroke-width:1.1"/>
+<text x="612.0" y="359.0" text-anchor="middle" style="font-family:var(--sans);font-size:12px;font-weight:650;fill:var(--ink)">Roda a ferramenta</text>
+<text x="612.0" y="373.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">1 das 10, tipada</text>
+<text x="612.0" y="387.0" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">foco da sessão · SQL só leitura</text>
+<path d="M702,369 L722,369" style="fill:none;stroke:var(--faint);stroke-width:1.1;stroke-dasharray:2 3"/>
+<path d="M726,350 L722,350 L722,388 L726,388" style="fill:none;stroke:var(--faint);stroke-width:1.1"/>
+<text x="730" y="365" text-anchor="start" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted);font-style:italic">Cada chamada vira um passo na tela</text>
+<text x="730" y="379" text-anchor="start" style="font-family:var(--mono);font-size:10px;font-weight:400;fill:var(--muted)">(event_stream_handler → Chainlit)</text>
+<path d="M585,420 A26.0,6 0 0 1 637,420 L637,454 A26.0,6 0 0 1 585,454 Z" style="fill:var(--soft);stroke:var(--muted);stroke-width:1.1"/>
+<path d="M585,420 A26.0,6 0 0 0 637,420" style="fill:none;stroke:var(--muted);stroke-width:1.1"/>
+<text x="645" y="432" text-anchor="start" style="font-family:var(--mono);font-size:10.5px;font-weight:600;fill:var(--ink)">desafio.sqlite?mode=ro</text>
+<text x="645" y="446" text-anchor="start" style="font-family:var(--sans);font-size:10.5px;font-weight:400;fill:var(--muted)">+ índice FTS5 em TEMP</text>
+<path d="M615,396 L611,414" style="fill:none;stroke:var(--faint);stroke-width:1.1;stroke-dasharray:2 3"/>
+<path d="M1027,420 A23.0,6 0 0 1 1073,420 L1073,454 A23.0,6 0 0 1 1027,454 Z" style="fill:var(--soft);stroke:var(--muted);stroke-width:1.1"/>
+<path d="M1027,420 A23.0,6 0 0 0 1073,420" style="fill:none;stroke:var(--muted);stroke-width:1.1"/>
+<text x="1019" y="441" text-anchor="end" style="font-family:var(--mono);font-size:10.5px;font-weight:600;fill:var(--ink)">usage.sqlite</text>
+<text x="1018" y="456" text-anchor="middle" style="font-family:var(--sans);font-size:10px;font-weight:400;fill:var(--ink)"></text>
+<path d="M1050,206 L1050,414" style="fill:none;stroke:var(--faint);stroke-width:1.1;stroke-dasharray:2 3"/>
+<circle cx="1000" cy="104.0" r="12" style="fill:var(--paper);stroke:var(--ink);stroke-width:3"/>
+<text x="1020" y="108.0" text-anchor="start" style="font-family:var(--sans);font-size:11px;font-weight:600;fill:var(--ink)">Lê a resposta citada</text>
+<path d="M168,116.0 L168,155" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<path d="M270,179 L284,179" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<path d="M343,203 L343,278 L420,278" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<path d="M552,278 L593,278" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<path d="M612,297 L612,342" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<text x="618" y="326" text-anchor="start" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--muted)">sim</text>
+<path d="M522,369 L486,369 L486,308" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<text x="480" y="386" text-anchor="end" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--muted)">resultado (JSON)</text>
+<path d="M631,278 L680,278" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<text x="652" y="301" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--muted)">não: texto</text>
+<path d="M836,278 L861,278" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<path d="M880,259 L880,236 L538,236 L538,248" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<text x="712" y="232" text-anchor="middle" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--muted)">não: ModelRetry, volta ao modelo</text>
+<path d="M899,278 L1000,278 L1000,206" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<text x="906" y="296" text-anchor="start" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--muted)">sim</text>
+<path d="M1000,152 L1000,116.0" style="fill:none;stroke:var(--ink);stroke-width:1.2" marker-end="url(#bp-seq)"/>
+<path d="M450,248 L450,52" style="fill:none;stroke:var(--blue);stroke-width:1.2;stroke-dasharray:5 4" marker-start="url(#bp-msg-start)" marker-end="url(#bp-msg)"/>
+<text x="444" y="110" text-anchor="end" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--blue)">pedido</text>
+<path d="M522,52 L522,248" style="fill:none;stroke:var(--blue);stroke-width:1.2;stroke-dasharray:5 4" marker-start="url(#bp-msg-start)" marker-end="url(#bp-msg)"/>
+<text x="528" y="110" text-anchor="start" style="font-family:var(--sans);font-size:10.5px;font-weight:600;fill:var(--blue)">decisão</text>
+</svg>
+
+  </div>
+  <p class="tiny" style="margin:6px 0 0">Notação BPMN: ○ início · ◎ fim · ▭ tarefa · ◇ decisão · → fluxo · <span style="color:var(--blue)">⇢ mensagem com o modelo (participante externo)</span> · ⋯ associação com dado ou nota. O laço ferramenta → modelo se repete até o modelo responder em texto.</p>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Fluxo no código</span></div>
+</section>
+
+<!-- 10. Arquitetura em camadas -->
+<section class="slide">
+  <p class="kicker">05 · Como está estruturado</p>
+  <h2 style="margin-bottom:16px">Camadas: a dependência só aponta para baixo</h2>
+  <div style="display:grid; grid-template-columns: 1.35fr 1fr; gap:22px" class="grow">
+    <div>
+      <div class="layer" style="background:var(--soft)">
+        <div class="tag">Apresentação</div>
+        <h3>Chainlit (web) · CLI (terminal)</h3>
+        <p>Mostra cada ferramenta como passo e o rodapé com tokens, custo e tempo. Nunca faz SQL.</p>
+      </div>
+      <div class="down">▼</div>
+      <div class="layer" style="background:var(--green-soft); border-color:transparent">
+        <div class="tag">Agente · Pydantic AI</div>
+        <h3>Instruções + mapa do banco · lembrete do processo em foco · 4 validadores</h3>
+        <p>Novas tentativas quando o serviço recusa (503/429). Não conhece o fornecedor do modelo.</p>
+      </div>
+      <div class="down">▼</div>
+      <div class="layer">
+        <div class="tag">Ferramentas · 10, tipadas</div>
+        <div class="chips">
+          <span class="chip">find_case</span><span class="chip">list_parties</span><span class="chip">list_movements</span><span class="chip">list_documents</span><span class="chip">read_document</span>
+          <span class="chip">search_text</span><span class="chip">search_parties</span><span class="chip">search_cases</span><span class="chip">prepare_draft</span><span class="chip" style="border-color:var(--amber)">run_sql</span>
+        </div>
+      </div>
+      <div class="down">▼</div>
+      <div class="layer">
+        <div class="tag">Domínio e acesso a dados</div>
+        <h3>Regras do domínio · citações · número CNJ · SQL validado</h3>
+        <p>Três sinais de julgamento, lado do advogado, comarca, citação: cada regra num lugar só.</p>
+      </div>
+      <div class="down">▼</div>
+      <div class="layer" style="background:#10231b; color:#d5efe2; border-color:transparent">
+        <div class="tag" style="color:#8fd3b4">Banco</div>
+        <h3 style="color:#fff"><code>desafio.sqlite?mode=ro</code> + índice FTS5 em tabela temporária</h3>
+      </div>
+    </div>
+    <div style="display:flex; flex-direction:column; gap:10px">
+      <div class="card green">
+        <div class="num">Sessão (uma por conversa)</div>
+        <table class="session">
+          <tr><td><code>connection</code></td><td class="small muted">SQLite somente leitura</td></tr>
+          <tr><td><code>focused_case_number</code></td><td class="small muted">processo em foco</td></tr>
+          <tr><td><code>failed_sql_attempts</code></td><td class="small muted">falhas seguidas do SQL livre</td></tr>
+          <tr><td><code>draft_run_id</code></td><td class="small muted">esta resposta é uma minuta</td></tr>
+          <tr><td><code>id</code></td><td class="small muted">registro de uso</td></tr>
+        </table>
+      </div>
+      <div class="card" style="padding:12px 16px">
+        <div class="num">Os quatro validadores</div>
+        <table class="validators">
+          <tr><th>Validador</th><th>O que confere</th></tr>
+          <tr><td>Processo não consultado</td><td>Processo da pergunta passou por uma ferramenta</td></tr>
+          <tr><td>Sentença não lida</td><td>Sentença citada foi aberta (<code>read_document</code>)</td></tr>
+          <tr><td>Petição não lida</td><td>Pedidos do autor: petição inicial aberta</td></tr>
+          <tr><td>Minuta sem aviso</td><td>Minuta abre com "texto não proferido"</td></tr>
+        </table>
+      </div>
+      <div class="card soft" style="padding:10px 16px">
+        <div class="num">Registro de uso</div>
+        <p style="margin:0; font-size:15px">Tokens, ferramentas, tempo e custo por resposta em <code>usage.sqlite</code>. O texto da pergunta não é gravado.</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Arquitetura</span></div>
+</section>
+
+<!-- 11. Fluxo de uma pergunta -->
+<section class="slide">
+  <p class="kicker">05 · Fluxo de uma pergunta</p>
+  <h2>"E ele já foi julgado?", depois de perguntar sobre o caso ID 3161</h2>
+  <div class="flow">
+    <div class="step"><div class="k">1 · PERGUNTA</div><h3>Usuário pergunta sem número</h3><p>O histórico da conversa vai junto. O agente injeta o lembrete: <i>processo em foco: 0000007-79.2023.8.99.9014</i>.</p><p class="mod">→ <code>app.py</code> · <code>agent.py</code> · <code>prompts.py</code></p></div>
+    <div class="step"><div class="k">2 · DECISÃO</div><h3>O modelo escolhe a ferramenta</h3><p>Lê as descrições das 10 ferramentas e o roteiro das instruções. Chama <code>find_case()</code> sem número.</p><p class="mod">→ <code>agent_tools.py</code> · <code>prompts.py</code></p></div>
+    <div class="step hl"><div class="k">3 · SESSÃO</div><h3>Sem número, usa o foco</h3><p>Confere o dígito verificador do número CNJ. O processo encontrado vira o novo foco da sessão.</p><p class="mod">→ <code>agent_tools.py</code> · <code>session.py</code> · <code>case_number.py</code></p></div>
+    <div class="step last"><div class="k">4 · BANCO</div><h3>SQL pronto, somente leitura</h3><p>Consulta parametrizada; regras do domínio aplicadas no código (três sinais de julgamento, avisos do cadastro).</p><p class="mod">→ <code>tools.py</code> · <code>db.py</code></p></div>
+    <div class="turn">↩ continua</div>
+    <div class="step" style="grid-column: span 2; padding:0; border:none; min-height:0">
+<pre class="json"><span class="c">// 5 · JSON devolvido por find_case (trecho real)</span>
+<span class="c">// → tools.py · citations.py</span>
+{ <span class="k">"found"</span>: true,
+  <span class="k">"case_number"</span>: <span class="s">"0000007-79.2023.8.99.9014"</span>,
+  <span class="k">"judge"</span>: { <span class="k">"name"</span>: <span class="s">"Luiz Bonetti Vasconcelos"</span>,
+             <span class="k">"status"</span>: <span class="s">"aposentado"</span> },
+  <span class="k">"judgment"</span>: { <span class="k">"summary"</span>: <span class="s">"Julgado: data, movimentação e documento…"</span> },
+  <span class="k">"warnings"</span>: [<span class="s">"Magistrado … está aposentado."</span>],
+  <span class="k">"source"</span>: <span class="s">"[cadastro do processo]"</span> }</pre>
+    </div>
+    <div class="step"><div class="k">6 · RESPOSTA</div><h3>O modelo redige e cita</h3><p>Lê a sentença com <code>read_document(7878)</code> para os fundamentos. Repassa o aviso do juiz sem "corrigir".</p><p class="mod">→ <code>agent_tools.py</code> · <code>tools.py</code> · <code>citations.py</code></p></div>
+    <div class="step warn last"><div class="k">7 · VALIDADORES</div><h3>Código confere antes de sair</h3><p>Processo não consultado? Sentença ou petição não lida? Minuta sem o aviso? → volta ao modelo (passo 2).</p><p class="mod">→ <code>agent.py</code></p></div>
+  </div>
+  <div class="card soft" style="margin-top:14px; padding:10px 16px">
+    <p style="margin:0; font-size:16px"><b>8 · Na tela:</b> resposta citando <code>[doc 7878 — Sentença, 18/02/2026]</code>, cada ferramenta como um passo aberto e o rodapé com tokens, custo e tempo.</p>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Fluxo</span></div>
+</section>
+
+<!-- 12. SQL livre e exceções -->
+<section class="slide">
+  <p class="kicker">05 · Quando não há ferramenta, e quando dá errado</p>
+  <h2>SQL livre controlado e respostas para cada exceção</h2>
+  <div style="display:grid; grid-template-columns: 1fr 1.08fr; gap:28px" class="grow">
+    <div class="pipe">
+      <div class="box"><b>Pergunta sem ferramenta</b> · "Com uma consulta SQL, conte…"</div>
+      <div class="arr">▼ o modelo escreve um SELECT</div>
+      <div class="box"><b>1.</b> Validação do texto: só <code>SELECT</code>/<code>WITH</code>, um comando, sem escrita</div>
+      <div class="arr">▼</div>
+      <div class="box"><b>2.</b> Autorizador do SQLite durante a consulta</div>
+      <div class="arr">▼</div>
+      <div class="box"><b>3.</b> Conexão <code>mode=ro</code> · 5 s · resposta com até 50 linhas e 6 mil caracteres</div>
+      <div class="arr">▼</div>
+      <div class="split">
+        <div class="box ok"><b>Deu certo</b><br><span class="small">resultado + lembrete: "confira se a consulta responde; se sim, mostre o SQL"</span></div>
+        <div class="box amb"><b>Falhou</b><br><span class="small">erro vira observação, com o mapa do banco, para o modelo corrigir</span></div>
+      </div>
+      <div class="arr" style="text-align:right; padding-right:22%">▼ 2 falhas seguidas na mesma pergunta</div>
+      <div class="box bad"><b>Teto:</b> a 3ª nem executa → "não foi possível obter a resposta com uma consulta ao banco" (e nunca "não consta")</div>
+    </div>
+    <div>
+      <table>
+        <tr><th>Situação</th><th>Resposta</th></tr>
+        <tr><td>Processo inexistente</td><td>"Não consta no banco" + o que foi consultado</td></tr>
+        <tr><td>Dígito verificador errado</td><td>Avisa que o número foi digitado errado</td></tr>
+        <tr><td>Sem número e sem processo em foco</td><td>Pede o número do processo</td></tr>
+        <tr><td>Processo sem documentos (63%)</td><td>Resume pelo andamento e declara a ausência</td></tr>
+        <tr><td>Minuta sem petição inicial e contestação</td><td>Recusa, com o motivo</td></tr>
+        <tr><td>Nome com mais de uma pessoa</td><td>Lista por CPF/CNPJ e pergunta qual</td></tr>
+        <tr><td>Inconsistência do cadastro</td><td>Repassa o aviso; não escolhe lado</td></tr>
+        <tr><td>Serviço do modelo recusa (503/429)</td><td>Avisa e tenta de novo em 5 s e 10 s</td></tr>
+        <tr><td>Resposta cita o que não consultou</td><td>Validador devolve ao modelo</td></tr>
+      </table>
+      <p class="tiny" style="margin-top:10px">Na fronteira das ferramentas, toda exceção vira observação para o modelo. Nada é engolido e nada vira <code>None</code> silencioso.</p>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>SQL livre e exceções</span></div>
+</section>
+
+<!-- 13. Demonstração -->
+<section class="slide cover" style="align-items:center; text-align:center">
+  <h1 style="font-size:96px; margin:0">Demonstração</h1>
+</section>
+
+<!-- 14. Comparativo por pergunta -->
+<section class="slide">
+  <p class="kicker">06 · Comparativo por modelo</p>
+  <h2>As 4 perguntas do edital no processo 3161, numa conversa</h2>
+  <div style="display:grid; grid-template-columns: 1.25fr 1fr; gap:30px" class="grow">
+    <div>
+      <table>
+        <tr><th>Pergunta</th><th class="n">Gemini 3.8 Flash</th><th class="n">Claude Sonnet 5.5</th><th class="n">Qwen3 4B local</th></tr>
+        <tr><td>1. Resumo</td><td class="n">19 s · R$ 0,22</td><td class="n">R$ 0,27</td><td class="n">203 s · R$ 0</td></tr>
+        <tr><td>2. Partes, juiz, advogados, pedidos</td><td class="n">10 s · R$ 0,19</td><td class="n">R$ 0,09</td><td class="n">45 s · R$ 0</td></tr>
+        <tr><td>3. Já foi julgado?</td><td class="n">7 s · R$ 0,17</td><td class="n">R$ 0,06</td><td class="n">66 s · R$ 0</td></tr>
+        <tr><td>4. Minuta de sentença</td><td class="n">12 s · R$ 0,26</td><td class="n">R$ 0,20</td><td class="n">218 s · R$ 0</td></tr>
+        <tr class="total"><td>Conversa inteira</td><td class="n">48 s · R$ 0,84</td><td class="n">38 s · R$ 0,62</td><td class="n">535 s · R$ 0</td></tr>
+      </table>
+      <ul class="small" style="margin-top:16px; font-size:14.5px; color:var(--muted)">
+        <li><b>Claude:</b> com cache de prompt; sem ele, R$ 1,50 no mesmo tempo. O tempo de cada pergunta não foi registrado, só o total (D87).</li>
+        <li><b>Gemini:</b> ensaio da demonstração em 29/09; não reaproveita cache.</li>
+        <li><b>Local:</b> custo zero por token. O tempo é um teto: Mac com 7,7 GB de swap durante a medição (D78).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Tempo por pergunta</h3>
+      <div class="legend" style="margin-bottom:12px"><span><i style="background:var(--green)"></i>Gemini</span><span><i style="background:#b8c2bc"></i>Qwen3 4B local</span></div>
+      <div class="bars">
+        <div class="lbl">Resumo</div><div class="row"><div class="bar g" style="width:8.7%"><span>19 s</span></div><div class="bar l" style="width:93.1%"><span>203 s</span></div></div>
+        <div class="lbl">Partes</div><div class="row"><div class="bar g" style="width:4.6%"><span>10 s</span></div><div class="bar l" style="width:20.6%"><span>45 s</span></div></div>
+        <div class="lbl">Julgado?</div><div class="row"><div class="bar g" style="width:3.2%"><span>7 s</span></div><div class="bar l" style="width:30.3%"><span>66 s</span></div></div>
+        <div class="lbl">Minuta</div><div class="row"><div class="bar g" style="width:5.5%"><span>12 s</span></div><div class="bar l" style="width:86%"><span>218 s</span></div></div>
+      </div>
+      <div class="card green" style="margin-top:22px">
+        <p style="margin:0; font-size:15.5px"><b>O gargalo do local é escrever, não ler:</b> ele lê o prompt a ~120 tokens/s, mas escreve a 6–9 tokens/s. A geração responde por 63% a 98% do tempo (D78).</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Comparativo por pergunta</span></div>
+</section>
+
+<!-- 15. Qualidade e custo em escala -->
+<section class="slide">
+  <p class="kicker">06 · Comparativo por modelo</p>
+  <h2 style="margin-bottom:8px">Qualidade na bateria e custo em escala</h2>
+  <p class="lead" style="font-size:18px; margin-bottom:20px"><b>Bateria</b> é uma prova automática: o mesmo conjunto de conversas, com respostas esperadas definidas antes, roda contra o modelo real, e cada resposta é conferida (ferramenta certa chamada, fatos presentes, nada inventado). O placar mostra quantas conversas passaram.</p>
+  <div class="cols-2 grow" style="gap:30px">
+    <div>
+      <h3>Bateria de avaliação: 20 conversas com critério por resposta</h3>
+      <table>
+        <tr><th>Modelo</th><th class="n">Acertos</th><th class="n">Por resposta</th></tr>
+        <tr><td>Gemini 3.8 Flash</td><td class="n"><b>20/20</b></td><td class="n">9,2 s · R$ 0,051</td></tr>
+        <tr><td>Qwen3 4B · Ollama</td><td class="n"><b>19/20</b></td><td class="n">10,0 s · R$ 0</td></tr>
+        <tr><td>Qwen3 4B · oMLX</td><td class="n">15/20</td><td class="n">10,9 s · R$ 0</td></tr>
+        <tr><td>gpt-oss · Gemma 4</td><td class="n">15/20</td><td class="n">17,3 s · 9,2 s</td></tr>
+        <tr><td>Claude Sonnet 5.5</td><td class="n muted">não rodada</td><td class="n">R$ 0,62 nas 4 do edital</td></tr>
+      </table>
+      <ul class="small" style="margin-top:14px; font-size:14.5px; color:var(--muted)">
+        <li>O local subiu com correções medidas: validadores, SQL que admite a falha, petição lida (D90, D92).</li>
+        <li>No M5 (24 GB), a bateria do local caiu de 1.260 s para 280 s; oMLX e modelos maiores não superaram o 4B (D91).</li>
+        <li>O Gemini oscilou entre rodadas (19/19, 17/19 e 20/20 nos 20 casos, em 08/10): a variação está registrada (D95).</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Projeção mensal: 20 perguntas por pessoa por dia</h3>
+      <table>
+        <tr><th>Cenário</th><th class="n">Respostas/mês</th><th class="n">Gemini</th><th class="n">Servidor próprio</th></tr>
+        <tr><td>Gabinete (10)</td><td class="n">4.400</td><td class="n">R$ 215</td><td class="n">R$ 7.082</td></tr>
+        <tr><td>Comarca (100)</td><td class="n">44.000</td><td class="n">R$ 2.152</td><td class="n">R$ 7.082</td></tr>
+        <tr><td>Tribunal (2.000)</td><td class="n">880.000</td><td class="n">R$ 43.031</td><td class="n">R$ 7.082+</td></tr>
+      </table>
+      <div class="card green" style="margin-top:16px">
+        <p style="margin:0; font-size:15.5px">O servidor próprio (1 GPU L40S) compensa a partir de <b>~145 mil respostas/mês</b>. O custo por pergunta não depende do tamanho da base, só do volume de perguntas (D76).</p>
+      </div>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Qualidade e custo</span></div>
+</section>
+
+<!-- 16. Arguição 1 -->
+<section class="slide">
+  <p class="kicker">07 · Arguição · 1 de 5</p>
+  <p class="q">Por que essa arquitetura e não outra? Que alternativas você descartou e por quê?</p>
+  <p class="answer-lead">Text-to-SQL com ferramentas prontas, porque os dados pediam isso: chave exata, fatos em colunas e um processo que cabe inteiro no contexto. Consulta vazia vira "não consta" com honestidade.</p>
+  <div class="cols-2">
+    <ul style="font-size:17.5px">
+      <li><b>RAG com Qdrant:</b> era a minha ideia inicial; a análise do banco mostrou que era a ferramenta errada (D02)</li>
+      <li><b>SQL livre como único caminho:</b> um modelo de 4B inventa colunas e esquece as armadilhas; virou válvula de escape (D03)</li>
+    </ul>
+    <ul style="font-size:17.5px">
+      <li><b>LangChain, LlamaIndex, CrewAI:</b> camadas demais; o Pydantic AI faz o mesmo com funções simples (D06)</li>
+      <li><b>Streamlit, Gradio, React:</b> o Chainlit mostra os passos do agente sem código extra (D09)</li>
+      <li><b>Modelos que não cabem em 8 GB</b> ou não chamam ferramentas (D08)</li>
+    </ul>
+  </div>
+  <p class="ev" style="margin-top:auto">Evidência: <code>plan.md</code> §2–3; <code>DECISOES.md</code> D02, D03, D05, D06, D08, D09</p>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Arguição</span></div>
+</section>
+
+<!-- 17. Arguição 2 -->
+<section class="slide">
+  <p class="kicker">07 · Arguição · 2 de 5</p>
+  <p class="q">Como o agente decide o que consultar no banco? O que acontece quando ele erra?</p>
+  <p class="answer-lead">Decide por <i>tool calling</i>: lê a descrição das 10 ferramentas e um roteiro nas instruções. Quando erra, o erro vira observação e há tetos e validadores escritos em código.</p>
+  <div class="cols-2">
+    <ul style="font-size:17px">
+      <li>Ferramentas devolvem metadados; só <code>read_document</code> devolve texto</li>
+      <li>Processo em foco lembrado a cada pedido; usado quando a pergunta não traz número</li>
+      <li>Processo ou documento inexistente é resposta, não exceção</li>
+    </ul>
+    <ul style="font-size:17px">
+      <li>SQL livre: três camadas de leitura, 5 s, 50 linhas, teto de 2 falhas (D39, D52)</li>
+      <li>Resultado de SQL com lembrete de conferir a consulta: o local passou a admitir em 4 de 4 rodadas (D90)</li>
+      <li>4 validadores: processo não consultado, sentença não lida, petição não lida, minuta sem aviso (D51, D58, D66, D92)</li>
+    </ul>
+  </div>
+  <div class="card green" style="margin-top:14px"><p style="margin:0; font-size:16px"><b>Ao vivo:</b> a pergunta que falha de propósito. A consulta estoura os 5 s, o modelo tenta de novo, bate no teto e admite. <b>Medido:</b> bateria de 20 casos: Gemini 20/20 (08/10; antes 19/19 e 17/19 em 19 casos), local 19/20. Nesta pergunta, o Gemini fez 3 chamadas em 23 s e admitiu (D95).</p></div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Arguição</span></div>
+</section>
+
+<!-- 18. Arguição 3 -->
+<section class="slide">
+  <p class="kicker">07 · Arguição · 3 de 5</p>
+  <p class="q">Como você usou IA no desenvolvimento? Ferramentas, instruções, skills ou prompts, e onde a IA atrapalhou?</p>
+  <p class="answer-lead">Claude Code no terminal, sobre o repositório. Eu decido; a IA propõe, implementa e verifica. Teste antes do código, uma branch e um PR por tarefa, e o merge é sempre meu.</p>
+  <div class="cols-2">
+    <div>
+      <h3>O que configurei</h3>
+      <ul style="font-size:16.5px">
+        <li><code>AGENTS.md</code>: arquitetura fechada, banco somente leitura, armadilhas medidas, padrão de código e fluxo de Git</li>
+        <li>Memória persistente com as lições dos erros; plugin de continuidade entre sessões</li>
+        <li>Prompts que mudaram o projeto transcritos em <code>docs/ai_use/</code>; cada decisão tem "Uso de IA"</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Onde atrapalhou</h3>
+      <ul style="font-size:16.5px">
+        <li>Um contra-teste alterou o banco original por bytecode em cache; restaurado e conferido por hash (D31), e hoje há uma guarda de integridade</li>
+        <li>Contou 1.024 "comarcas divergentes" que eram a mesma cidade (D34), o que deu origem à regra "medir antes de afirmar"</li>
+        <li>Atribuiu um erro de memória à máquina sem medir; o reboot não resolveu (D89)</li>
+      </ul>
+    </div>
+  </div>
+  <p class="ev" style="margin-top:auto">Onde ela me corrigiu: o RAG inicial; "parte" traduzida como <i>party</i>.</p>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Arguição</span></div>
+</section>
+
+<!-- 19. Arguição 4 -->
+<section class="slide">
+  <p class="kicker">07 · Arguição · 4 de 5</p>
+  <p class="q">O que você não fez por falta de tempo, e qual seria o próximo passo?</p>
+  <div class="cols-2 grow" style="gap:30px">
+    <div>
+      <h3>Não fiz</h3>
+      <ul style="font-size:17px">
+        <li><b>Busca semântica</b> ("processos parecidos"): fora do escopo; entraria com <code>sqlite-vec</code>, sem servidor</li>
+        <li><b>LLM como juiz:</b> descartado de propósito; a bateria de critérios é mais barata e determinística (D61)</li>
+        <li><b>Várias rodadas da bateria por modelo</b>, para medir a variação (o Gemini oscilou entre 19 e 17)</li>
+        <li><b>Cadastro próprio de advogados:</b> hoje vêm das assinaturas (D37)</li>
+        <li><b>Streaming do texto da resposta</b> (os passos já aparecem em tempo real)</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Próximo passo</h3>
+      <div class="card green">
+        <p style="font-size:17px">Bateria de avaliação na CI a cada mudança de instruções, com placar por versão do prompt.</p>
+        <p style="font-size:15px; margin:0" class="muted">Hoje a CI roda os 427 testes sem IA; a bateria com modelo real é manual.</p>
+      </div>
+      <h3 style="margin-top:20px">Feito depois da entrega</h3>
+      <ul style="font-size:15.5px" class="muted">
+        <li>oMLX e modelos maiores avaliados: no Mac de 8 GB, o oMLX estoura a memória (D89); no de 24 GB, nenhum supera o Qwen3 4B no Ollama (D91)</li>
+        <li>SQL livre: o modelo local admite em vez de inventar o número (D90)</li>
+        <li>Pedidos do autor só depois de ler a petição inicial: o local os inventava (D92)</li>
+      </ul>
+    </div>
+  </div>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Arguição</span></div>
+</section>
+
+<!-- 20. Arguição 5 -->
+<section class="slide">
+  <p class="kicker">07 · Arguição · 5 de 5</p>
+  <p class="q">O que muda se os dados forem reais, sigilosos e o volume for 10.000 vezes maior?</p>
+  <p class="answer-lead">O desenho não muda; a infraestrutura e os controles, sim. O custo por pergunta não depende do tamanho da base, porque as ferramentas devolvem só o necessário.</p>
+  <div class="cols-3">
+    <div class="card"><div class="num">Volume</div><ul style="font-size:15.5px"><li>SQLite → Postgres, com os mesmos índices</li><li>Busca textual do próprio banco</li><li>SQL livre desligado em produção: só ferramentas auditadas</li></ul></div>
+    <div class="card"><div class="num">Sigilo</div><ul style="font-size:15.5px"><li>Modelo dentro do tribunal: a troca por variável já está provada <span class="pill green">feito</span></li><li>Dados pessoais mascarados antes do modelo <span class="pill amber">a fazer</span></li><li>Acesso por perfil na camada de dados, inclusive segredo de justiça <span class="pill amber">a fazer</span></li><li>Registro de toda consulta, sem o texto da pergunta <span class="pill green">feito</span> <span class="tiny">por resposta (D72): guarda as ferramentas chamadas, não os argumentos nem o SQL de cada chamada</span></li></ul></div>
+    <div class="card"><div class="num">Custo e qualidade</div><ul style="font-size:15.5px"><li>Servidor com GPU compensa a partir de ~145 mil respostas/mês</li><li>Modelo aberto maior no lugar do 4B</li><li>Bateria como regressão obrigatória</li></ul></div>
+  </div>
+  <p class="ev" style="margin-top:auto">Evidência: D72 (registro sem a pergunta), D76 (custo e projeção), D13 (reportar, nunca corrigir)</p>
+  <div class="footer"><span>Desafio técnico TJSC</span><span>Arguição</span></div>
+</section>
+
+<!-- 21. Encerramento -->
+<section class="slide cover">
+  <p class="kicker">Obrigado</p>
+  <h1>Perguntas?</h1>
+  <div class="bar"></div>
+  <p class="lead">Código, README e as 93 decisões registradas estão no repositório, cada uma com o porquê, o que foi descartado e o uso de IA.</p>
+  <p class="muted" style="margin-top:22px">André Piacentini · andrepiacentini.com.br</p>
+</section>
+
+</div>
+<div id="progress"></div>
+<div id="counter"></div>
+<div id="hint">← → navegar · F tela cheia</div>
+
+<script>
+  const slides = Array.from(document.querySelectorAll(".slide"));
+  const stage = document.getElementById("stage");
+  const progress = document.getElementById("progress");
+  const counter = document.getElementById("counter");
+  let current = 0;
+
+  function readSlideFromHash() {
+    const n = parseInt(location.hash.replace("#", ""), 10);
+    return Number.isInteger(n) && n >= 1 && n <= slides.length ? n - 1 : 0;
+  }
+
+  function show(index) {
+    current = Math.max(0, Math.min(slides.length - 1, index));
+    slides.forEach((slide, i) => slide.classList.toggle("active", i === current));
+    progress.style.width = ((current + 1) / slides.length * 100) + "%";
+    counter.textContent = `${current + 1}/${slides.length}`;
+    history.replaceState(null, "", "#" + (current + 1));
+  }
+
+  function fit() {
+    const scale = Math.min(window.innerWidth / 1280, window.innerHeight / 720) * 0.96;
+    stage.style.transform = `translate(-50%, -50%) scale(${scale})`;
+  }
+
+  document.addEventListener("keydown", (event) => {
+    if (["ArrowRight", "PageDown", " ", "Enter"].includes(event.key)) { event.preventDefault(); show(current + 1); }
+    if (["ArrowLeft", "PageUp", "Backspace"].includes(event.key)) { event.preventDefault(); show(current - 1); }
+    if (event.key === "Home") show(0);
+    if (event.key === "End") show(slides.length - 1);
+    if (event.key === "f" || event.key === "F") {
+      if (document.fullscreenElement) document.exitFullscreen(); else document.documentElement.requestFullscreen();
+    }
+  });
+  document.addEventListener("click", (event) => {
+    show(event.clientX > window.innerWidth / 3 ? current + 1 : current - 1);
+  });
+  window.addEventListener("resize", fit);
+
+  fit();
+  show(readSlideFromHash());
+</script>
+</body>
+</html>
