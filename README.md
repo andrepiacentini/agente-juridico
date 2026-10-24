@@ -1,4 +1,4 @@
-# Assistente de IA para consulta de processos judiciais — Desafio TJSC
+# Assistente de IA para consulta de processos judiciais — Teste Técnico TJSC
 
 [![tests](https://github.com/andrepiacentini/desafio-tjsc/actions/workflows/tests.yml/badge.svg)](https://github.com/andrepiacentini/desafio-tjsc/actions/workflows/tests.yml)
 
